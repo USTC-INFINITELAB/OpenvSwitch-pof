@@ -2685,7 +2685,7 @@ init_ports(struct ofproto *p)
         }
     }
 
-    SHASH_FOR_EACH_SAFE(node, next, &init_ofp_ports) {
+    SHASH_FOR_EACH_SAFE(node, next, &init_ofp_ports) {  /*buzaoganmade*/
         struct iface_hint *iface_hint = node->data;
 
         if (!strcmp(iface_hint->br_name, p->name)) {
@@ -3311,7 +3311,36 @@ handle_features_request(struct ofconn *ofconn, const struct ofp_header *oh)
     return 0;
 }
 
+/*sqy*/
 static enum ofperr
+handle_port_status(struct ofconn *ofconn, const struct ofp_header *oh)  /*sqy*/
+{
+    struct ofproto *p = ofconn_get_ofproto(ofconn);
+    struct ofproto_port_dump dump;
+    struct ofproto_port ofproto_port;
+
+    OFPROTO_PORT_FOR_EACH (&ofproto_port, &dump, p) {
+        const char *name = ofproto_port.name;
+        VLOG_INFO_RL(&rl, "%s:  %s +++sqy",
+                         p->name, name);
+        struct ofputil_phy_port pp;
+        struct netdev *netdev;
+        netdev = ofport_open(p, &ofproto_port, &pp);
+        if (netdev) {
+             /* XXX Should limit the number of queued port status change messages. */
+            struct ofputil_port_status ps;
+            ps.reason = OFPPR_ADD;
+            ps.desc = pp;
+            struct ofpbuf *msg;
+            msg = ofputil_encode_port_status_pof(&ps, ofconn_get_protocol(ofconn), oh->xid);
+            ofconn_send_reply(ofconn, msg);
+        }
+    }
+    return 0;
+}/*sqy*/
+
+
+static void /*enum ofperr*/
 handle_get_config_request(struct ofconn *ofconn, const struct ofp_header *oh)
 {
     struct ofputil_switch_config config;
@@ -3322,7 +3351,7 @@ handle_get_config_request(struct ofconn *ofconn, const struct ofp_header *oh)
 
     ofconn_send_reply(ofconn, ofputil_encode_get_config_reply(oh, &config));
 
-    return 0;
+    /*return 0;*/
 }
 
 static enum ofperr
@@ -7815,7 +7844,8 @@ handle_openflow__(struct ofconn *ofconn, const struct ofpbuf *msg)
         return handle_features_request(ofconn, oh);
 
     case OFPTYPE_GET_CONFIG_REQUEST:
-        return handle_get_config_request(ofconn, oh);
+        handle_get_config_request(ofconn, oh);
+        return handle_port_status(ofconn, oh);
 
     case OFPTYPE_SET_CONFIG:
         return handle_set_config(ofconn, oh);

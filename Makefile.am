@@ -116,6 +116,7 @@ EXTRA_DIST = \
 	ovs-pof.creator.user \
 	ovs-pof.files \
 	ovs-pof.includes \
+        lib/ofp-msgs.inc \
 	build-aux/cccl \
 	build-aux/cksum-schema-check \
 	build-aux/calculate-schema-cksum \

@@ -126,8 +126,12 @@ struct ofp11_port {
 
     ovs_be32 curr_speed;    /* Current port bitrate in kbps. */
     ovs_be32 max_speed;     /* Max port bitrate in kbps */
+
+    uint8_t of_enable; /*indicate whether openflow is enabled */
+    uint8_t pad3[7];   /*8 bytes aligned*/
+    char    name_pof_pad[48];
 };
-OFP_ASSERT(sizeof(struct ofp11_port) == 64);
+OFP_ASSERT(sizeof(struct ofp11_port) == 120);
 
 /* Modify behavior of the physical port */
 struct ofp11_port_mod {
