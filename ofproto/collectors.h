@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct collectors;
+struct collectors;//
 struct sset;
 
 int collectors_create(const struct sset *targets, uint16_t default_port,
