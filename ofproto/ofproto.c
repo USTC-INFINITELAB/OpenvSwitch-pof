@@ -3292,6 +3292,7 @@ handle_features_request(struct ofconn *ofconn, const struct ofp_header *oh)
 
     features.datapath_id = ofproto->datapath_id;
     features.n_buffers = 0;
+    /*features.port_num = port->ofp_port;*/
     features.n_tables = ofproto_get_n_visible_tables(ofproto);
     features.capabilities = (OFPUTIL_C_FLOW_STATS | OFPUTIL_C_TABLE_STATS |
                              OFPUTIL_C_PORT_STATS | OFPUTIL_C_QUEUE_STATS |

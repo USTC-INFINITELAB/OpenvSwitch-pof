@@ -105,6 +105,15 @@ EXTRA_DIST = \
 	.travis/osx-prepare.sh \
 	appveyor.yml \
 	boot.sh \
+	setup.sh \
+    unsetup.sh \
+	.cproject \
+	.project \
+	ovs-pof.config \
+	ovs-pof.creator \
+	ovs-pof.creator.user \
+	ovs-pof.files \
+	ovs-pof.includes \
 	build-aux/cccl \
 	build-aux/cksum-schema-check \
 	build-aux/calculate-schema-cksum \

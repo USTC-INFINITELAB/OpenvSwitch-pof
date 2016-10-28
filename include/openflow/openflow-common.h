@@ -117,7 +117,7 @@ enum ofp_version {
 #define OFP_PORT  6653
 
 #define OFP_DEFAULT_MISS_SEND_LEN   128
-
+#define POF_NAME_MAX_LENGTH   64
 /* Values below this cutoff are 802.3 packets and the two bytes
  * following MAC addresses are used as a frame length.  Otherwise, the
  * two bytes are used as the Ethernet type.
@@ -247,26 +247,35 @@ OFP_ASSERT(sizeof(struct ofp_prop_experimenter) == 12);
 
 /* Switch features. */
 struct ofp_switch_features {
-    ovs_be64 datapath_id;   /* Datapath unique ID.  The lower 48-bits are for
+
+    ovs_be32 datapath_id;/*dev_id*/
+    ovs_be16 port_num;/*how to init sqy*/
+    ovs_be16 n_tables;/*table_num*/
+    ovs_be32 capabilities;
+
+
+    /*ovs_be64 datapath_id;*/   /* Datapath unique ID.  The lower 48-bits are for
                                a MAC address, while the upper 16-bits are
                                implementer-defined. */
+    /*ovs_be32 n_buffers;      Max packets buffered at once. */
 
-    ovs_be32 n_buffers;     /* Max packets buffered at once. */
-
-    uint8_t n_tables;       /* Number of tables supported by datapath. */
-    uint8_t auxiliary_id;   /* OF 1.3: Identify auxiliary connections */
-    uint8_t pad[2];         /* Align to 64-bits. */
+    /*uint8_t n_tables;        Number of tables supported by datapath. */
+    /*uint8_t auxiliary_id;    OF 1.3: Identify auxiliary connections */
+    uint8_t pad[4];       /*   Align to 64-bits. */
 
     /* Features. */
-    ovs_be32 capabilities;  /* OFPC_*, OFPC10_*, OFPC11_*, OFPC12_*. */
-    ovs_be32 actions;       /* Bitmap of supported "ofp_action_type"s.
+   /* ovs_be32 capabilities;   OFPC_*, OFPC10_*, OFPC11_*, OFPC12_*. */
+   /* ovs_be32 actions;        Bitmap of supported "ofp_action_type"s.
                              * DEPRECATED in OpenFlow 1.1 */
-
+    char     vendor_id[POF_NAME_MAX_LENGTH];
+    char     dev_fw_id[POF_NAME_MAX_LENGTH]; /*device forward engine ID*/
+    char     dev_lkup_id[POF_NAME_MAX_LENGTH]; /*device lookup engine ID*/
+    /*uint8_t poftest[192];how to init sqy*/
     /* Followed by an array of struct ofp10_phy_port or struct ofp11_port
      * structures.  The number is inferred from header.length.
      * REMOVED in OpenFlow 1.3 */
 };
-OFP_ASSERT(sizeof(struct ofp_switch_features) == 24);
+OFP_ASSERT(sizeof(struct ofp_switch_features) == 208);
 
 /* Common capabilities supported by the datapath (struct ofp_switch_features,
  * member capabilities). */

@@ -4678,28 +4678,29 @@ ofputil_pull_switch_features(struct ofpbuf *b,
     enum ofpraw raw = ofpraw_pull_assert(b);
     const struct ofp_switch_features *osf = ofpbuf_pull(b, sizeof *osf);
     features->datapath_id = ntohll(osf->datapath_id);
-    features->n_buffers = ntohl(osf->n_buffers);
+    /*features->n_buffers = ntohl(osf->n_buffers);sqy*/
     features->n_tables = osf->n_tables;
     features->auxiliary_id = 0;
-
+    /*features->port_num = osf->port_num; sqy */
     features->capabilities = ntohl(osf->capabilities) &
         ofputil_capabilities_mask(oh->version);
 
     if (raw == OFPRAW_OFPT10_FEATURES_REPLY) {
-        if (osf->capabilities & htonl(OFPC10_STP)) {
+        return OFPERR_OFPBRC_BAD_VERSION;
+        /*if (osf->capabilities & htonl(OFPC10_STP)) {
             features->capabilities |= OFPUTIL_C_STP;
         }
         features->ofpacts = ofpact_bitmap_from_openflow(osf->actions,
-                                                        OFP10_VERSION);
+                                                        OFP10_VERSION)sqy*/
     } else if (raw == OFPRAW_OFPT11_FEATURES_REPLY
                || raw == OFPRAW_OFPT13_FEATURES_REPLY) {
         if (osf->capabilities & htonl(OFPC11_GROUP_STATS)) {
             features->capabilities |= OFPUTIL_C_GROUP_STATS;
         }
         features->ofpacts = 0;
-        if (raw == OFPRAW_OFPT13_FEATURES_REPLY) {
+        /*if (raw == OFPRAW_OFPT13_FEATURES_REPLY) {
             features->auxiliary_id = osf->auxiliary_id;
-        }
+        }sqy*/
     } else {
         return OFPERR_OFPBRC_BAD_VERSION;
     }
@@ -4759,6 +4760,7 @@ ofputil_encode_switch_features(const struct ofputil_switch_features *features,
     struct ofpbuf *b;
     enum ofp_version version;
     enum ofpraw raw;
+    char szVendorName[POF_NAME_MAX_LENGTH] = "Infinite";
 
     version = ofputil_protocol_to_ofp_version(protocol);
     switch (version) {
@@ -4781,9 +4783,12 @@ ofputil_encode_switch_features(const struct ofputil_switch_features *features,
     b = ofpraw_alloc_xid(raw, version, xid, 0);
     osf = ofpbuf_put_zeros(b, sizeof *osf);
     osf->datapath_id = htonll(features->datapath_id);
-    osf->n_buffers = htonl(features->n_buffers);
+    /*osf->n_buffers = htonl(features->n_buffers);sqy*/
     osf->n_tables = features->n_tables;
-
+    /*osf->port_num = features->port_num;sqy*/
+    strncpy(osf->vendor_id, szVendorName, POF_NAME_MAX_LENGTH);
+    strncpy(osf->dev_fw_id, "", POF_NAME_MAX_LENGTH);
+    strncpy(osf->dev_lkup_id, "", POF_NAME_MAX_LENGTH);
     osf->capabilities = htonl(features->capabilities & OFPC_COMMON);
     osf->capabilities = htonl(features->capabilities &
                               ofputil_capabilities_mask(version));
@@ -4792,14 +4797,14 @@ ofputil_encode_switch_features(const struct ofputil_switch_features *features,
         if (features->capabilities & OFPUTIL_C_STP) {
             osf->capabilities |= htonl(OFPC10_STP);
         }
-        osf->actions = ofpact_bitmap_to_openflow(features->ofpacts,
-                                                 OFP10_VERSION);
+        /*osf->actions = ofpact_bitmap_to_openflow(features->ofpacts,
+                                                 OFP10_VERSION)sqy*/
         break;
     case OFP13_VERSION:
     case OFP14_VERSION:
     case OFP15_VERSION:
     case OFP16_VERSION:
-        osf->auxiliary_id = features->auxiliary_id;
+        /*osf->auxiliary_id = features->auxiliary_id;sqy*/
         /* fall through */
     case OFP11_VERSION:
     case OFP12_VERSION:
