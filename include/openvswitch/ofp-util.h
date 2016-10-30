@@ -546,7 +546,7 @@ bool ofputil_frag_handling_from_string(const char *,
 struct ofputil_switch_config {
     /* Fragment handling. */
     enum ofputil_frag_handling frag;
-
+    uint32_t dev_id;
     /* 0: Do not send packet to controller when decrementing invalid IP TTL.
      * 1: Do send packet to controller when decrementing invalid IP TTL.
      * -1: Unspecified (only OpenFlow 1.1 and 1.2 support this setting. */
@@ -624,10 +624,10 @@ enum ofputil_capabilities {
     OFPUTIL_C_ARP_MATCH_IP   = 1 << 7,  /* Match IP addresses in ARP pkts. */
 
     /* OpenFlow 1.0 only. */
-    OFPUTIL_C_STP            = 1 << 3,  /* 802.1d spanning tree. */
+    OFPUTIL_C_STP            = 1 << 4,  /* 802.1d spanning tree. */
 
     /* OpenFlow 1.1, 1.2, and 1.3 share this capability. */
-    OFPUTIL_C_GROUP_STATS    = 1 << 4,  /* Group statistics. */
+    OFPUTIL_C_GROUP_STATS    = 1 << 3,  /* Group statistics. */
 
     /* OpenFlow 1.2 and 1.3 share this capability */
     OFPUTIL_C_PORT_BLOCKED   = 1 << 8,  /* Switch will block looping ports */

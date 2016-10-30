@@ -51,5 +51,5 @@ ovs-vswitchd unix:$DB_SOCK --pidfile --detach
 ovs-vsctl add-br br0 -- set bridge br0 datapath_type=netdev
 #ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
 #ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
-ovs-vsctl set-controller br0 tcp:192.168.109.230:6633
+ovs-vsctl set-controller br0 tcp:192.168.109.160:6633
 

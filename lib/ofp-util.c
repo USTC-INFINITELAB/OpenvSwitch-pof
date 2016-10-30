@@ -4608,12 +4608,13 @@ ofputil_put_switch_config(const struct ofputil_switch_config *config,
                           struct ofpbuf *b)
 {
     const struct ofp_header *oh = b->data;
-    struct ofp_switch_config *osc = ofpbuf_put_zeros(b, sizeof *osc);
+    struct ofp_switch_config_pof *osc = ofpbuf_put_zeros(b, sizeof *osc);
     osc->flags = htons(config->frag);
     if (config->invalid_ttl_to_controller > 0 && oh->version < OFP13_VERSION) {
         osc->flags |= htons(OFPC_INVALID_TTL_TO_CONTROLLER);
     }
     osc->miss_send_len = htons(config->miss_send_len);
+    osc->dev_id = 00;/*sqy*/
     return b;
 }
 
@@ -4641,10 +4642,11 @@ ofputil_encode_set_config(const struct ofputil_switch_config *config,
 BUILD_ASSERT_DECL((int) OFPUTIL_C_FLOW_STATS == OFPC_FLOW_STATS);
 BUILD_ASSERT_DECL((int) OFPUTIL_C_TABLE_STATS == OFPC_TABLE_STATS);
 BUILD_ASSERT_DECL((int) OFPUTIL_C_PORT_STATS == OFPC_PORT_STATS);
+BUILD_ASSERT_DECL((int) OFPUTIL_C_GROUP_STATS == OFPC_GROUP_STATS);
 BUILD_ASSERT_DECL((int) OFPUTIL_C_IP_REASM == OFPC_IP_REASM);
 BUILD_ASSERT_DECL((int) OFPUTIL_C_QUEUE_STATS == OFPC_QUEUE_STATS);
 BUILD_ASSERT_DECL((int) OFPUTIL_C_ARP_MATCH_IP == OFPC_ARP_MATCH_IP);
-
+BUILD_ASSERT_DECL((int) OFPUTIL_C_PORT_BLOCKED == OFPC_PORT_BLOCKED);
 static uint32_t
 ofputil_capabilities_mask(enum ofp_version ofp_version)
 {
@@ -4760,7 +4762,7 @@ ofputil_encode_switch_features(const struct ofputil_switch_features *features,
     struct ofpbuf *b;
     enum ofp_version version;
     enum ofpraw raw;
-    char szVendorName[POF_NAME_MAX_LENGTH] = "Infinite";
+    char szVendorName[POF_NAME_MAX_LENGTH] = "HuaWei";
 
     version = ofputil_protocol_to_ofp_version(protocol);
     switch (version) {
@@ -4785,10 +4787,11 @@ ofputil_encode_switch_features(const struct ofputil_switch_features *features,
     osf->datapath_id = htonll(features->datapath_id);
     /*osf->n_buffers = htonl(features->n_buffers);sqy*/
     osf->n_tables = features->n_tables;
-    /*osf->port_num = features->port_num;sqy*/
+    osf->port_num = 8;/*features->port_num;sqy*/
+    osf->slotID=0;
     strncpy(osf->vendor_id, szVendorName, POF_NAME_MAX_LENGTH);
-    strncpy(osf->dev_fw_id, "", POF_NAME_MAX_LENGTH);
-    strncpy(osf->dev_lkup_id, "", POF_NAME_MAX_LENGTH);
+    strncpy(osf->dev_fw_id, "POFSwitch-1.4.0.015", POF_NAME_MAX_LENGTH);
+    strncpy(osf->dev_lkup_id, "POFSwitch-1.4.0.015", POF_NAME_MAX_LENGTH);
     osf->capabilities = htonl(features->capabilities & OFPC_COMMON);
     osf->capabilities = htonl(features->capabilities &
                               ofputil_capabilities_mask(version));

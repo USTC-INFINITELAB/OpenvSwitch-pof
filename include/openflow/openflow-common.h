@@ -174,12 +174,21 @@ enum ofp_config_flags {
 
 /* Switch configuration. */
 struct ofp_switch_config {
+    /*ovs_be32 dev_id;*/
     ovs_be16 flags;             /* OFPC_* flags. */
     ovs_be16 miss_send_len;     /* Max bytes of new flow that datapath should
                                    send to the controller. */
 };
 OFP_ASSERT(sizeof(struct ofp_switch_config) == 4);
 
+/* Switch configuration. */
+struct ofp_switch_config_pof {
+    ovs_be32 dev_id;/**/
+    ovs_be16 flags;             /* OFPC_* flags. */
+    ovs_be16 miss_send_len;     /* Max bytes of new flow that datapath should
+                                   send to the controller. */
+};
+OFP_ASSERT(sizeof(struct ofp_switch_config_pof) == 8);
 
 /* Common flags to indicate behavior of the physical port.  These flags are
  * used in ofp_port to describe the current configuration.  They are used in
@@ -249,8 +258,10 @@ OFP_ASSERT(sizeof(struct ofp_prop_experimenter) == 12);
 struct ofp_switch_features {
 
     ovs_be32 datapath_id;/*dev_id*/
+    ovs_be16 slotID;
     ovs_be16 port_num;/*how to init sqy*/
     ovs_be16 n_tables;/*table_num*/
+    uint8_t pad[2];       /*   Align to 64-bits. */
     ovs_be32 capabilities;
 
 
@@ -261,7 +272,7 @@ struct ofp_switch_features {
 
     /*uint8_t n_tables;        Number of tables supported by datapath. */
     /*uint8_t auxiliary_id;    OF 1.3: Identify auxiliary connections */
-    uint8_t pad[4];       /*   Align to 64-bits. */
+    /*uint8_t pad[4];          Align to 64-bits. */
 
     /* Features. */
    /* ovs_be32 capabilities;   OFPC_*, OFPC10_*, OFPC11_*, OFPC12_*. */
@@ -283,10 +294,12 @@ enum ofp_capabilities {
     OFPC_FLOW_STATS     = 1 << 0,  /* Flow statistics. */
     OFPC_TABLE_STATS    = 1 << 1,  /* Table statistics. */
     OFPC_PORT_STATS     = 1 << 2,  /* Port statistics. */
+    OFPC_GROUP_STATS = 1 << 3,
     OFPC_IP_REASM       = 1 << 5,  /* Can reassemble IP fragments. */
     OFPC_QUEUE_STATS    = 1 << 6,  /* Queue statistics. */
-    OFPC_ARP_MATCH_IP   = 1 << 7   /* Match IP addresses in ARP
+    OFPC_ARP_MATCH_IP   = 1 << 7,   /* Match IP addresses in ARP
                                       pkts. */
+    OFPC_PORT_BLOCKED = 1 << 8
 };
 
 /* Why is this packet being sent to the controller? */
