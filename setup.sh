@@ -26,8 +26,26 @@ mount -t hugetlbfs none /dev/hugepages
 #    modprobe vfio-pci
 #   sudo /usr/bin/chmod a+x /dev/vfio
 #    sudo /usr/bin/chmod 0666 /dev/vfio/*
-#    $DPDK_DIR/tools/dpdk-devbind.py --bind=vfio-pci eth1
-#   $DPDK_DIR/tools/dpdk-devbind.py --status
+cd $DPDK_DIR
+modprobe uio_pci_generic
+#sudo modprobe uio
+#insmod $DPDK_BUILD/kmod/igb_uio.ko
+#tools/dpdk-devbind.py --status
+#echo "Input the number of DPDK ports (even): (Enter)"
+#read n
+#echo "Input the eth name (for example eth2): (Enter and Next One)"
+#for((i=0;i<n;i++));do
+#  read port[$i]
+#done
+#for((i=0;i<n;i++));do
+#  sudo ifconfig ${port[$i]} down
+#  sudo ./tools/dpdk-devbind.py --bind=uio_pci_generic ${port[$i]}
+#done
+./tools/dpdk-devbind.py --bind=uio_pci_generic eth3
+./tools/dpdk-devbind.py --status
+echo "DPDK Environment Success"
+cd $OVS_DIR
+
 mkdir -p /usr/local/etc/openvswitch
 mkdir -p /usr/local/var/run/openvswitch
 #rm /usr/local/etc/openvswitch/conf.db
@@ -48,8 +66,9 @@ ovs-vswitchd unix:$DB_SOCK --pidfile --detach
 #     ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,0"
 #     ovs-vswitchd unix:$DB_SOCK --pidfile --detach
 #     ovs-vsctl set Open_vSwitch . other_config:pmd-cpu-mask=6
+ovs-appctl vlog/set ANY:ANY:dbg
 ovs-vsctl add-br br0 -- set bridge br0 datapath_type=netdev
-#ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
-#ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
 ovs-vsctl set-controller br0 tcp:192.168.109.160:6633
-
+ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
+#ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
+ovs-ofctl show br0

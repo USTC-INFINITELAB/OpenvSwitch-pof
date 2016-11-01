@@ -106,7 +106,9 @@ EXTRA_DIST = \
 	appveyor.yml \
 	boot.sh \
 	setup.sh \
-    unsetup.sh \
+        unsetup.sh \
+        dpdk_setup.sh \
+        dpdk_unsetup.sh \
 	.cproject \
 	.project \
 	ovs-pof.config \
