@@ -392,6 +392,21 @@ struct ofp_desc_stats {
 };
 OFP_ASSERT(sizeof(struct ofp_desc_stats) == 1056);
 
+
+/* +++sqy  Body of reply to OFPST_DESC request.. */
+struct ofp_flow_table_stats {
+    uint8_t resourceType;
+    uint8_t pad;    /* 8 bytes aligned. */
+    ovs_be16 slotID;
+    ovs_be32 counter_num; /*Counter number*/
+    ovs_be32 meter_num; /*Meter number*/
+    ovs_be32 group_num; /*Group number*/
+
+    char pof_table_resource_desc[64]; /*All table resource information*/
+};
+OFP_ASSERT(sizeof(struct ofp_flow_table_stats) == 80);
+
+
 /* Reply to OFPST_AGGREGATE request. */
 struct ofp_aggregate_stats_reply {
     ovs_32aligned_be64 packet_count; /* Number of packets in flows. */
