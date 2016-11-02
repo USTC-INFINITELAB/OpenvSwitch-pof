@@ -4750,6 +4750,31 @@ ofputil_switch_features_has_ports(struct ofpbuf *b)
     return false;
 }
 
+/*sqy*/
+struct ofpbuf *
+ofputil_encode_flow_table_resource(enum ofputil_protocol protocol, ovs_be32 xid)
+{
+    enum ofp_version version;
+    enum ofpraw raw;
+    struct ofp_flow_table_stats *ofts;
+    struct ofpbuf *msg;
+
+    version = ofputil_protocol_to_ofp_version(protocol);
+    raw = OFPRAW_OFPT11_PACKET_OUT;
+    msg = ofpraw_alloc_xid(raw, version, xid, 0);/*ofpraw_alloc_stats_reply(oh, 0);*/
+    ofts = ofpbuf_put_zeros(msg, sizeof *ofts);
+    ofts->counter_num = htonl(512);
+    ofts->group_num = htonl(1024);
+    ofts->meter_num = htonl(1024);
+    ofts->resourceType = 0;
+    ofts->slotID = htons(0);
+    ofts->type0 = 0;
+    ofts->type1 = 1;
+    ofts->type2 = 2;
+    ofts->type3 = 3;
+    return msg;
+}
+
 /* Returns a buffer owned by the caller that encodes 'features' in the format
  * required by 'protocol' with the given 'xid'.  The caller should append port
  * information to the buffer with subsequent calls to
@@ -4784,7 +4809,7 @@ ofputil_encode_switch_features(const struct ofputil_switch_features *features,
     }
     b = ofpraw_alloc_xid(raw, version, xid, 0);
     osf = ofpbuf_put_zeros(b, sizeof *osf);
-    osf->datapath_id = htonll(features->datapath_id);
+    osf->datapath_id = htonl((uint32_t)features->datapath_id);
     /*osf->n_buffers = htonl(features->n_buffers);sqy*/
     osf->n_tables = features->n_tables;
     osf->port_num = 8;/*features->port_num;sqy*/

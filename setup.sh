@@ -62,6 +62,7 @@ ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
 ovs-vsctl --no-wait init
 export DB_SOCK=/usr/local/var/run/openvswitch/db.sock
 ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-init=true
+sleep 2s
 ovs-vswitchd unix:$DB_SOCK --pidfile --detach
 #     ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,0"
 #     ovs-vswitchd unix:$DB_SOCK --pidfile --detach

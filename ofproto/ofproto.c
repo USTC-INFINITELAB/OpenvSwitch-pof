@@ -3289,7 +3289,9 @@ handle_features_request(struct ofconn *ofconn, const struct ofp_header *oh)
     struct ofpbuf *b;
 
     query_switch_features(ofproto, &arp_match_ip, &features.ofpacts);
-
+    VLOG_INFO("  +++sqy test");
+    VLOG_DBG("  +++sqy test2");
+    printf("%s","sqy++++testttttt");
     features.datapath_id = ofproto->datapath_id;
     features.n_buffers = 0;
     /*features.port_num = port->ofp_port;*/
@@ -3310,6 +3312,17 @@ handle_features_request(struct ofconn *ofconn, const struct ofp_header *oh)
     ofconn_send_reply(ofconn, b);
     return 0;
 }
+
+/*sqy*/
+static void
+handle_flow_table_resource(struct ofconn *ofconn, const struct ofp_header *oh)  /*sqy*/
+{
+    /*struct ofproto *ofproto = ofconn_get_ofproto(ofconn);*/
+    struct ofpbuf *msg;
+
+    msg = ofputil_encode_flow_table_resource(ofconn_get_protocol(ofconn), oh->xid);
+    ofconn_send_reply(ofconn, msg);
+}/*sqy*/
 
 /*sqy*/
 static enum ofperr
@@ -7845,6 +7858,7 @@ handle_openflow__(struct ofconn *ofconn, const struct ofpbuf *msg)
 
     case OFPTYPE_GET_CONFIG_REQUEST:
         handle_get_config_request(ofconn, oh);
+        handle_flow_table_resource(ofconn, oh);
         return handle_port_status(ofconn, oh);
 
     case OFPTYPE_SET_CONFIG:

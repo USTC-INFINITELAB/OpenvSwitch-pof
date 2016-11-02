@@ -23,7 +23,7 @@ ovs-appctl -t ovs-vswitchd exit
 #killall ovsdb-server
 #killall ovs-vswitchd
 rm /usr/local/etc/openvswitch/conf.db
-sleep 2s
+sleep 1s
 umount -t hugetlbfs none /dev/hugepages
 sleep 1s
 grep HugePages_ /proc/meminfo

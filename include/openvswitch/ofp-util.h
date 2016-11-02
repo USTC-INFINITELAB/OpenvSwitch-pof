@@ -650,6 +650,8 @@ enum ofperr ofputil_pull_switch_features(struct ofpbuf *,
 struct ofpbuf *ofputil_encode_switch_features(
     const struct ofputil_switch_features *, enum ofputil_protocol,
     ovs_be32 xid);
+struct ofpbuf * ofputil_encode_flow_table_resource(enum ofputil_protocol protocol,
+                                                   ovs_be32 xid);
 void ofputil_put_switch_features_port(const struct ofputil_phy_port *,
                                       struct ofpbuf *);
 bool ofputil_switch_features_has_ports(struct ofpbuf *b);
