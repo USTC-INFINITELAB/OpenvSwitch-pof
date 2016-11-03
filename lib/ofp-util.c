@@ -4683,7 +4683,7 @@ ofputil_pull_switch_features(struct ofpbuf *b,
     /*features->n_buffers = ntohl(osf->n_buffers);sqy*/
     features->n_tables = osf->n_tables;
     features->auxiliary_id = 0;
-    /*features->port_num = osf->port_num; sqy */
+    /*features->port_num = ntohs(osf->port_num); sqy */
     features->capabilities = ntohl(osf->capabilities) &
         ofputil_capabilities_mask(oh->version);
 
@@ -4763,11 +4763,11 @@ ofputil_encode_flow_table_resource(enum ofputil_protocol protocol, ovs_be32 xid)
     raw = OFPRAW_OFPT11_PACKET_OUT;
     msg = ofpraw_alloc_xid(raw, version, xid, 0);/*ofpraw_alloc_stats_reply(oh, 0);*/
     ofts = ofpbuf_put_zeros(msg, sizeof *ofts);
-    ofts->counter_num = htonl(512);
-    ofts->group_num = htonl(1024);
-    ofts->meter_num = htonl(1024);
+    ofts->counter_num = htonl((uint32_t)512);
+    ofts->group_num = htonl((uint32_t)1024);
+    ofts->meter_num = htonl((uint32_t)1024);
     ofts->resourceType = 0;
-    ofts->slotID = htons(0);
+    ofts->slotID = htons((uint16_t)0);
     ofts->type0 = 0;
     ofts->type1 = 1;
     ofts->type2 = 2;
