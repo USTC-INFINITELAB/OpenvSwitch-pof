@@ -3289,9 +3289,10 @@ handle_features_request(struct ofconn *ofconn, const struct ofp_header *oh)
     struct ofpbuf *b;
 
     query_switch_features(ofproto, &arp_match_ip, &features.ofpacts);
-    VLOG_INFO("  +++sqy test");
+    char *s = "+++sqy test222";
+    VLOG_INFO_RL(&rl,"%s: +++++++sqyyy",  s);
+    VLOG_INFO("blala  ");
     VLOG_DBG("  +++sqy test2");
-    printf("%s","sqy++++testttttt");
     features.datapath_id = ofproto->datapath_id;
     features.n_buffers = 0;
     /*features.port_num = port->ofp_port;*/

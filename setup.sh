@@ -67,9 +67,12 @@ ovs-vswitchd unix:$DB_SOCK --pidfile --detach
 #     ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,0"
 #     ovs-vswitchd unix:$DB_SOCK --pidfile --detach
 #     ovs-vsctl set Open_vSwitch . other_config:pmd-cpu-mask=6
-ovs-appctl vlog/set ANY:ANY:dbg
+ovs-appctl vlog/set ANY:ANY:INFO
+ovs-appctl vlog/set ofproto:ANY:dbg
 ovs-vsctl add-br br0 -- set bridge br0 datapath_type=netdev
 ovs-vsctl set-controller br0 tcp:192.168.109.160:6633
 ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
 #ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
-ovs-ofctl show br0
+#ovs-ofctl show br0
+ovs-appctl -t ovs-vswitchd exit
+ovs-vswitchd --pidfile

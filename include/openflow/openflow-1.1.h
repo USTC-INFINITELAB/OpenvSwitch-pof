@@ -109,10 +109,10 @@ enum ofp11_port_features {
 /* Description of a port */
 struct ofp11_port {
     ovs_be32 port_no;
-    uint8_t pad[4];
+    ovs_be32 device_id;
     struct eth_addr hw_addr;
     uint8_t pad2[2];                  /* Align to 64 bits. */
-    char name[OFP_MAX_PORT_NAME_LEN]; /* Null-terminated */
+    char name[POF_NAME_MAX_LENGTH]; /* Null-terminated */
 
     ovs_be32 config;        /* Bitmap of OFPPC_* flags. */
     ovs_be32 state;         /* Bitmap of OFPPS_* and OFPPS11_* flags. */
@@ -129,7 +129,6 @@ struct ofp11_port {
 
     uint8_t of_enable; /*indicate whether openflow is enabled */
     uint8_t pad3[7];   /*8 bytes aligned*/
-    char    name_pof_pad[48];
 };
 OFP_ASSERT(sizeof(struct ofp11_port) == 120);
 

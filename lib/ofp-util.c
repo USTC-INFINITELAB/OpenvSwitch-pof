@@ -4688,12 +4688,11 @@ ofputil_pull_switch_features(struct ofpbuf *b,
         ofputil_capabilities_mask(oh->version);
 
     if (raw == OFPRAW_OFPT10_FEATURES_REPLY) {
-        return OFPERR_OFPBRC_BAD_VERSION;
-        /*if (osf->capabilities & htonl(OFPC10_STP)) {
+        if (osf->capabilities & htonl(OFPC10_STP)) {
             features->capabilities |= OFPUTIL_C_STP;
         }
-        features->ofpacts = ofpact_bitmap_from_openflow(osf->actions,
-                                                        OFP10_VERSION)sqy*/
+        /*features->ofpacts = ofpact_bitmap_from_openflow(osf->actions,
+                                                        OFP10_VERSION);*/
     } else if (raw == OFPRAW_OFPT11_FEATURES_REPLY
                || raw == OFPRAW_OFPT13_FEATURES_REPLY) {
         if (osf->capabilities & htonl(OFPC11_GROUP_STATS)) {
