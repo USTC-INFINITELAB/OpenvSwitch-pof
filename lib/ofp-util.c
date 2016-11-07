@@ -4683,7 +4683,7 @@ ofputil_pull_switch_features(struct ofpbuf *b,
     /*features->n_buffers = ntohl(osf->n_buffers);sqy*/
     features->n_tables = osf->n_tables;
     features->auxiliary_id = 0;
-    /*features->port_num = ntohs(osf->port_num); sqy */
+    features->port_num = ntohs(osf->port_num);/* sqy */
     features->capabilities = ntohl(osf->capabilities) &
         ofputil_capabilities_mask(oh->version);
 
@@ -4811,7 +4811,7 @@ ofputil_encode_switch_features(const struct ofputil_switch_features *features,
     osf->datapath_id = htonl((uint32_t)features->datapath_id);
     /*osf->n_buffers = htonl(features->n_buffers);sqy*/
     osf->n_tables = features->n_tables;
-    osf->port_num = 8;/*features->port_num;sqy*/
+    osf->port_num = htons(features->port_num);/*htons(2);sqy*/
     osf->slotID=0;
     strncpy(osf->vendor_id, szVendorName, POF_NAME_MAX_LENGTH);
     strncpy(osf->dev_fw_id, "POFSwitch-1.4.0.015", POF_NAME_MAX_LENGTH);

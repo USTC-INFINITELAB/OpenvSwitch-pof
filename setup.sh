@@ -62,7 +62,7 @@ ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
 ovs-vsctl --no-wait init
 export DB_SOCK=/usr/local/var/run/openvswitch/db.sock
 ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-init=true
-sleep 2s
+sleep 1s
 ovs-vswitchd unix:$DB_SOCK --pidfile --detach
 #     ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,0"
 #     ovs-vswitchd unix:$DB_SOCK --pidfile --detach
@@ -74,5 +74,6 @@ ovs-vsctl set-controller br0 tcp:192.168.109.160:6633
 ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
 #ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
 #ovs-ofctl show br0
+sleep 1s
 ovs-appctl -t ovs-vswitchd exit
-ovs-vswitchd --pidfile
+#ovs-vswitchd --pidfile

@@ -3287,6 +3287,8 @@ handle_features_request(struct ofconn *ofconn, const struct ofp_header *oh)
     struct ofport *port;
     bool arp_match_ip;
     struct ofpbuf *b;
+    struct ofproto_port_dump dump;
+    struct ofproto_port ofproto_port;
 
     query_switch_features(ofproto, &arp_match_ip, &features.ofpacts);
     char *s = "+++sqy test222";
@@ -3295,6 +3297,11 @@ handle_features_request(struct ofconn *ofconn, const struct ofp_header *oh)
     VLOG_DBG("  +++sqy test2");
     features.datapath_id = ofproto->datapath_id;
     features.n_buffers = 0;
+    features.port_num = 0;
+    OFPROTO_PORT_FOR_EACH (&ofproto_port, &dump, ofproto) {
+        features.port_num = features.port_num+1;
+    }
+
     /*features.port_num = port->ofp_port;*/
     features.n_tables = ofproto_get_n_visible_tables(ofproto);
     features.capabilities = (OFPUTIL_C_FLOW_STATS | OFPUTIL_C_TABLE_STATS |
