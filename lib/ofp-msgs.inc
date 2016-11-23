@@ -1143,16 +1143,25 @@ static struct raw_instance ofpraw_ofpt14_port_status_instances[] = {
     { {0, NULL}, {6, 12, 0, 0x0, 0}, OFPRAW_OFPT14_PORT_STATUS, 0 },
     { {0, NULL}, {7, 12, 0, 0x0, 0}, OFPRAW_OFPT14_PORT_STATUS, 0 },
 };
+static struct raw_instance ofpraw_ofpt_resource_report_instances[] = {
+    { {0, NULL}, {1, 13, 0, 0x0, 0}, OFPRAW_OFPT_RESOURCE_REPORT, 0 },
+    { {0, NULL}, {2, 13, 0, 0x0, 0}, OFPRAW_OFPT_RESOURCE_REPORT, 0 },
+    { {0, NULL}, {3, 13, 0, 0x0, 0}, OFPRAW_OFPT_RESOURCE_REPORT, 0 },
+    { {0, NULL}, {4, 13, 0, 0x0, 0}, OFPRAW_OFPT_RESOURCE_REPORT, 0 },
+    { {0, NULL}, {5, 13, 0, 0x0, 0}, OFPRAW_OFPT_RESOURCE_REPORT, 0 },
+    { {0, NULL}, {6, 13, 0, 0x0, 0}, OFPRAW_OFPT_RESOURCE_REPORT, 0 },
+    { {0, NULL}, {7, 13, 0, 0x0, 0}, OFPRAW_OFPT_RESOURCE_REPORT, 0 },
+};
 static struct raw_instance ofpraw_ofpt10_packet_out_instances[] = {
-    { {0, NULL}, {1, 13, 0, 0x0, 0}, OFPRAW_OFPT10_PACKET_OUT, 0 },
+    { {0, NULL}, {1, 36, 0, 0x0, 0}, OFPRAW_OFPT10_PACKET_OUT, 0 },
 };
 static struct raw_instance ofpraw_ofpt11_packet_out_instances[] = {
-    { {0, NULL}, {2, 13, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
-    { {0, NULL}, {3, 13, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
-    { {0, NULL}, {4, 13, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
-    { {0, NULL}, {5, 13, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
-    { {0, NULL}, {6, 13, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
-    { {0, NULL}, {7, 13, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {2, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {3, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {4, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {5, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {6, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {7, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
 };
 static struct raw_instance ofpraw_ofpt10_flow_mod_instances[] = {
     { {0, NULL}, {1, 14, 0, 0x0, 0}, OFPRAW_OFPT10_FLOW_MOD, 0 },
@@ -1817,7 +1826,7 @@ static struct raw_info raw_infos[] = {
         0,
 #line 114 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 1821 "lib/ofp-msgs.inc"
+#line 1830 "lib/ofp-msgs.inc"
         OFPTYPE_HELLO,
         "OFPT_HELLO",
     },
@@ -1828,7 +1837,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp_error_msg),
 #line 117 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 1832 "lib/ofp-msgs.inc"
+#line 1841 "lib/ofp-msgs.inc"
         OFPTYPE_ERROR,
         "OFPT_ERROR",
     },
@@ -1839,7 +1848,7 @@ static struct raw_info raw_infos[] = {
         0,
 #line 120 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 1843 "lib/ofp-msgs.inc"
+#line 1852 "lib/ofp-msgs.inc"
         OFPTYPE_ECHO_REQUEST,
         "OFPT_ECHO_REQUEST",
     },
@@ -1850,7 +1859,7 @@ static struct raw_info raw_infos[] = {
         0,
 #line 123 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 1854 "lib/ofp-msgs.inc"
+#line 1863 "lib/ofp-msgs.inc"
         OFPTYPE_ECHO_REPLY,
         "OFPT_ECHO_REPLY",
     },
@@ -1861,7 +1870,7 @@ static struct raw_info raw_infos[] = {
         0,
 #line 131 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 1865 "lib/ofp-msgs.inc"
+#line 1874 "lib/ofp-msgs.inc"
         OFPTYPE_FEATURES_REQUEST,
         "OFPT_FEATURES_REQUEST",
     },
@@ -1872,7 +1881,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp_switch_features),
 #line 134 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_phy_port),
-#line 1876 "lib/ofp-msgs.inc"
+#line 1885 "lib/ofp-msgs.inc"
         OFPTYPE_FEATURES_REPLY,
         "OFPT_FEATURES_REPLY",
     },
@@ -1883,7 +1892,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp_switch_features),
 #line 136 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_port),
-#line 1887 "lib/ofp-msgs.inc"
+#line 1896 "lib/ofp-msgs.inc"
         OFPTYPE_FEATURES_REPLY,
         "OFPT_FEATURES_REPLY",
     },
@@ -1894,7 +1903,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp_switch_features),
 #line 138 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 1898 "lib/ofp-msgs.inc"
+#line 1907 "lib/ofp-msgs.inc"
         OFPTYPE_FEATURES_REPLY,
         "OFPT_FEATURES_REPLY",
     },
@@ -1905,7 +1914,7 @@ static struct raw_info raw_infos[] = {
         0,
 #line 141 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 1909 "lib/ofp-msgs.inc"
+#line 1918 "lib/ofp-msgs.inc"
         OFPTYPE_GET_CONFIG_REQUEST,
         "OFPT_GET_CONFIG_REQUEST",
     },
@@ -1916,7 +1925,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp_switch_config),
 #line 144 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 1920 "lib/ofp-msgs.inc"
+#line 1929 "lib/ofp-msgs.inc"
         OFPTYPE_GET_CONFIG_REPLY,
         "OFPT_GET_CONFIG_REPLY",
     },
@@ -1927,7 +1936,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp_switch_config),
 #line 147 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 1931 "lib/ofp-msgs.inc"
+#line 1940 "lib/ofp-msgs.inc"
         OFPTYPE_SET_CONFIG,
         "OFPT_SET_CONFIG",
     },
@@ -1938,7 +1947,7 @@ static struct raw_info raw_infos[] = {
         offsetof(struct ofp10_packet_in, data),
 #line 150 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 1942 "lib/ofp-msgs.inc"
+#line 1951 "lib/ofp-msgs.inc"
         OFPTYPE_PACKET_IN,
         "OFPT_PACKET_IN",
     },
@@ -1949,7 +1958,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp11_packet_in),
 #line 152 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 1953 "lib/ofp-msgs.inc"
+#line 1962 "lib/ofp-msgs.inc"
         OFPTYPE_PACKET_IN,
         "OFPT_PACKET_IN",
     },
@@ -1960,7 +1969,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp12_packet_in),
 #line 154 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 1964 "lib/ofp-msgs.inc"
+#line 1973 "lib/ofp-msgs.inc"
         OFPTYPE_PACKET_IN,
         "OFPT_PACKET_IN",
     },
@@ -1971,7 +1980,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp12_packet_in) + sizeof(ovs_be64),
 #line 156 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 1975 "lib/ofp-msgs.inc"
+#line 1984 "lib/ofp-msgs.inc"
         OFPTYPE_PACKET_IN,
         "OFPT_PACKET_IN",
     },
@@ -1982,7 +1991,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct nx_packet_in),
 #line 158 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 1986 "lib/ofp-msgs.inc"
+#line 1995 "lib/ofp-msgs.inc"
         OFPTYPE_PACKET_IN,
         "NXT_PACKET_IN",
     },
@@ -1993,7 +2002,7 @@ static struct raw_info raw_infos[] = {
         0,
 #line 160 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 1997 "lib/ofp-msgs.inc"
+#line 2006 "lib/ofp-msgs.inc"
         OFPTYPE_PACKET_IN,
         "NXT_PACKET_IN2",
     },
@@ -2004,7 +2013,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp10_flow_removed),
 #line 163 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2008 "lib/ofp-msgs.inc"
+#line 2017 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_REMOVED,
         "OFPT_FLOW_REMOVED",
     },
@@ -2015,7 +2024,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp11_flow_removed),
 #line 165 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2019 "lib/ofp-msgs.inc"
+#line 2028 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_REMOVED,
         "OFPT_FLOW_REMOVED",
     },
@@ -2026,7 +2035,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct nx_flow_removed),
 #line 167 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2030 "lib/ofp-msgs.inc"
+#line 2039 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_REMOVED,
         "NXT_FLOW_REMOVED",
     },
@@ -2037,7 +2046,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp_port_status) + sizeof(struct ofp10_phy_port),
 #line 170 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2041 "lib/ofp-msgs.inc"
+#line 2050 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_STATUS,
         "OFPT_PORT_STATUS",
     },
@@ -2048,7 +2057,7 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp_port_status) + sizeof(struct ofp11_port),
 #line 172 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2052 "lib/ofp-msgs.inc"
+#line 2061 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_STATUS,
         "OFPT_PORT_STATUS",
     },
@@ -2059,1294 +2068,1305 @@ static struct raw_info raw_infos[] = {
         sizeof(struct ofp_port_status) + sizeof(struct ofp14_port),
 #line 174 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2063 "lib/ofp-msgs.inc"
+#line 2072 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_STATUS,
         "OFPT_PORT_STATUS",
     },
     {
+        ofpraw_ofpt_resource_report_instances,
+        1, 7,
+#line 177 "./include/openvswitch/ofp-msgs.h"
+        sizeof(struct ofp_flow_table_stats),
+#line 177 "./include/openvswitch/ofp-msgs.h"
+        0,
+#line 2083 "lib/ofp-msgs.inc"
+        OFPTYPE_RESOURCE_REPORT,
+        "OFPT_RESOURCE_REPORT",
+    },
+    {
         ofpraw_ofpt10_packet_out_instances,
         1, 1,
-#line 177 "./include/openvswitch/ofp-msgs.h"
+#line 180 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_packet_out),
-#line 177 "./include/openvswitch/ofp-msgs.h"
+#line 180 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 2074 "lib/ofp-msgs.inc"
+#line 2094 "lib/ofp-msgs.inc"
         OFPTYPE_PACKET_OUT,
         "OFPT_PACKET_OUT",
     },
     {
         ofpraw_ofpt11_packet_out_instances,
         2, 7,
-#line 179 "./include/openvswitch/ofp-msgs.h"
+#line 182 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_packet_out),
-#line 179 "./include/openvswitch/ofp-msgs.h"
+#line 182 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 2085 "lib/ofp-msgs.inc"
+#line 2105 "lib/ofp-msgs.inc"
         OFPTYPE_PACKET_OUT,
         "OFPT_PACKET_OUT",
     },
     {
         ofpraw_ofpt10_flow_mod_instances,
         1, 1,
-#line 182 "./include/openvswitch/ofp-msgs.h"
+#line 185 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_flow_mod),
-#line 182 "./include/openvswitch/ofp-msgs.h"
+#line 185 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2096 "lib/ofp-msgs.inc"
+#line 2116 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_MOD,
         "OFPT_FLOW_MOD",
     },
     {
         ofpraw_ofpt11_flow_mod_instances,
         2, 7,
-#line 184 "./include/openvswitch/ofp-msgs.h"
+#line 187 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_flow_mod),
-#line 184 "./include/openvswitch/ofp-msgs.h"
+#line 187 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_instruction),
-#line 2107 "lib/ofp-msgs.inc"
+#line 2127 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_MOD,
         "OFPT_FLOW_MOD",
     },
     {
         ofpraw_nxt_flow_mod_instances,
         1, 7,
-#line 186 "./include/openvswitch/ofp-msgs.h"
+#line 189 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_flow_mod),
-#line 186 "./include/openvswitch/ofp-msgs.h"
+#line 189 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2118 "lib/ofp-msgs.inc"
+#line 2138 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_MOD,
         "NXT_FLOW_MOD",
     },
     {
         ofpraw_ofpt11_group_mod_instances,
         2, 5,
-#line 189 "./include/openvswitch/ofp-msgs.h"
+#line 192 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_group_mod),
-#line 189 "./include/openvswitch/ofp-msgs.h"
+#line 192 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2129 "lib/ofp-msgs.inc"
+#line 2149 "lib/ofp-msgs.inc"
         OFPTYPE_GROUP_MOD,
         "OFPT_GROUP_MOD",
     },
     {
         ofpraw_ofpt15_group_mod_instances,
         6, 7,
-#line 191 "./include/openvswitch/ofp-msgs.h"
+#line 194 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp15_group_mod),
-#line 191 "./include/openvswitch/ofp-msgs.h"
+#line 194 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2140 "lib/ofp-msgs.inc"
+#line 2160 "lib/ofp-msgs.inc"
         OFPTYPE_GROUP_MOD,
         "OFPT_GROUP_MOD",
     },
     {
         ofpraw_ofpt10_port_mod_instances,
         1, 1,
-#line 194 "./include/openvswitch/ofp-msgs.h"
+#line 197 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_port_mod),
-#line 194 "./include/openvswitch/ofp-msgs.h"
+#line 197 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2151 "lib/ofp-msgs.inc"
+#line 2171 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_MOD,
         "OFPT_PORT_MOD",
     },
     {
         ofpraw_ofpt11_port_mod_instances,
         2, 4,
-#line 196 "./include/openvswitch/ofp-msgs.h"
+#line 199 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_port_mod),
-#line 196 "./include/openvswitch/ofp-msgs.h"
+#line 199 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2162 "lib/ofp-msgs.inc"
+#line 2182 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_MOD,
         "OFPT_PORT_MOD",
     },
     {
         ofpraw_ofpt14_port_mod_instances,
         5, 7,
-#line 198 "./include/openvswitch/ofp-msgs.h"
+#line 201 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp14_port_mod),
-#line 198 "./include/openvswitch/ofp-msgs.h"
+#line 201 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2173 "lib/ofp-msgs.inc"
+#line 2193 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_MOD,
         "OFPT_PORT_MOD",
     },
     {
         ofpraw_ofpt11_table_mod_instances,
         2, 4,
-#line 201 "./include/openvswitch/ofp-msgs.h"
+#line 204 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_table_mod),
-#line 201 "./include/openvswitch/ofp-msgs.h"
+#line 204 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2184 "lib/ofp-msgs.inc"
+#line 2204 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_MOD,
         "OFPT_TABLE_MOD",
     },
     {
         ofpraw_ofpt14_table_mod_instances,
         5, 7,
-#line 203 "./include/openvswitch/ofp-msgs.h"
+#line 206 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp14_table_mod),
-#line 203 "./include/openvswitch/ofp-msgs.h"
+#line 206 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2195 "lib/ofp-msgs.inc"
+#line 2215 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_MOD,
         "OFPT_TABLE_MOD",
     },
     {
         ofpraw_ofpt10_barrier_request_instances,
         1, 1,
-#line 206 "./include/openvswitch/ofp-msgs.h"
+#line 209 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 206 "./include/openvswitch/ofp-msgs.h"
+#line 209 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2206 "lib/ofp-msgs.inc"
+#line 2226 "lib/ofp-msgs.inc"
         OFPTYPE_BARRIER_REQUEST,
         "OFPT_BARRIER_REQUEST",
     },
     {
         ofpraw_ofpt11_barrier_request_instances,
         2, 7,
-#line 208 "./include/openvswitch/ofp-msgs.h"
+#line 211 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 208 "./include/openvswitch/ofp-msgs.h"
+#line 211 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2217 "lib/ofp-msgs.inc"
+#line 2237 "lib/ofp-msgs.inc"
         OFPTYPE_BARRIER_REQUEST,
         "OFPT_BARRIER_REQUEST",
     },
     {
         ofpraw_ofpt10_barrier_reply_instances,
         1, 1,
-#line 211 "./include/openvswitch/ofp-msgs.h"
+#line 214 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 211 "./include/openvswitch/ofp-msgs.h"
+#line 214 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2228 "lib/ofp-msgs.inc"
+#line 2248 "lib/ofp-msgs.inc"
         OFPTYPE_BARRIER_REPLY,
         "OFPT_BARRIER_REPLY",
     },
     {
         ofpraw_ofpt11_barrier_reply_instances,
         2, 7,
-#line 213 "./include/openvswitch/ofp-msgs.h"
+#line 216 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 213 "./include/openvswitch/ofp-msgs.h"
+#line 216 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2239 "lib/ofp-msgs.inc"
+#line 2259 "lib/ofp-msgs.inc"
         OFPTYPE_BARRIER_REPLY,
         "OFPT_BARRIER_REPLY",
     },
     {
         ofpraw_ofpt10_queue_get_config_request_instances,
         1, 1,
-#line 216 "./include/openvswitch/ofp-msgs.h"
+#line 219 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_queue_get_config_request),
-#line 216 "./include/openvswitch/ofp-msgs.h"
+#line 219 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2250 "lib/ofp-msgs.inc"
+#line 2270 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_GET_CONFIG_REQUEST,
         "OFPT_QUEUE_GET_CONFIG_REQUEST",
     },
     {
         ofpraw_ofpt11_queue_get_config_request_instances,
         2, 4,
-#line 218 "./include/openvswitch/ofp-msgs.h"
+#line 221 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_queue_get_config_request),
-#line 218 "./include/openvswitch/ofp-msgs.h"
+#line 221 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2261 "lib/ofp-msgs.inc"
+#line 2281 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_GET_CONFIG_REQUEST,
         "OFPT_QUEUE_GET_CONFIG_REQUEST",
     },
     {
         ofpraw_ofpt10_queue_get_config_reply_instances,
         1, 1,
-#line 221 "./include/openvswitch/ofp-msgs.h"
+#line 224 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_queue_get_config_reply),
-#line 221 "./include/openvswitch/ofp-msgs.h"
+#line 224 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2272 "lib/ofp-msgs.inc"
+#line 2292 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_GET_CONFIG_REPLY,
         "OFPT_QUEUE_GET_CONFIG_REPLY",
     },
     {
         ofpraw_ofpt11_queue_get_config_reply_instances,
         2, 4,
-#line 223 "./include/openvswitch/ofp-msgs.h"
+#line 226 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_queue_get_config_reply),
-#line 223 "./include/openvswitch/ofp-msgs.h"
+#line 226 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2283 "lib/ofp-msgs.inc"
+#line 2303 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_GET_CONFIG_REPLY,
         "OFPT_QUEUE_GET_CONFIG_REPLY",
     },
     {
         ofpraw_ofpt12_role_request_instances,
         3, 7,
-#line 226 "./include/openvswitch/ofp-msgs.h"
+#line 229 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp12_role_request),
-#line 226 "./include/openvswitch/ofp-msgs.h"
+#line 229 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2294 "lib/ofp-msgs.inc"
+#line 2314 "lib/ofp-msgs.inc"
         OFPTYPE_ROLE_REQUEST,
         "OFPT_ROLE_REQUEST",
     },
     {
         ofpraw_nxt_role_request_instances,
         1, 7,
-#line 228 "./include/openvswitch/ofp-msgs.h"
+#line 231 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_role_request),
-#line 228 "./include/openvswitch/ofp-msgs.h"
+#line 231 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2305 "lib/ofp-msgs.inc"
+#line 2325 "lib/ofp-msgs.inc"
         OFPTYPE_ROLE_REQUEST,
         "NXT_ROLE_REQUEST",
     },
     {
         ofpraw_ofpt12_role_reply_instances,
         3, 7,
-#line 231 "./include/openvswitch/ofp-msgs.h"
+#line 234 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp12_role_request),
-#line 231 "./include/openvswitch/ofp-msgs.h"
+#line 234 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2316 "lib/ofp-msgs.inc"
+#line 2336 "lib/ofp-msgs.inc"
         OFPTYPE_ROLE_REPLY,
         "OFPT_ROLE_REPLY",
     },
     {
         ofpraw_nxt_role_reply_instances,
         1, 7,
-#line 233 "./include/openvswitch/ofp-msgs.h"
+#line 236 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_role_request),
-#line 233 "./include/openvswitch/ofp-msgs.h"
+#line 236 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2327 "lib/ofp-msgs.inc"
+#line 2347 "lib/ofp-msgs.inc"
         OFPTYPE_ROLE_REPLY,
         "NXT_ROLE_REPLY",
     },
     {
         ofpraw_ofpt13_get_async_request_instances,
         4, 4,
-#line 236 "./include/openvswitch/ofp-msgs.h"
+#line 239 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 236 "./include/openvswitch/ofp-msgs.h"
+#line 239 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2338 "lib/ofp-msgs.inc"
+#line 2358 "lib/ofp-msgs.inc"
         OFPTYPE_GET_ASYNC_REQUEST,
         "OFPT_GET_ASYNC_REQUEST",
     },
     {
         ofpraw_ofpt14_get_async_request_instances,
         5, 7,
-#line 238 "./include/openvswitch/ofp-msgs.h"
+#line 241 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 238 "./include/openvswitch/ofp-msgs.h"
+#line 241 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2349 "lib/ofp-msgs.inc"
+#line 2369 "lib/ofp-msgs.inc"
         OFPTYPE_GET_ASYNC_REQUEST,
         "OFPT_GET_ASYNC_REQUEST",
     },
     {
         ofpraw_ofpt13_get_async_reply_instances,
         4, 4,
-#line 240 "./include/openvswitch/ofp-msgs.h"
+#line 243 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp13_async_config),
-#line 240 "./include/openvswitch/ofp-msgs.h"
+#line 243 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2360 "lib/ofp-msgs.inc"
+#line 2380 "lib/ofp-msgs.inc"
         OFPTYPE_GET_ASYNC_REPLY,
         "OFPT_GET_ASYNC_REPLY",
     },
     {
         ofpraw_ofpt14_get_async_reply_instances,
         5, 7,
-#line 242 "./include/openvswitch/ofp-msgs.h"
+#line 245 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 242 "./include/openvswitch/ofp-msgs.h"
+#line 245 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2371 "lib/ofp-msgs.inc"
+#line 2391 "lib/ofp-msgs.inc"
         OFPTYPE_GET_ASYNC_REPLY,
         "OFPT_GET_ASYNC_REPLY",
     },
     {
         ofpraw_ofpt13_set_async_instances,
         4, 4,
-#line 244 "./include/openvswitch/ofp-msgs.h"
+#line 247 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp13_async_config),
-#line 244 "./include/openvswitch/ofp-msgs.h"
+#line 247 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2382 "lib/ofp-msgs.inc"
+#line 2402 "lib/ofp-msgs.inc"
         OFPTYPE_SET_ASYNC_CONFIG,
         "OFPT_SET_ASYNC",
     },
     {
         ofpraw_nxt_set_async_config_instances,
         1, 7,
-#line 246 "./include/openvswitch/ofp-msgs.h"
+#line 249 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_async_config),
-#line 246 "./include/openvswitch/ofp-msgs.h"
+#line 249 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2393 "lib/ofp-msgs.inc"
+#line 2413 "lib/ofp-msgs.inc"
         OFPTYPE_SET_ASYNC_CONFIG,
         "NXT_SET_ASYNC_CONFIG",
     },
     {
         ofpraw_nxt_set_async_config2_instances,
         1, 4,
-#line 248 "./include/openvswitch/ofp-msgs.h"
+#line 251 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 248 "./include/openvswitch/ofp-msgs.h"
+#line 251 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2404 "lib/ofp-msgs.inc"
+#line 2424 "lib/ofp-msgs.inc"
         OFPTYPE_SET_ASYNC_CONFIG,
         "NXT_SET_ASYNC_CONFIG2",
     },
     {
         ofpraw_ofpt14_set_async_instances,
         5, 7,
-#line 250 "./include/openvswitch/ofp-msgs.h"
+#line 253 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 250 "./include/openvswitch/ofp-msgs.h"
+#line 253 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2415 "lib/ofp-msgs.inc"
+#line 2435 "lib/ofp-msgs.inc"
         OFPTYPE_SET_ASYNC_CONFIG,
         "OFPT_SET_ASYNC",
     },
     {
         ofpraw_ofpt13_meter_mod_instances,
         4, 7,
-#line 253 "./include/openvswitch/ofp-msgs.h"
+#line 256 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp13_meter_mod),
-#line 253 "./include/openvswitch/ofp-msgs.h"
+#line 256 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2426 "lib/ofp-msgs.inc"
+#line 2446 "lib/ofp-msgs.inc"
         OFPTYPE_METER_MOD,
         "OFPT_METER_MOD",
     },
     {
         ofpraw_ofpt14_role_status_instances,
         5, 7,
-#line 256 "./include/openvswitch/ofp-msgs.h"
+#line 259 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp14_role_status),
-#line 256 "./include/openvswitch/ofp-msgs.h"
+#line 259 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2437 "lib/ofp-msgs.inc"
+#line 2457 "lib/ofp-msgs.inc"
         OFPTYPE_ROLE_STATUS,
         "OFPT_ROLE_STATUS",
     },
     {
         ofpraw_ofpt14_table_status_instances,
         5, 7,
-#line 259 "./include/openvswitch/ofp-msgs.h"
+#line 262 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp14_table_status),
-#line 259 "./include/openvswitch/ofp-msgs.h"
+#line 262 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2448 "lib/ofp-msgs.inc"
+#line 2468 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_STATUS,
         "OFPT_TABLE_STATUS",
     },
     {
         ofpraw_ofpt14_requestforward_instances,
         5, 7,
-#line 262 "./include/openvswitch/ofp-msgs.h"
+#line 265 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp14_requestforward),
-#line 262 "./include/openvswitch/ofp-msgs.h"
+#line 265 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2459 "lib/ofp-msgs.inc"
+#line 2479 "lib/ofp-msgs.inc"
         OFPTYPE_REQUESTFORWARD,
         "OFPT_REQUESTFORWARD",
     },
     {
         ofpraw_ofpt14_bundle_control_instances,
         5, 7,
-#line 265 "./include/openvswitch/ofp-msgs.h"
+#line 268 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp14_bundle_ctrl_msg),
-#line 265 "./include/openvswitch/ofp-msgs.h"
+#line 268 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2470 "lib/ofp-msgs.inc"
+#line 2490 "lib/ofp-msgs.inc"
         OFPTYPE_BUNDLE_CONTROL,
         "OFPT_BUNDLE_CONTROL",
     },
     {
         ofpraw_onft13_bundle_control_instances,
         4, 4,
-#line 267 "./include/openvswitch/ofp-msgs.h"
+#line 270 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp14_bundle_ctrl_msg),
-#line 267 "./include/openvswitch/ofp-msgs.h"
+#line 270 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2481 "lib/ofp-msgs.inc"
+#line 2501 "lib/ofp-msgs.inc"
         OFPTYPE_BUNDLE_CONTROL,
         "ONFT_BUNDLE_CONTROL",
     },
     {
         ofpraw_ofpt14_bundle_add_message_instances,
         5, 7,
-#line 270 "./include/openvswitch/ofp-msgs.h"
+#line 273 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp14_bundle_ctrl_msg),
-#line 270 "./include/openvswitch/ofp-msgs.h"
+#line 273 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 2492 "lib/ofp-msgs.inc"
+#line 2512 "lib/ofp-msgs.inc"
         OFPTYPE_BUNDLE_ADD_MESSAGE,
         "OFPT_BUNDLE_ADD_MESSAGE",
     },
     {
         ofpraw_onft13_bundle_add_message_instances,
         4, 4,
-#line 272 "./include/openvswitch/ofp-msgs.h"
+#line 275 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp14_bundle_ctrl_msg),
-#line 272 "./include/openvswitch/ofp-msgs.h"
+#line 275 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 2503 "lib/ofp-msgs.inc"
+#line 2523 "lib/ofp-msgs.inc"
         OFPTYPE_BUNDLE_ADD_MESSAGE,
         "ONFT_BUNDLE_ADD_MESSAGE",
     },
     {
         ofpraw_ofpst_desc_request_instances,
         1, 7,
-#line 277 "./include/openvswitch/ofp-msgs.h"
+#line 280 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 277 "./include/openvswitch/ofp-msgs.h"
+#line 280 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2514 "lib/ofp-msgs.inc"
+#line 2534 "lib/ofp-msgs.inc"
         OFPTYPE_DESC_STATS_REQUEST,
         "OFPST_DESC request",
     },
     {
         ofpraw_ofpst_desc_reply_instances,
         1, 7,
-#line 280 "./include/openvswitch/ofp-msgs.h"
+#line 283 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp_desc_stats),
-#line 280 "./include/openvswitch/ofp-msgs.h"
+#line 283 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2525 "lib/ofp-msgs.inc"
+#line 2545 "lib/ofp-msgs.inc"
         OFPTYPE_DESC_STATS_REPLY,
         "OFPST_DESC reply",
     },
     {
         ofpraw_ofpst10_flow_request_instances,
         1, 1,
-#line 283 "./include/openvswitch/ofp-msgs.h"
+#line 286 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_flow_stats_request),
-#line 283 "./include/openvswitch/ofp-msgs.h"
+#line 286 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2536 "lib/ofp-msgs.inc"
+#line 2556 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_STATS_REQUEST,
         "OFPST_FLOW request",
     },
     {
         ofpraw_ofpst11_flow_request_instances,
         2, 7,
-#line 285 "./include/openvswitch/ofp-msgs.h"
+#line 288 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_flow_stats_request),
-#line 285 "./include/openvswitch/ofp-msgs.h"
+#line 288 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2547 "lib/ofp-msgs.inc"
+#line 2567 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_STATS_REQUEST,
         "OFPST_FLOW request",
     },
     {
         ofpraw_nxst_flow_request_instances,
         1, 1,
-#line 287 "./include/openvswitch/ofp-msgs.h"
+#line 290 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_flow_stats_request),
-#line 287 "./include/openvswitch/ofp-msgs.h"
+#line 290 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2558 "lib/ofp-msgs.inc"
+#line 2578 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_STATS_REQUEST,
         "NXST_FLOW request",
     },
     {
         ofpraw_ofpst10_flow_reply_instances,
         1, 1,
-#line 290 "./include/openvswitch/ofp-msgs.h"
+#line 293 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 290 "./include/openvswitch/ofp-msgs.h"
+#line 293 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 2569 "lib/ofp-msgs.inc"
+#line 2589 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_STATS_REPLY,
         "OFPST_FLOW reply",
     },
     {
         ofpraw_ofpst11_flow_reply_instances,
         2, 3,
-#line 292 "./include/openvswitch/ofp-msgs.h"
+#line 295 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 292 "./include/openvswitch/ofp-msgs.h"
+#line 295 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 2580 "lib/ofp-msgs.inc"
+#line 2600 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_STATS_REPLY,
         "OFPST_FLOW reply",
     },
     {
         ofpraw_ofpst13_flow_reply_instances,
         4, 7,
-#line 294 "./include/openvswitch/ofp-msgs.h"
+#line 297 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 294 "./include/openvswitch/ofp-msgs.h"
+#line 297 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 2591 "lib/ofp-msgs.inc"
+#line 2611 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_STATS_REPLY,
         "OFPST_FLOW reply",
     },
     {
         ofpraw_nxst_flow_reply_instances,
         1, 1,
-#line 296 "./include/openvswitch/ofp-msgs.h"
+#line 299 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 296 "./include/openvswitch/ofp-msgs.h"
+#line 299 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
-#line 2602 "lib/ofp-msgs.inc"
+#line 2622 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_STATS_REPLY,
         "NXST_FLOW reply",
     },
     {
         ofpraw_ofpst10_aggregate_request_instances,
         1, 1,
-#line 299 "./include/openvswitch/ofp-msgs.h"
+#line 302 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_flow_stats_request),
-#line 299 "./include/openvswitch/ofp-msgs.h"
+#line 302 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2613 "lib/ofp-msgs.inc"
+#line 2633 "lib/ofp-msgs.inc"
         OFPTYPE_AGGREGATE_STATS_REQUEST,
         "OFPST_AGGREGATE request",
     },
     {
         ofpraw_ofpst11_aggregate_request_instances,
         2, 7,
-#line 301 "./include/openvswitch/ofp-msgs.h"
+#line 304 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_flow_stats_request),
-#line 301 "./include/openvswitch/ofp-msgs.h"
+#line 304 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2624 "lib/ofp-msgs.inc"
+#line 2644 "lib/ofp-msgs.inc"
         OFPTYPE_AGGREGATE_STATS_REQUEST,
         "OFPST_AGGREGATE request",
     },
     {
         ofpraw_nxst_aggregate_request_instances,
         1, 1,
-#line 303 "./include/openvswitch/ofp-msgs.h"
+#line 306 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_flow_stats_request),
-#line 303 "./include/openvswitch/ofp-msgs.h"
+#line 306 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2635 "lib/ofp-msgs.inc"
+#line 2655 "lib/ofp-msgs.inc"
         OFPTYPE_AGGREGATE_STATS_REQUEST,
         "NXST_AGGREGATE request",
     },
     {
         ofpraw_ofpst_aggregate_reply_instances,
         1, 7,
-#line 306 "./include/openvswitch/ofp-msgs.h"
+#line 309 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp_aggregate_stats_reply),
-#line 306 "./include/openvswitch/ofp-msgs.h"
+#line 309 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2646 "lib/ofp-msgs.inc"
+#line 2666 "lib/ofp-msgs.inc"
         OFPTYPE_AGGREGATE_STATS_REPLY,
         "OFPST_AGGREGATE reply",
     },
     {
         ofpraw_nxst_aggregate_reply_instances,
         1, 1,
-#line 308 "./include/openvswitch/ofp-msgs.h"
+#line 311 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp_aggregate_stats_reply),
-#line 308 "./include/openvswitch/ofp-msgs.h"
+#line 311 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2657 "lib/ofp-msgs.inc"
+#line 2677 "lib/ofp-msgs.inc"
         OFPTYPE_AGGREGATE_STATS_REPLY,
         "NXST_AGGREGATE reply",
     },
     {
         ofpraw_ofpst_table_request_instances,
         1, 7,
-#line 311 "./include/openvswitch/ofp-msgs.h"
+#line 314 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 311 "./include/openvswitch/ofp-msgs.h"
+#line 314 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2668 "lib/ofp-msgs.inc"
+#line 2688 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_STATS_REQUEST,
         "OFPST_TABLE request",
     },
     {
         ofpraw_ofpst10_table_reply_instances,
         1, 1,
-#line 314 "./include/openvswitch/ofp-msgs.h"
+#line 317 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 314 "./include/openvswitch/ofp-msgs.h"
+#line 317 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_table_stats),
-#line 2679 "lib/ofp-msgs.inc"
+#line 2699 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_STATS_REPLY,
         "OFPST_TABLE reply",
     },
     {
         ofpraw_ofpst11_table_reply_instances,
         2, 2,
-#line 316 "./include/openvswitch/ofp-msgs.h"
+#line 319 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 316 "./include/openvswitch/ofp-msgs.h"
+#line 319 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_table_stats),
-#line 2690 "lib/ofp-msgs.inc"
+#line 2710 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_STATS_REPLY,
         "OFPST_TABLE reply",
     },
     {
         ofpraw_ofpst12_table_reply_instances,
         3, 3,
-#line 318 "./include/openvswitch/ofp-msgs.h"
+#line 321 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 318 "./include/openvswitch/ofp-msgs.h"
+#line 321 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp12_table_stats),
-#line 2701 "lib/ofp-msgs.inc"
+#line 2721 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_STATS_REPLY,
         "OFPST_TABLE reply",
     },
     {
         ofpraw_ofpst13_table_reply_instances,
         4, 7,
-#line 320 "./include/openvswitch/ofp-msgs.h"
+#line 323 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 320 "./include/openvswitch/ofp-msgs.h"
+#line 323 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp13_table_stats),
-#line 2712 "lib/ofp-msgs.inc"
+#line 2732 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_STATS_REPLY,
         "OFPST_TABLE reply",
     },
     {
         ofpraw_ofpst10_port_request_instances,
         1, 1,
-#line 323 "./include/openvswitch/ofp-msgs.h"
+#line 326 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_port_stats_request),
-#line 323 "./include/openvswitch/ofp-msgs.h"
+#line 326 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2723 "lib/ofp-msgs.inc"
+#line 2743 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_STATS_REQUEST,
         "OFPST_PORT request",
     },
     {
         ofpraw_ofpst11_port_request_instances,
         2, 7,
-#line 325 "./include/openvswitch/ofp-msgs.h"
+#line 328 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_port_stats_request),
-#line 325 "./include/openvswitch/ofp-msgs.h"
+#line 328 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2734 "lib/ofp-msgs.inc"
+#line 2754 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_STATS_REQUEST,
         "OFPST_PORT request",
     },
     {
         ofpraw_ofpst10_port_reply_instances,
         1, 1,
-#line 328 "./include/openvswitch/ofp-msgs.h"
+#line 331 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 328 "./include/openvswitch/ofp-msgs.h"
+#line 331 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_port_stats),
-#line 2745 "lib/ofp-msgs.inc"
+#line 2765 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_STATS_REPLY,
         "OFPST_PORT reply",
     },
     {
         ofpraw_ofpst11_port_reply_instances,
         2, 3,
-#line 330 "./include/openvswitch/ofp-msgs.h"
+#line 333 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 330 "./include/openvswitch/ofp-msgs.h"
+#line 333 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_port_stats),
-#line 2756 "lib/ofp-msgs.inc"
+#line 2776 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_STATS_REPLY,
         "OFPST_PORT reply",
     },
     {
         ofpraw_ofpst13_port_reply_instances,
         4, 4,
-#line 332 "./include/openvswitch/ofp-msgs.h"
+#line 335 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 332 "./include/openvswitch/ofp-msgs.h"
+#line 335 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp13_port_stats),
-#line 2767 "lib/ofp-msgs.inc"
+#line 2787 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_STATS_REPLY,
         "OFPST_PORT reply",
     },
     {
         ofpraw_ofpst14_port_reply_instances,
         5, 7,
-#line 334 "./include/openvswitch/ofp-msgs.h"
+#line 337 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 334 "./include/openvswitch/ofp-msgs.h"
+#line 337 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2778 "lib/ofp-msgs.inc"
+#line 2798 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_STATS_REPLY,
         "OFPST_PORT reply",
     },
     {
         ofpraw_ofpst10_queue_request_instances,
         1, 1,
-#line 337 "./include/openvswitch/ofp-msgs.h"
+#line 340 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_queue_stats_request),
-#line 337 "./include/openvswitch/ofp-msgs.h"
+#line 340 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2789 "lib/ofp-msgs.inc"
+#line 2809 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_STATS_REQUEST,
         "OFPST_QUEUE request",
     },
     {
         ofpraw_ofpst11_queue_request_instances,
         2, 7,
-#line 339 "./include/openvswitch/ofp-msgs.h"
+#line 342 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_queue_stats_request),
-#line 339 "./include/openvswitch/ofp-msgs.h"
+#line 342 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2800 "lib/ofp-msgs.inc"
+#line 2820 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_STATS_REQUEST,
         "OFPST_QUEUE request",
     },
     {
         ofpraw_ofpst10_queue_reply_instances,
         1, 1,
-#line 342 "./include/openvswitch/ofp-msgs.h"
+#line 345 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 342 "./include/openvswitch/ofp-msgs.h"
+#line 345 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_queue_stats),
-#line 2811 "lib/ofp-msgs.inc"
+#line 2831 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_STATS_REPLY,
         "OFPST_QUEUE reply",
     },
     {
         ofpraw_ofpst11_queue_reply_instances,
         2, 3,
-#line 344 "./include/openvswitch/ofp-msgs.h"
+#line 347 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 344 "./include/openvswitch/ofp-msgs.h"
+#line 347 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_queue_stats),
-#line 2822 "lib/ofp-msgs.inc"
+#line 2842 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_STATS_REPLY,
         "OFPST_QUEUE reply",
     },
     {
         ofpraw_ofpst13_queue_reply_instances,
         4, 4,
-#line 346 "./include/openvswitch/ofp-msgs.h"
+#line 349 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 346 "./include/openvswitch/ofp-msgs.h"
+#line 349 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp13_queue_stats),
-#line 2833 "lib/ofp-msgs.inc"
+#line 2853 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_STATS_REPLY,
         "OFPST_QUEUE reply",
     },
     {
         ofpraw_ofpst14_queue_reply_instances,
         5, 7,
-#line 348 "./include/openvswitch/ofp-msgs.h"
+#line 351 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 348 "./include/openvswitch/ofp-msgs.h"
+#line 351 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2844 "lib/ofp-msgs.inc"
+#line 2864 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_STATS_REPLY,
         "OFPST_QUEUE reply",
     },
     {
         ofpraw_ofpst11_group_request_instances,
         2, 7,
-#line 351 "./include/openvswitch/ofp-msgs.h"
+#line 354 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_group_stats_request),
-#line 351 "./include/openvswitch/ofp-msgs.h"
+#line 354 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2855 "lib/ofp-msgs.inc"
+#line 2875 "lib/ofp-msgs.inc"
         OFPTYPE_GROUP_STATS_REQUEST,
         "OFPST_GROUP request",
     },
     {
         ofpraw_ofpst11_group_reply_instances,
         2, 3,
-#line 354 "./include/openvswitch/ofp-msgs.h"
+#line 357 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 354 "./include/openvswitch/ofp-msgs.h"
+#line 357 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2866 "lib/ofp-msgs.inc"
+#line 2886 "lib/ofp-msgs.inc"
         OFPTYPE_GROUP_STATS_REPLY,
         "OFPST_GROUP reply",
     },
     {
         ofpraw_ofpst13_group_reply_instances,
         4, 7,
-#line 356 "./include/openvswitch/ofp-msgs.h"
+#line 359 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 356 "./include/openvswitch/ofp-msgs.h"
+#line 359 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2877 "lib/ofp-msgs.inc"
+#line 2897 "lib/ofp-msgs.inc"
         OFPTYPE_GROUP_STATS_REPLY,
         "OFPST_GROUP reply",
     },
     {
         ofpraw_ofpst11_group_desc_request_instances,
         2, 5,
-#line 359 "./include/openvswitch/ofp-msgs.h"
+#line 362 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 359 "./include/openvswitch/ofp-msgs.h"
+#line 362 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2888 "lib/ofp-msgs.inc"
+#line 2908 "lib/ofp-msgs.inc"
         OFPTYPE_GROUP_DESC_STATS_REQUEST,
         "OFPST_GROUP_DESC request",
     },
     {
         ofpraw_ofpst15_group_desc_request_instances,
         6, 7,
-#line 361 "./include/openvswitch/ofp-msgs.h"
+#line 364 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp15_group_desc_request),
-#line 361 "./include/openvswitch/ofp-msgs.h"
+#line 364 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2899 "lib/ofp-msgs.inc"
+#line 2919 "lib/ofp-msgs.inc"
         OFPTYPE_GROUP_DESC_STATS_REQUEST,
         "OFPST_GROUP_DESC request",
     },
     {
         ofpraw_ofpst11_group_desc_reply_instances,
         2, 7,
-#line 364 "./include/openvswitch/ofp-msgs.h"
+#line 367 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 364 "./include/openvswitch/ofp-msgs.h"
+#line 367 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2910 "lib/ofp-msgs.inc"
+#line 2930 "lib/ofp-msgs.inc"
         OFPTYPE_GROUP_DESC_STATS_REPLY,
         "OFPST_GROUP_DESC reply",
     },
     {
         ofpraw_ofpst12_group_features_request_instances,
         3, 7,
-#line 367 "./include/openvswitch/ofp-msgs.h"
+#line 370 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 367 "./include/openvswitch/ofp-msgs.h"
+#line 370 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2921 "lib/ofp-msgs.inc"
+#line 2941 "lib/ofp-msgs.inc"
         OFPTYPE_GROUP_FEATURES_STATS_REQUEST,
         "OFPST_GROUP_FEATURES request",
     },
     {
         ofpraw_ofpst12_group_features_reply_instances,
         3, 7,
-#line 370 "./include/openvswitch/ofp-msgs.h"
+#line 373 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp12_group_features_stats),
-#line 370 "./include/openvswitch/ofp-msgs.h"
+#line 373 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2932 "lib/ofp-msgs.inc"
+#line 2952 "lib/ofp-msgs.inc"
         OFPTYPE_GROUP_FEATURES_STATS_REPLY,
         "OFPST_GROUP_FEATURES reply",
     },
     {
         ofpraw_ofpst13_meter_request_instances,
         4, 7,
-#line 373 "./include/openvswitch/ofp-msgs.h"
+#line 376 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp13_meter_multipart_request),
-#line 373 "./include/openvswitch/ofp-msgs.h"
+#line 376 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2943 "lib/ofp-msgs.inc"
+#line 2963 "lib/ofp-msgs.inc"
         OFPTYPE_METER_STATS_REQUEST,
         "OFPST_METER request",
     },
     {
         ofpraw_ofpst13_meter_reply_instances,
         4, 7,
-#line 376 "./include/openvswitch/ofp-msgs.h"
+#line 379 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 376 "./include/openvswitch/ofp-msgs.h"
+#line 379 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2954 "lib/ofp-msgs.inc"
+#line 2974 "lib/ofp-msgs.inc"
         OFPTYPE_METER_STATS_REPLY,
         "OFPST_METER reply",
     },
     {
         ofpraw_ofpst13_meter_config_request_instances,
         4, 7,
-#line 379 "./include/openvswitch/ofp-msgs.h"
+#line 382 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp13_meter_multipart_request),
-#line 379 "./include/openvswitch/ofp-msgs.h"
+#line 382 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2965 "lib/ofp-msgs.inc"
+#line 2985 "lib/ofp-msgs.inc"
         OFPTYPE_METER_CONFIG_STATS_REQUEST,
         "OFPST_METER_CONFIG request",
     },
     {
         ofpraw_ofpst13_meter_config_reply_instances,
         4, 7,
-#line 382 "./include/openvswitch/ofp-msgs.h"
+#line 385 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 382 "./include/openvswitch/ofp-msgs.h"
+#line 385 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 2976 "lib/ofp-msgs.inc"
+#line 2996 "lib/ofp-msgs.inc"
         OFPTYPE_METER_CONFIG_STATS_REPLY,
         "OFPST_METER_CONFIG reply",
     },
     {
         ofpraw_ofpst13_meter_features_request_instances,
         4, 7,
-#line 385 "./include/openvswitch/ofp-msgs.h"
+#line 388 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 385 "./include/openvswitch/ofp-msgs.h"
+#line 388 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2987 "lib/ofp-msgs.inc"
+#line 3007 "lib/ofp-msgs.inc"
         OFPTYPE_METER_FEATURES_STATS_REQUEST,
         "OFPST_METER_FEATURES request",
     },
     {
         ofpraw_ofpst13_meter_features_reply_instances,
         4, 7,
-#line 388 "./include/openvswitch/ofp-msgs.h"
+#line 391 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp13_meter_features),
-#line 388 "./include/openvswitch/ofp-msgs.h"
+#line 391 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 2998 "lib/ofp-msgs.inc"
+#line 3018 "lib/ofp-msgs.inc"
         OFPTYPE_METER_FEATURES_STATS_REPLY,
         "OFPST_METER_FEATURES reply",
     },
     {
         ofpraw_ofpst13_table_features_request_instances,
         4, 7,
-#line 391 "./include/openvswitch/ofp-msgs.h"
+#line 394 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 391 "./include/openvswitch/ofp-msgs.h"
+#line 394 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3009 "lib/ofp-msgs.inc"
+#line 3029 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_FEATURES_STATS_REQUEST,
         "OFPST_TABLE_FEATURES request",
     },
     {
         ofpraw_ofpst13_table_features_reply_instances,
         4, 7,
-#line 394 "./include/openvswitch/ofp-msgs.h"
+#line 397 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp13_table_features),
-#line 394 "./include/openvswitch/ofp-msgs.h"
+#line 397 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 3020 "lib/ofp-msgs.inc"
+#line 3040 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_FEATURES_STATS_REPLY,
         "OFPST_TABLE_FEATURES reply",
     },
     {
         ofpraw_ofpst14_table_desc_request_instances,
         5, 7,
-#line 397 "./include/openvswitch/ofp-msgs.h"
+#line 400 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 397 "./include/openvswitch/ofp-msgs.h"
+#line 400 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3031 "lib/ofp-msgs.inc"
+#line 3051 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_DESC_REQUEST,
         "OFPST_TABLE_DESC request",
     },
     {
         ofpraw_ofpst14_table_desc_reply_instances,
         5, 7,
-#line 400 "./include/openvswitch/ofp-msgs.h"
+#line 403 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp14_table_desc),
-#line 400 "./include/openvswitch/ofp-msgs.h"
+#line 403 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 3042 "lib/ofp-msgs.inc"
+#line 3062 "lib/ofp-msgs.inc"
         OFPTYPE_TABLE_DESC_REPLY,
         "OFPST_TABLE_DESC reply",
     },
     {
         ofpraw_ofpst10_port_desc_request_instances,
         1, 5,
-#line 403 "./include/openvswitch/ofp-msgs.h"
+#line 406 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 403 "./include/openvswitch/ofp-msgs.h"
+#line 406 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3053 "lib/ofp-msgs.inc"
+#line 3073 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_DESC_STATS_REQUEST,
         "OFPST_PORT_DESC request",
     },
     {
         ofpraw_ofpst15_port_desc_request_instances,
         6, 7,
-#line 405 "./include/openvswitch/ofp-msgs.h"
+#line 408 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp15_port_desc_request),
-#line 405 "./include/openvswitch/ofp-msgs.h"
+#line 408 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3064 "lib/ofp-msgs.inc"
+#line 3084 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_DESC_STATS_REQUEST,
         "OFPST_PORT_DESC request",
     },
     {
         ofpraw_ofpst10_port_desc_reply_instances,
         1, 1,
-#line 408 "./include/openvswitch/ofp-msgs.h"
+#line 411 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 408 "./include/openvswitch/ofp-msgs.h"
+#line 411 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp10_phy_port),
-#line 3075 "lib/ofp-msgs.inc"
+#line 3095 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_DESC_STATS_REPLY,
         "OFPST_PORT_DESC reply",
     },
     {
         ofpraw_ofpst11_port_desc_reply_instances,
         2, 4,
-#line 410 "./include/openvswitch/ofp-msgs.h"
+#line 413 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 410 "./include/openvswitch/ofp-msgs.h"
+#line 413 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp11_port),
-#line 3086 "lib/ofp-msgs.inc"
+#line 3106 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_DESC_STATS_REPLY,
         "OFPST_PORT_DESC reply",
     },
     {
         ofpraw_ofpst14_port_desc_reply_instances,
         5, 7,
-#line 412 "./include/openvswitch/ofp-msgs.h"
+#line 415 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 412 "./include/openvswitch/ofp-msgs.h"
+#line 415 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 3097 "lib/ofp-msgs.inc"
+#line 3117 "lib/ofp-msgs.inc"
         OFPTYPE_PORT_DESC_STATS_REPLY,
         "OFPST_PORT_DESC reply",
     },
     {
         ofpraw_ofpst14_queue_desc_request_instances,
         5, 7,
-#line 415 "./include/openvswitch/ofp-msgs.h"
+#line 418 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct ofp14_queue_desc_request),
-#line 415 "./include/openvswitch/ofp-msgs.h"
+#line 418 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3108 "lib/ofp-msgs.inc"
+#line 3128 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_GET_CONFIG_REQUEST,
         "OFPST_QUEUE_DESC request",
     },
     {
         ofpraw_ofpst14_queue_desc_reply_instances,
         5, 7,
-#line 417 "./include/openvswitch/ofp-msgs.h"
+#line 420 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 417 "./include/openvswitch/ofp-msgs.h"
+#line 420 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 3119 "lib/ofp-msgs.inc"
+#line 3139 "lib/ofp-msgs.inc"
         OFPTYPE_QUEUE_GET_CONFIG_REPLY,
         "OFPST_QUEUE_DESC reply",
     },
     {
         ofpraw_ofpst14_flow_monitor_request_instances,
         5, 7,
-#line 420 "./include/openvswitch/ofp-msgs.h"
+#line 423 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 420 "./include/openvswitch/ofp-msgs.h"
+#line 423 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 3130 "lib/ofp-msgs.inc"
+#line 3150 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_MONITOR_STATS_REQUEST,
         "OFPST_FLOW_MONITOR request",
     },
     {
         ofpraw_nxst_flow_monitor_request_instances,
         1, 1,
-#line 422 "./include/openvswitch/ofp-msgs.h"
+#line 425 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 422 "./include/openvswitch/ofp-msgs.h"
+#line 425 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 3141 "lib/ofp-msgs.inc"
+#line 3161 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_MONITOR_STATS_REQUEST,
         "NXST_FLOW_MONITOR request",
     },
     {
         ofpraw_ofpst14_flow_monitor_reply_instances,
         5, 7,
-#line 425 "./include/openvswitch/ofp-msgs.h"
+#line 428 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 425 "./include/openvswitch/ofp-msgs.h"
+#line 428 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 3152 "lib/ofp-msgs.inc"
+#line 3172 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_MONITOR_STATS_REPLY,
         "OFPST_FLOW_MONITOR reply",
     },
     {
         ofpraw_nxst_flow_monitor_reply_instances,
         1, 1,
-#line 427 "./include/openvswitch/ofp-msgs.h"
+#line 430 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 427 "./include/openvswitch/ofp-msgs.h"
+#line 430 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 3163 "lib/ofp-msgs.inc"
+#line 3183 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_MONITOR_STATS_REPLY,
         "NXST_FLOW_MONITOR reply",
     },
     {
         ofpraw_nxt_set_flow_format_instances,
         1, 1,
-#line 435 "./include/openvswitch/ofp-msgs.h"
+#line 438 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_set_flow_format),
-#line 435 "./include/openvswitch/ofp-msgs.h"
+#line 438 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3174 "lib/ofp-msgs.inc"
+#line 3194 "lib/ofp-msgs.inc"
         OFPTYPE_SET_FLOW_FORMAT,
         "NXT_SET_FLOW_FORMAT",
     },
     {
         ofpraw_nxt_flow_mod_table_id_instances,
         1, 7,
-#line 438 "./include/openvswitch/ofp-msgs.h"
+#line 441 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_flow_mod_table_id),
-#line 438 "./include/openvswitch/ofp-msgs.h"
+#line 441 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3185 "lib/ofp-msgs.inc"
+#line 3205 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_MOD_TABLE_ID,
         "NXT_FLOW_MOD_TABLE_ID",
     },
     {
         ofpraw_nxt_set_packet_in_format_instances,
         1, 7,
-#line 441 "./include/openvswitch/ofp-msgs.h"
+#line 444 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_set_packet_in_format),
-#line 441 "./include/openvswitch/ofp-msgs.h"
+#line 444 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3196 "lib/ofp-msgs.inc"
+#line 3216 "lib/ofp-msgs.inc"
         OFPTYPE_SET_PACKET_IN_FORMAT,
         "NXT_SET_PACKET_IN_FORMAT",
     },
     {
         ofpraw_nxt_flow_age_instances,
         1, 7,
-#line 444 "./include/openvswitch/ofp-msgs.h"
+#line 447 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 444 "./include/openvswitch/ofp-msgs.h"
+#line 447 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3207 "lib/ofp-msgs.inc"
+#line 3227 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_AGE,
         "NXT_FLOW_AGE",
     },
     {
         ofpraw_nxt_set_controller_id_instances,
         1, 7,
-#line 447 "./include/openvswitch/ofp-msgs.h"
+#line 450 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_controller_id),
-#line 447 "./include/openvswitch/ofp-msgs.h"
+#line 450 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3218 "lib/ofp-msgs.inc"
+#line 3238 "lib/ofp-msgs.inc"
         OFPTYPE_SET_CONTROLLER_ID,
         "NXT_SET_CONTROLLER_ID",
     },
     {
         ofpraw_nxt_flow_monitor_cancel_instances,
         1, 7,
-#line 450 "./include/openvswitch/ofp-msgs.h"
+#line 453 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_flow_monitor_cancel),
-#line 450 "./include/openvswitch/ofp-msgs.h"
+#line 453 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3229 "lib/ofp-msgs.inc"
+#line 3249 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_MONITOR_CANCEL,
         "NXT_FLOW_MONITOR_CANCEL",
     },
     {
         ofpraw_nxt_flow_monitor_paused_instances,
         1, 7,
-#line 453 "./include/openvswitch/ofp-msgs.h"
+#line 456 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 453 "./include/openvswitch/ofp-msgs.h"
+#line 456 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3240 "lib/ofp-msgs.inc"
+#line 3260 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_MONITOR_PAUSED,
         "NXT_FLOW_MONITOR_PAUSED",
     },
     {
         ofpraw_nxt_flow_monitor_resumed_instances,
         1, 7,
-#line 456 "./include/openvswitch/ofp-msgs.h"
+#line 459 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 456 "./include/openvswitch/ofp-msgs.h"
+#line 459 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3251 "lib/ofp-msgs.inc"
+#line 3271 "lib/ofp-msgs.inc"
         OFPTYPE_FLOW_MONITOR_RESUMED,
         "NXT_FLOW_MONITOR_RESUMED",
     },
     {
         ofpraw_nxt_tlv_table_mod_instances,
         1, 7,
-#line 459 "./include/openvswitch/ofp-msgs.h"
+#line 462 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_tlv_table_mod),
-#line 459 "./include/openvswitch/ofp-msgs.h"
+#line 462 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_tlv_map),
-#line 3262 "lib/ofp-msgs.inc"
+#line 3282 "lib/ofp-msgs.inc"
         OFPTYPE_NXT_TLV_TABLE_MOD,
         "NXT_TLV_TABLE_MOD",
     },
     {
         ofpraw_nxt_tlv_table_request_instances,
         1, 7,
-#line 462 "./include/openvswitch/ofp-msgs.h"
+#line 465 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 462 "./include/openvswitch/ofp-msgs.h"
+#line 465 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3273 "lib/ofp-msgs.inc"
+#line 3293 "lib/ofp-msgs.inc"
         OFPTYPE_NXT_TLV_TABLE_REQUEST,
         "NXT_TLV_TABLE_REQUEST",
     },
     {
         ofpraw_nxt_tlv_table_reply_instances,
         1, 7,
-#line 465 "./include/openvswitch/ofp-msgs.h"
+#line 468 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_tlv_table_reply),
-#line 465 "./include/openvswitch/ofp-msgs.h"
+#line 468 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_tlv_map),
-#line 3284 "lib/ofp-msgs.inc"
+#line 3304 "lib/ofp-msgs.inc"
         OFPTYPE_NXT_TLV_TABLE_REPLY,
         "NXT_TLV_TABLE_REPLY",
     },
     {
         ofpraw_nxt_resume_instances,
         1, 7,
-#line 468 "./include/openvswitch/ofp-msgs.h"
+#line 471 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 468 "./include/openvswitch/ofp-msgs.h"
+#line 471 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t[8]),
-#line 3295 "lib/ofp-msgs.inc"
+#line 3315 "lib/ofp-msgs.inc"
         OFPTYPE_NXT_RESUME,
         "NXT_RESUME",
     },
     {
         ofpraw_nxt_ct_flush_zone_instances,
         1, 7,
-#line 471 "./include/openvswitch/ofp-msgs.h"
+#line 474 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_zone_id),
-#line 471 "./include/openvswitch/ofp-msgs.h"
+#line 474 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3306 "lib/ofp-msgs.inc"
+#line 3326 "lib/ofp-msgs.inc"
         OFPTYPE_CT_FLUSH_ZONE,
         "NXT_CT_FLUSH_ZONE",
     },
     {
         ofpraw_nxst_ipfix_bridge_request_instances,
         1, 7,
-#line 474 "./include/openvswitch/ofp-msgs.h"
+#line 477 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 474 "./include/openvswitch/ofp-msgs.h"
+#line 477 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3317 "lib/ofp-msgs.inc"
+#line 3337 "lib/ofp-msgs.inc"
         OFPTYPE_IPFIX_BRIDGE_STATS_REQUEST,
         "NXST_IPFIX_BRIDGE request",
     },
     {
         ofpraw_nxst_ipfix_bridge_reply_instances,
         1, 7,
-#line 477 "./include/openvswitch/ofp-msgs.h"
+#line 480 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_ipfix_stats_reply),
-#line 477 "./include/openvswitch/ofp-msgs.h"
+#line 480 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3328 "lib/ofp-msgs.inc"
+#line 3348 "lib/ofp-msgs.inc"
         OFPTYPE_IPFIX_BRIDGE_STATS_REPLY,
         "NXST_IPFIX_BRIDGE reply",
     },
     {
         ofpraw_nxst_ipfix_flow_request_instances,
         1, 7,
-#line 480 "./include/openvswitch/ofp-msgs.h"
+#line 483 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 480 "./include/openvswitch/ofp-msgs.h"
+#line 483 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 3339 "lib/ofp-msgs.inc"
+#line 3359 "lib/ofp-msgs.inc"
         OFPTYPE_IPFIX_FLOW_STATS_REQUEST,
         "NXST_IPFIX_FLOW request",
     },
     {
         ofpraw_nxst_ipfix_flow_reply_instances,
         1, 7,
-#line 483 "./include/openvswitch/ofp-msgs.h"
+#line 486 "./include/openvswitch/ofp-msgs.h"
         0,
-#line 483 "./include/openvswitch/ofp-msgs.h"
+#line 486 "./include/openvswitch/ofp-msgs.h"
         sizeof(struct nx_ipfix_stats_reply),
-#line 3350 "lib/ofp-msgs.inc"
+#line 3370 "lib/ofp-msgs.inc"
         OFPTYPE_IPFIX_FLOW_STATS_REPLY,
         "NXST_IPFIX_FLOW reply",
     },
@@ -3365,6 +3385,7 @@ static const char *type_names[] = {
     "OFPT_PACKET_IN",
     "OFPT_FLOW_REMOVED",
     "OFPT_PORT_STATUS",
+    "OFPT_RESOURCE_REPORT",
     "OFPT_PACKET_OUT",
     "OFPT_FLOW_MOD",
     "OFPT_GROUP_MOD",

@@ -4759,7 +4759,7 @@ ofputil_encode_flow_table_resource(enum ofputil_protocol protocol, ovs_be32 xid)
     struct ofpbuf *msg;
 
     version = ofputil_protocol_to_ofp_version(protocol);
-    raw = OFPRAW_OFPT11_PACKET_OUT;
+    raw = OFPRAW_OFPT_RESOURCE_REPORT;
     msg = ofpraw_alloc_xid(raw, version, xid, 0);/*ofpraw_alloc_stats_reply(oh, 0);*/
     ofts = ofpbuf_put_zeros(msg, sizeof *ofts);
     ofts->counter_num = htonl((uint32_t)512);
