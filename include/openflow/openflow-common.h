@@ -118,6 +118,7 @@ enum ofp_version {
 
 #define OFP_DEFAULT_MISS_SEND_LEN   128
 #define POF_NAME_MAX_LENGTH   64
+#define POF_MAX_MATCH_FIELD_NUM 8
 /* Values below this cutoff are 802.3 packets and the two bytes
  * following MAC addresses are used as a frame length.  Otherwise, the
  * two bytes are used as the Ethernet type.
@@ -392,6 +393,17 @@ struct ofp_desc_stats {
 };
 OFP_ASSERT(sizeof(struct ofp_desc_stats) == 1056);
 
+struct pof_table_resource_desc {
+    ovs_be32 device_id;
+    uint8_t  type; /*table type: MM or EM or LPM */
+    uint8_t  tbl_num; /*table number*/
+    ovs_be16 key_len;   /*key length*/
+
+    ovs_be32 total_size; /*the  total number of EM entry*/
+    uint8_t pad[4];   /*8 bytes aligned*/
+};
+OFP_ASSERT(sizeof(struct pof_table_resource_desc) == 16);
+
 /* +++sqy  Body of reply to OFPST_DESC request.. */
 struct ofp_flow_table_stats {
     uint8_t resourceType;
@@ -401,33 +413,7 @@ struct ofp_flow_table_stats {
     ovs_be32 meter_num; /*Meter number*/
     ovs_be32 group_num; /*Group number*/
 
-    ovs_be32 device_id0;
-    uint8_t  type0; /*table type: MM or EM or LPM */
-    uint8_t  tbl_num0; /*table number*/
-    ovs_be16 key_len0;   /*key length*/
-    ovs_be32 total_size0; /*the  total number of EM entry*/
-    uint8_t pad0[4];   /*8 bytes aligned*/
-
-    ovs_be32 device_id1;
-    uint8_t  type1; /*table type: MM or EM or LPM */
-    uint8_t  tbl_num1; /*table number*/
-    ovs_be16 key_len1;   /*key length*/
-    ovs_be32 total_size1; /*the  total number of EM entry*/
-    uint8_t pad1[4];   /*8 bytes aligned*/
-
-    ovs_be32 device_id2;
-    uint8_t  type2; /*table type: MM or EM or LPM */
-    uint8_t  tbl_num2; /*table number*/
-    ovs_be16 key_len2;   /*key length*/
-    ovs_be32 total_size2; /*the  total number of EM entry*/
-    uint8_t pad2[4];   /*8 bytes aligned*/
-
-    ovs_be32 device_id3;
-    uint8_t  type3; /*table type: MM or EM or LPM */
-    uint8_t  tbl_num3; /*table number*/
-    ovs_be16 key_len3;   /*key length*/
-    ovs_be32 total_size3; /*the  total number of EM entry*/
-    uint8_t pad3[4];   /*8 bytes aligned*/
+    struct pof_table_resource_desc tbl_rsc_desc[4];/*All table resource information*/
 };
 OFP_ASSERT(sizeof(struct ofp_flow_table_stats) == 80);
 

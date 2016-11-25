@@ -311,13 +311,38 @@ struct ofp11_instruction_experimenter {
 };
 OFP_ASSERT(sizeof(struct ofp11_instruction_experimenter) == 8);
 
+/* added by sqy. */
+struct pof_match {
+    ovs_be16 field_id;  /*0xffff means metadata,
+                          0x8XXX means from table parameter,
+                          otherwise means from packet data. */
+    ovs_be16 offset; /*bit unit*/
+    ovs_be16 len;   /*length in bit unit*/
+    uint8_t pad[2];   /*8 bytes aligned*/
+};
+OFP_ASSERT(sizeof(struct pof_match) == 8);
+
 /* Configure/Modify behavior of a flow table */
 struct ofp11_table_mod {
-    uint8_t table_id;       /* ID of the table, 0xFF indicates all tables */
-    uint8_t pad[3];         /* Pad to 32 bits */
-    ovs_be32 config;        /* Bitmap of OFPTC_* flags */
+
+    uint8_t command;
+    uint8_t table_id;              /*table ID*/
+    uint8_t type;            /*table type*/
+    uint8_t match_field_num;  /*the number of match fields.*/
+    ovs_be32 size;            /*table size*/
+
+    ovs_be16 key_len;         /*The max sum of length of all match fields*/
+    ovs_be16 slotID;            /* For multiple slots. */
+    uint8_t pad[4];             /*8 bytes aligned*/
+
+    char table_name[POF_NAME_MAX_LENGTH];
+    struct pof_match match[POF_MAX_MATCH_FIELD_NUM];
+
+    /* uint8_t table_id;       ID of the table, 0xFF indicates all tables */
+    /* uint8_t pad[3];         Pad to 32 bits */
+    /* ovs_be32 config;        Bitmap of OFPTC_* flags */
 };
-OFP_ASSERT(sizeof(struct ofp11_table_mod) == 8);
+OFP_ASSERT(sizeof(struct ofp11_table_mod) == 144);
 
 /* Flow setup and teardown (controller -> datapath). */
 struct ofp11_flow_mod {

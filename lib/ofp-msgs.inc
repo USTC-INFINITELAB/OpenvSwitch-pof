@@ -1153,26 +1153,26 @@ static struct raw_instance ofpraw_ofpt_resource_report_instances[] = {
     { {0, NULL}, {7, 13, 0, 0x0, 0}, OFPRAW_OFPT_RESOURCE_REPORT, 0 },
 };
 static struct raw_instance ofpraw_ofpt10_packet_out_instances[] = {
-    { {0, NULL}, {1, 36, 0, 0x0, 0}, OFPRAW_OFPT10_PACKET_OUT, 0 },
+    { {0, NULL}, {1, 14, 0, 0x0, 0}, OFPRAW_OFPT10_PACKET_OUT, 0 },
 };
 static struct raw_instance ofpraw_ofpt11_packet_out_instances[] = {
-    { {0, NULL}, {2, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
-    { {0, NULL}, {3, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
-    { {0, NULL}, {4, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
-    { {0, NULL}, {5, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
-    { {0, NULL}, {6, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
-    { {0, NULL}, {7, 36, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {2, 14, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {3, 14, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {4, 14, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {5, 14, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {6, 14, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
+    { {0, NULL}, {7, 14, 0, 0x0, 0}, OFPRAW_OFPT11_PACKET_OUT, 0 },
 };
 static struct raw_instance ofpraw_ofpt10_flow_mod_instances[] = {
-    { {0, NULL}, {1, 14, 0, 0x0, 0}, OFPRAW_OFPT10_FLOW_MOD, 0 },
+    { {0, NULL}, {1, 15, 0, 0x0, 0}, OFPRAW_OFPT10_FLOW_MOD, 0 },
 };
 static struct raw_instance ofpraw_ofpt11_flow_mod_instances[] = {
-    { {0, NULL}, {2, 14, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
-    { {0, NULL}, {3, 14, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
-    { {0, NULL}, {4, 14, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
-    { {0, NULL}, {5, 14, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
-    { {0, NULL}, {6, 14, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
-    { {0, NULL}, {7, 14, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
+    { {0, NULL}, {2, 15, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
+    { {0, NULL}, {3, 15, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
+    { {0, NULL}, {4, 15, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
+    { {0, NULL}, {5, 15, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
+    { {0, NULL}, {6, 15, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
+    { {0, NULL}, {7, 15, 0, 0x0, 0}, OFPRAW_OFPT11_FLOW_MOD, 0 },
 };
 static struct raw_instance ofpraw_nxt_flow_mod_instances[] = {
     { {0, NULL}, {1, 4, 0, 0x2320, 13}, OFPRAW_NXT_FLOW_MOD, 0 },
@@ -1184,40 +1184,40 @@ static struct raw_instance ofpraw_nxt_flow_mod_instances[] = {
     { {0, NULL}, {7, 4, 0, 0x2320, 13}, OFPRAW_NXT_FLOW_MOD, 0 },
 };
 static struct raw_instance ofpraw_ofpt11_group_mod_instances[] = {
-    { {0, NULL}, {2, 15, 0, 0x0, 0}, OFPRAW_OFPT11_GROUP_MOD, 0 },
-    { {0, NULL}, {3, 15, 0, 0x0, 0}, OFPRAW_OFPT11_GROUP_MOD, 0 },
-    { {0, NULL}, {4, 15, 0, 0x0, 0}, OFPRAW_OFPT11_GROUP_MOD, 0 },
-    { {0, NULL}, {5, 15, 0, 0x0, 0}, OFPRAW_OFPT11_GROUP_MOD, 0 },
+    { {0, NULL}, {2, 16, 0, 0x0, 0}, OFPRAW_OFPT11_GROUP_MOD, 0 },
+    { {0, NULL}, {3, 16, 0, 0x0, 0}, OFPRAW_OFPT11_GROUP_MOD, 0 },
+    { {0, NULL}, {4, 16, 0, 0x0, 0}, OFPRAW_OFPT11_GROUP_MOD, 0 },
+    { {0, NULL}, {5, 16, 0, 0x0, 0}, OFPRAW_OFPT11_GROUP_MOD, 0 },
 };
 static struct raw_instance ofpraw_ofpt15_group_mod_instances[] = {
-    { {0, NULL}, {6, 15, 0, 0x0, 0}, OFPRAW_OFPT15_GROUP_MOD, 0 },
-    { {0, NULL}, {7, 15, 0, 0x0, 0}, OFPRAW_OFPT15_GROUP_MOD, 0 },
+    { {0, NULL}, {6, 16, 0, 0x0, 0}, OFPRAW_OFPT15_GROUP_MOD, 0 },
+    { {0, NULL}, {7, 16, 0, 0x0, 0}, OFPRAW_OFPT15_GROUP_MOD, 0 },
 };
 static struct raw_instance ofpraw_ofpt10_port_mod_instances[] = {
-    { {0, NULL}, {1, 15, 0, 0x0, 0}, OFPRAW_OFPT10_PORT_MOD, 0 },
+    { {0, NULL}, {1, 16, 0, 0x0, 0}, OFPRAW_OFPT10_PORT_MOD, 0 },
 };
 static struct raw_instance ofpraw_ofpt11_port_mod_instances[] = {
-    { {0, NULL}, {2, 16, 0, 0x0, 0}, OFPRAW_OFPT11_PORT_MOD, 0 },
-    { {0, NULL}, {3, 16, 0, 0x0, 0}, OFPRAW_OFPT11_PORT_MOD, 0 },
-    { {0, NULL}, {4, 16, 0, 0x0, 0}, OFPRAW_OFPT11_PORT_MOD, 0 },
+    { {0, NULL}, {2, 17, 0, 0x0, 0}, OFPRAW_OFPT11_PORT_MOD, 0 },
+    { {0, NULL}, {3, 17, 0, 0x0, 0}, OFPRAW_OFPT11_PORT_MOD, 0 },
+    { {0, NULL}, {4, 17, 0, 0x0, 0}, OFPRAW_OFPT11_PORT_MOD, 0 },
 };
 static struct raw_instance ofpraw_ofpt14_port_mod_instances[] = {
-    { {0, NULL}, {5, 16, 0, 0x0, 0}, OFPRAW_OFPT14_PORT_MOD, 0 },
-    { {0, NULL}, {6, 16, 0, 0x0, 0}, OFPRAW_OFPT14_PORT_MOD, 0 },
-    { {0, NULL}, {7, 16, 0, 0x0, 0}, OFPRAW_OFPT14_PORT_MOD, 0 },
+    { {0, NULL}, {5, 17, 0, 0x0, 0}, OFPRAW_OFPT14_PORT_MOD, 0 },
+    { {0, NULL}, {6, 17, 0, 0x0, 0}, OFPRAW_OFPT14_PORT_MOD, 0 },
+    { {0, NULL}, {7, 17, 0, 0x0, 0}, OFPRAW_OFPT14_PORT_MOD, 0 },
 };
 static struct raw_instance ofpraw_ofpt11_table_mod_instances[] = {
-    { {0, NULL}, {2, 17, 0, 0x0, 0}, OFPRAW_OFPT11_TABLE_MOD, 0 },
-    { {0, NULL}, {3, 17, 0, 0x0, 0}, OFPRAW_OFPT11_TABLE_MOD, 0 },
-    { {0, NULL}, {4, 17, 0, 0x0, 0}, OFPRAW_OFPT11_TABLE_MOD, 0 },
+    { {0, NULL}, {2, 18, 0, 0x0, 0}, OFPRAW_OFPT11_TABLE_MOD, 0 },
+    { {0, NULL}, {3, 18, 0, 0x0, 0}, OFPRAW_OFPT11_TABLE_MOD, 0 },
+    { {0, NULL}, {4, 18, 0, 0x0, 0}, OFPRAW_OFPT11_TABLE_MOD, 0 },
 };
 static struct raw_instance ofpraw_ofpt14_table_mod_instances[] = {
-    { {0, NULL}, {5, 17, 0, 0x0, 0}, OFPRAW_OFPT14_TABLE_MOD, 0 },
-    { {0, NULL}, {6, 17, 0, 0x0, 0}, OFPRAW_OFPT14_TABLE_MOD, 0 },
-    { {0, NULL}, {7, 17, 0, 0x0, 0}, OFPRAW_OFPT14_TABLE_MOD, 0 },
+    { {0, NULL}, {5, 18, 0, 0x0, 0}, OFPRAW_OFPT14_TABLE_MOD, 0 },
+    { {0, NULL}, {6, 18, 0, 0x0, 0}, OFPRAW_OFPT14_TABLE_MOD, 0 },
+    { {0, NULL}, {7, 18, 0, 0x0, 0}, OFPRAW_OFPT14_TABLE_MOD, 0 },
 };
 static struct raw_instance ofpraw_ofpt10_barrier_request_instances[] = {
-    { {0, NULL}, {1, 18, 0, 0x0, 0}, OFPRAW_OFPT10_BARRIER_REQUEST, 0 },
+    { {0, NULL}, {1, 40, 0, 0x0, 0}, OFPRAW_OFPT10_BARRIER_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpt11_barrier_request_instances[] = {
     { {0, NULL}, {2, 20, 0, 0x0, 0}, OFPRAW_OFPT11_BARRIER_REQUEST, 0 },
@@ -1363,312 +1363,312 @@ static struct raw_instance ofpraw_onft13_bundle_add_message_instances[] = {
     { {0, NULL}, {4, 4, 0, 0x4f4e4600, 2301}, OFPRAW_ONFT13_BUNDLE_ADD_MESSAGE, 0 },
 };
 static struct raw_instance ofpraw_ofpst_desc_request_instances[] = {
-    { {0, NULL}, {1, 16, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
-    { {0, NULL}, {2, 18, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
-    { {0, NULL}, {3, 18, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
+    { {0, NULL}, {2, 38, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst_desc_reply_instances[] = {
-    { {0, NULL}, {1, 17, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
-    { {0, NULL}, {2, 19, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
-    { {0, NULL}, {3, 19, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
-    { {0, NULL}, {4, 19, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
-    { {0, NULL}, {5, 19, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
-    { {0, NULL}, {6, 19, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
-    { {0, NULL}, {7, 19, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
+    { {0, NULL}, {1, 37, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
+    { {0, NULL}, {2, 39, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
+    { {0, NULL}, {3, 39, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
+    { {0, NULL}, {4, 39, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
+    { {0, NULL}, {5, 39, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
+    { {0, NULL}, {6, 39, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
+    { {0, NULL}, {7, 39, 0, 0x0, 0}, OFPRAW_OFPST_DESC_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst10_flow_request_instances[] = {
-    { {0, NULL}, {1, 16, 1, 0x0, 0}, OFPRAW_OFPST10_FLOW_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 1, 0x0, 0}, OFPRAW_OFPST10_FLOW_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_flow_request_instances[] = {
-    { {0, NULL}, {2, 18, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
-    { {0, NULL}, {3, 18, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
+    { {0, NULL}, {2, 38, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_nxst_flow_request_instances[] = {
-    { {0, NULL}, {1, 16, 65535, 0x2320, 0}, OFPRAW_NXST_FLOW_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 65535, 0x2320, 0}, OFPRAW_NXST_FLOW_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst10_flow_reply_instances[] = {
-    { {0, NULL}, {1, 17, 1, 0x0, 0}, OFPRAW_OFPST10_FLOW_REPLY, 0 },
+    { {0, NULL}, {1, 37, 1, 0x0, 0}, OFPRAW_OFPST10_FLOW_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_flow_reply_instances[] = {
-    { {0, NULL}, {2, 19, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REPLY, 0 },
-    { {0, NULL}, {3, 19, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REPLY, 0 },
+    { {0, NULL}, {2, 39, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REPLY, 0 },
+    { {0, NULL}, {3, 39, 1, 0x0, 0}, OFPRAW_OFPST11_FLOW_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_flow_reply_instances[] = {
-    { {0, NULL}, {4, 19, 1, 0x0, 0}, OFPRAW_OFPST13_FLOW_REPLY, 0 },
-    { {0, NULL}, {5, 19, 1, 0x0, 0}, OFPRAW_OFPST13_FLOW_REPLY, 0 },
-    { {0, NULL}, {6, 19, 1, 0x0, 0}, OFPRAW_OFPST13_FLOW_REPLY, 0 },
-    { {0, NULL}, {7, 19, 1, 0x0, 0}, OFPRAW_OFPST13_FLOW_REPLY, 0 },
+    { {0, NULL}, {4, 39, 1, 0x0, 0}, OFPRAW_OFPST13_FLOW_REPLY, 0 },
+    { {0, NULL}, {5, 39, 1, 0x0, 0}, OFPRAW_OFPST13_FLOW_REPLY, 0 },
+    { {0, NULL}, {6, 39, 1, 0x0, 0}, OFPRAW_OFPST13_FLOW_REPLY, 0 },
+    { {0, NULL}, {7, 39, 1, 0x0, 0}, OFPRAW_OFPST13_FLOW_REPLY, 0 },
 };
 static struct raw_instance ofpraw_nxst_flow_reply_instances[] = {
-    { {0, NULL}, {1, 17, 65535, 0x2320, 0}, OFPRAW_NXST_FLOW_REPLY, 0 },
+    { {0, NULL}, {1, 37, 65535, 0x2320, 0}, OFPRAW_NXST_FLOW_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst10_aggregate_request_instances[] = {
-    { {0, NULL}, {1, 16, 2, 0x0, 0}, OFPRAW_OFPST10_AGGREGATE_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 2, 0x0, 0}, OFPRAW_OFPST10_AGGREGATE_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_aggregate_request_instances[] = {
-    { {0, NULL}, {2, 18, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
-    { {0, NULL}, {3, 18, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
+    { {0, NULL}, {2, 38, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 2, 0x0, 0}, OFPRAW_OFPST11_AGGREGATE_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_nxst_aggregate_request_instances[] = {
-    { {0, NULL}, {1, 16, 65535, 0x2320, 1}, OFPRAW_NXST_AGGREGATE_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 65535, 0x2320, 1}, OFPRAW_NXST_AGGREGATE_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst_aggregate_reply_instances[] = {
-    { {0, NULL}, {1, 17, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
-    { {0, NULL}, {2, 19, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
-    { {0, NULL}, {3, 19, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
-    { {0, NULL}, {4, 19, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
-    { {0, NULL}, {5, 19, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
-    { {0, NULL}, {6, 19, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
-    { {0, NULL}, {7, 19, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
+    { {0, NULL}, {1, 37, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
+    { {0, NULL}, {2, 39, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
+    { {0, NULL}, {3, 39, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
+    { {0, NULL}, {4, 39, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
+    { {0, NULL}, {5, 39, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
+    { {0, NULL}, {6, 39, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
+    { {0, NULL}, {7, 39, 2, 0x0, 0}, OFPRAW_OFPST_AGGREGATE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_nxst_aggregate_reply_instances[] = {
-    { {0, NULL}, {1, 17, 65535, 0x2320, 1}, OFPRAW_NXST_AGGREGATE_REPLY, 0 },
+    { {0, NULL}, {1, 37, 65535, 0x2320, 1}, OFPRAW_NXST_AGGREGATE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst_table_request_instances[] = {
-    { {0, NULL}, {1, 16, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
-    { {0, NULL}, {2, 18, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
-    { {0, NULL}, {3, 18, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
+    { {0, NULL}, {2, 38, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 3, 0x0, 0}, OFPRAW_OFPST_TABLE_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst10_table_reply_instances[] = {
-    { {0, NULL}, {1, 17, 3, 0x0, 0}, OFPRAW_OFPST10_TABLE_REPLY, 0 },
+    { {0, NULL}, {1, 37, 3, 0x0, 0}, OFPRAW_OFPST10_TABLE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_table_reply_instances[] = {
-    { {0, NULL}, {2, 19, 3, 0x0, 0}, OFPRAW_OFPST11_TABLE_REPLY, 0 },
+    { {0, NULL}, {2, 39, 3, 0x0, 0}, OFPRAW_OFPST11_TABLE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst12_table_reply_instances[] = {
-    { {0, NULL}, {3, 19, 3, 0x0, 0}, OFPRAW_OFPST12_TABLE_REPLY, 0 },
+    { {0, NULL}, {3, 39, 3, 0x0, 0}, OFPRAW_OFPST12_TABLE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_table_reply_instances[] = {
-    { {0, NULL}, {4, 19, 3, 0x0, 0}, OFPRAW_OFPST13_TABLE_REPLY, 0 },
-    { {0, NULL}, {5, 19, 3, 0x0, 0}, OFPRAW_OFPST13_TABLE_REPLY, 0 },
-    { {0, NULL}, {6, 19, 3, 0x0, 0}, OFPRAW_OFPST13_TABLE_REPLY, 0 },
-    { {0, NULL}, {7, 19, 3, 0x0, 0}, OFPRAW_OFPST13_TABLE_REPLY, 0 },
+    { {0, NULL}, {4, 39, 3, 0x0, 0}, OFPRAW_OFPST13_TABLE_REPLY, 0 },
+    { {0, NULL}, {5, 39, 3, 0x0, 0}, OFPRAW_OFPST13_TABLE_REPLY, 0 },
+    { {0, NULL}, {6, 39, 3, 0x0, 0}, OFPRAW_OFPST13_TABLE_REPLY, 0 },
+    { {0, NULL}, {7, 39, 3, 0x0, 0}, OFPRAW_OFPST13_TABLE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst10_port_request_instances[] = {
-    { {0, NULL}, {1, 16, 4, 0x0, 0}, OFPRAW_OFPST10_PORT_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 4, 0x0, 0}, OFPRAW_OFPST10_PORT_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_port_request_instances[] = {
-    { {0, NULL}, {2, 18, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
-    { {0, NULL}, {3, 18, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
+    { {0, NULL}, {2, 38, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst10_port_reply_instances[] = {
-    { {0, NULL}, {1, 17, 4, 0x0, 0}, OFPRAW_OFPST10_PORT_REPLY, 0 },
+    { {0, NULL}, {1, 37, 4, 0x0, 0}, OFPRAW_OFPST10_PORT_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_port_reply_instances[] = {
-    { {0, NULL}, {2, 19, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REPLY, 0 },
-    { {0, NULL}, {3, 19, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REPLY, 0 },
+    { {0, NULL}, {2, 39, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REPLY, 0 },
+    { {0, NULL}, {3, 39, 4, 0x0, 0}, OFPRAW_OFPST11_PORT_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_port_reply_instances[] = {
-    { {0, NULL}, {4, 19, 4, 0x0, 0}, OFPRAW_OFPST13_PORT_REPLY, 0 },
+    { {0, NULL}, {4, 39, 4, 0x0, 0}, OFPRAW_OFPST13_PORT_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst14_port_reply_instances[] = {
-    { {0, NULL}, {5, 19, 4, 0x0, 0}, OFPRAW_OFPST14_PORT_REPLY, 0 },
-    { {0, NULL}, {6, 19, 4, 0x0, 0}, OFPRAW_OFPST14_PORT_REPLY, 0 },
-    { {0, NULL}, {7, 19, 4, 0x0, 0}, OFPRAW_OFPST14_PORT_REPLY, 0 },
+    { {0, NULL}, {5, 39, 4, 0x0, 0}, OFPRAW_OFPST14_PORT_REPLY, 0 },
+    { {0, NULL}, {6, 39, 4, 0x0, 0}, OFPRAW_OFPST14_PORT_REPLY, 0 },
+    { {0, NULL}, {7, 39, 4, 0x0, 0}, OFPRAW_OFPST14_PORT_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst10_queue_request_instances[] = {
-    { {0, NULL}, {1, 16, 5, 0x0, 0}, OFPRAW_OFPST10_QUEUE_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 5, 0x0, 0}, OFPRAW_OFPST10_QUEUE_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_queue_request_instances[] = {
-    { {0, NULL}, {2, 18, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
-    { {0, NULL}, {3, 18, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
+    { {0, NULL}, {2, 38, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst10_queue_reply_instances[] = {
-    { {0, NULL}, {1, 17, 5, 0x0, 0}, OFPRAW_OFPST10_QUEUE_REPLY, 0 },
+    { {0, NULL}, {1, 37, 5, 0x0, 0}, OFPRAW_OFPST10_QUEUE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_queue_reply_instances[] = {
-    { {0, NULL}, {2, 19, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REPLY, 0 },
-    { {0, NULL}, {3, 19, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REPLY, 0 },
+    { {0, NULL}, {2, 39, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REPLY, 0 },
+    { {0, NULL}, {3, 39, 5, 0x0, 0}, OFPRAW_OFPST11_QUEUE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_queue_reply_instances[] = {
-    { {0, NULL}, {4, 19, 5, 0x0, 0}, OFPRAW_OFPST13_QUEUE_REPLY, 0 },
+    { {0, NULL}, {4, 39, 5, 0x0, 0}, OFPRAW_OFPST13_QUEUE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst14_queue_reply_instances[] = {
-    { {0, NULL}, {5, 19, 5, 0x0, 0}, OFPRAW_OFPST14_QUEUE_REPLY, 0 },
-    { {0, NULL}, {6, 19, 5, 0x0, 0}, OFPRAW_OFPST14_QUEUE_REPLY, 0 },
-    { {0, NULL}, {7, 19, 5, 0x0, 0}, OFPRAW_OFPST14_QUEUE_REPLY, 0 },
+    { {0, NULL}, {5, 39, 5, 0x0, 0}, OFPRAW_OFPST14_QUEUE_REPLY, 0 },
+    { {0, NULL}, {6, 39, 5, 0x0, 0}, OFPRAW_OFPST14_QUEUE_REPLY, 0 },
+    { {0, NULL}, {7, 39, 5, 0x0, 0}, OFPRAW_OFPST14_QUEUE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_group_request_instances[] = {
-    { {0, NULL}, {2, 18, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
-    { {0, NULL}, {3, 18, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
+    { {0, NULL}, {2, 38, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_group_reply_instances[] = {
-    { {0, NULL}, {2, 19, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REPLY, 0 },
-    { {0, NULL}, {3, 19, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REPLY, 0 },
+    { {0, NULL}, {2, 39, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REPLY, 0 },
+    { {0, NULL}, {3, 39, 6, 0x0, 0}, OFPRAW_OFPST11_GROUP_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_group_reply_instances[] = {
-    { {0, NULL}, {4, 19, 6, 0x0, 0}, OFPRAW_OFPST13_GROUP_REPLY, 0 },
-    { {0, NULL}, {5, 19, 6, 0x0, 0}, OFPRAW_OFPST13_GROUP_REPLY, 0 },
-    { {0, NULL}, {6, 19, 6, 0x0, 0}, OFPRAW_OFPST13_GROUP_REPLY, 0 },
-    { {0, NULL}, {7, 19, 6, 0x0, 0}, OFPRAW_OFPST13_GROUP_REPLY, 0 },
+    { {0, NULL}, {4, 39, 6, 0x0, 0}, OFPRAW_OFPST13_GROUP_REPLY, 0 },
+    { {0, NULL}, {5, 39, 6, 0x0, 0}, OFPRAW_OFPST13_GROUP_REPLY, 0 },
+    { {0, NULL}, {6, 39, 6, 0x0, 0}, OFPRAW_OFPST13_GROUP_REPLY, 0 },
+    { {0, NULL}, {7, 39, 6, 0x0, 0}, OFPRAW_OFPST13_GROUP_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_group_desc_request_instances[] = {
-    { {0, NULL}, {2, 18, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REQUEST, 0 },
-    { {0, NULL}, {3, 18, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REQUEST, 0 },
+    { {0, NULL}, {2, 38, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst15_group_desc_request_instances[] = {
-    { {0, NULL}, {6, 18, 7, 0x0, 0}, OFPRAW_OFPST15_GROUP_DESC_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 7, 0x0, 0}, OFPRAW_OFPST15_GROUP_DESC_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 7, 0x0, 0}, OFPRAW_OFPST15_GROUP_DESC_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 7, 0x0, 0}, OFPRAW_OFPST15_GROUP_DESC_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_group_desc_reply_instances[] = {
-    { {0, NULL}, {2, 19, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
-    { {0, NULL}, {3, 19, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
-    { {0, NULL}, {4, 19, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
-    { {0, NULL}, {5, 19, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
-    { {0, NULL}, {6, 19, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
-    { {0, NULL}, {7, 19, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
+    { {0, NULL}, {2, 39, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
+    { {0, NULL}, {3, 39, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
+    { {0, NULL}, {4, 39, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
+    { {0, NULL}, {5, 39, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
+    { {0, NULL}, {6, 39, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
+    { {0, NULL}, {7, 39, 7, 0x0, 0}, OFPRAW_OFPST11_GROUP_DESC_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst12_group_features_request_instances[] = {
-    { {0, NULL}, {3, 18, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst12_group_features_reply_instances[] = {
-    { {0, NULL}, {3, 19, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REPLY, 0 },
-    { {0, NULL}, {4, 19, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REPLY, 0 },
-    { {0, NULL}, {5, 19, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REPLY, 0 },
-    { {0, NULL}, {6, 19, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REPLY, 0 },
-    { {0, NULL}, {7, 19, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REPLY, 0 },
+    { {0, NULL}, {3, 39, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REPLY, 0 },
+    { {0, NULL}, {4, 39, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REPLY, 0 },
+    { {0, NULL}, {5, 39, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REPLY, 0 },
+    { {0, NULL}, {6, 39, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REPLY, 0 },
+    { {0, NULL}, {7, 39, 8, 0x0, 0}, OFPRAW_OFPST12_GROUP_FEATURES_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_meter_request_instances[] = {
-    { {0, NULL}, {4, 18, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_meter_reply_instances[] = {
-    { {0, NULL}, {4, 19, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REPLY, 0 },
-    { {0, NULL}, {5, 19, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REPLY, 0 },
-    { {0, NULL}, {6, 19, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REPLY, 0 },
-    { {0, NULL}, {7, 19, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REPLY, 0 },
+    { {0, NULL}, {4, 39, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REPLY, 0 },
+    { {0, NULL}, {5, 39, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REPLY, 0 },
+    { {0, NULL}, {6, 39, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REPLY, 0 },
+    { {0, NULL}, {7, 39, 9, 0x0, 0}, OFPRAW_OFPST13_METER_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_meter_config_request_instances[] = {
-    { {0, NULL}, {4, 18, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_meter_config_reply_instances[] = {
-    { {0, NULL}, {4, 19, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REPLY, 0 },
-    { {0, NULL}, {5, 19, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REPLY, 0 },
-    { {0, NULL}, {6, 19, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REPLY, 0 },
-    { {0, NULL}, {7, 19, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REPLY, 0 },
+    { {0, NULL}, {4, 39, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REPLY, 0 },
+    { {0, NULL}, {5, 39, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REPLY, 0 },
+    { {0, NULL}, {6, 39, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REPLY, 0 },
+    { {0, NULL}, {7, 39, 10, 0x0, 0}, OFPRAW_OFPST13_METER_CONFIG_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_meter_features_request_instances[] = {
-    { {0, NULL}, {4, 18, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_meter_features_reply_instances[] = {
-    { {0, NULL}, {4, 19, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REPLY, 0 },
-    { {0, NULL}, {5, 19, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REPLY, 0 },
-    { {0, NULL}, {6, 19, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REPLY, 0 },
-    { {0, NULL}, {7, 19, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REPLY, 0 },
+    { {0, NULL}, {4, 39, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REPLY, 0 },
+    { {0, NULL}, {5, 39, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REPLY, 0 },
+    { {0, NULL}, {6, 39, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REPLY, 0 },
+    { {0, NULL}, {7, 39, 11, 0x0, 0}, OFPRAW_OFPST13_METER_FEATURES_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_table_features_request_instances[] = {
-    { {0, NULL}, {4, 18, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst13_table_features_reply_instances[] = {
-    { {0, NULL}, {4, 19, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REPLY, 0 },
-    { {0, NULL}, {5, 19, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REPLY, 0 },
-    { {0, NULL}, {6, 19, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REPLY, 0 },
-    { {0, NULL}, {7, 19, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REPLY, 0 },
+    { {0, NULL}, {4, 39, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REPLY, 0 },
+    { {0, NULL}, {5, 39, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REPLY, 0 },
+    { {0, NULL}, {6, 39, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REPLY, 0 },
+    { {0, NULL}, {7, 39, 12, 0x0, 0}, OFPRAW_OFPST13_TABLE_FEATURES_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst14_table_desc_request_instances[] = {
-    { {0, NULL}, {5, 18, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst14_table_desc_reply_instances[] = {
-    { {0, NULL}, {5, 19, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REPLY, 0 },
-    { {0, NULL}, {6, 19, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REPLY, 0 },
-    { {0, NULL}, {7, 19, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REPLY, 0 },
+    { {0, NULL}, {5, 39, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REPLY, 0 },
+    { {0, NULL}, {6, 39, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REPLY, 0 },
+    { {0, NULL}, {7, 39, 14, 0x0, 0}, OFPRAW_OFPST14_TABLE_DESC_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst10_port_desc_request_instances[] = {
-    { {0, NULL}, {1, 16, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REQUEST, 0 },
-    { {0, NULL}, {2, 18, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REQUEST, 0 },
-    { {0, NULL}, {3, 18, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REQUEST, 0 },
+    { {0, NULL}, {2, 38, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst15_port_desc_request_instances[] = {
-    { {0, NULL}, {6, 18, 13, 0x0, 0}, OFPRAW_OFPST15_PORT_DESC_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 13, 0x0, 0}, OFPRAW_OFPST15_PORT_DESC_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 13, 0x0, 0}, OFPRAW_OFPST15_PORT_DESC_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 13, 0x0, 0}, OFPRAW_OFPST15_PORT_DESC_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst10_port_desc_reply_instances[] = {
-    { {0, NULL}, {1, 17, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REPLY, 0 },
+    { {0, NULL}, {1, 37, 13, 0x0, 0}, OFPRAW_OFPST10_PORT_DESC_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst11_port_desc_reply_instances[] = {
-    { {0, NULL}, {2, 19, 13, 0x0, 0}, OFPRAW_OFPST11_PORT_DESC_REPLY, 0 },
-    { {0, NULL}, {3, 19, 13, 0x0, 0}, OFPRAW_OFPST11_PORT_DESC_REPLY, 0 },
-    { {0, NULL}, {4, 19, 13, 0x0, 0}, OFPRAW_OFPST11_PORT_DESC_REPLY, 0 },
+    { {0, NULL}, {2, 39, 13, 0x0, 0}, OFPRAW_OFPST11_PORT_DESC_REPLY, 0 },
+    { {0, NULL}, {3, 39, 13, 0x0, 0}, OFPRAW_OFPST11_PORT_DESC_REPLY, 0 },
+    { {0, NULL}, {4, 39, 13, 0x0, 0}, OFPRAW_OFPST11_PORT_DESC_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst14_port_desc_reply_instances[] = {
-    { {0, NULL}, {5, 19, 13, 0x0, 0}, OFPRAW_OFPST14_PORT_DESC_REPLY, 0 },
-    { {0, NULL}, {6, 19, 13, 0x0, 0}, OFPRAW_OFPST14_PORT_DESC_REPLY, 0 },
-    { {0, NULL}, {7, 19, 13, 0x0, 0}, OFPRAW_OFPST14_PORT_DESC_REPLY, 0 },
+    { {0, NULL}, {5, 39, 13, 0x0, 0}, OFPRAW_OFPST14_PORT_DESC_REPLY, 0 },
+    { {0, NULL}, {6, 39, 13, 0x0, 0}, OFPRAW_OFPST14_PORT_DESC_REPLY, 0 },
+    { {0, NULL}, {7, 39, 13, 0x0, 0}, OFPRAW_OFPST14_PORT_DESC_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst14_queue_desc_request_instances[] = {
-    { {0, NULL}, {5, 18, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst14_queue_desc_reply_instances[] = {
-    { {0, NULL}, {5, 19, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REPLY, 0 },
-    { {0, NULL}, {6, 19, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REPLY, 0 },
-    { {0, NULL}, {7, 19, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REPLY, 0 },
+    { {0, NULL}, {5, 39, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REPLY, 0 },
+    { {0, NULL}, {6, 39, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REPLY, 0 },
+    { {0, NULL}, {7, 39, 15, 0x0, 0}, OFPRAW_OFPST14_QUEUE_DESC_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpst14_flow_monitor_request_instances[] = {
-    { {0, NULL}, {5, 18, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_nxst_flow_monitor_request_instances[] = {
-    { {0, NULL}, {1, 16, 65535, 0x2320, 2}, OFPRAW_NXST_FLOW_MONITOR_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 65535, 0x2320, 2}, OFPRAW_NXST_FLOW_MONITOR_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpst14_flow_monitor_reply_instances[] = {
-    { {0, NULL}, {5, 19, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REPLY, 0 },
-    { {0, NULL}, {6, 19, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REPLY, 0 },
-    { {0, NULL}, {7, 19, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REPLY, 0 },
+    { {0, NULL}, {5, 39, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REPLY, 0 },
+    { {0, NULL}, {6, 39, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REPLY, 0 },
+    { {0, NULL}, {7, 39, 16, 0x0, 0}, OFPRAW_OFPST14_FLOW_MONITOR_REPLY, 0 },
 };
 static struct raw_instance ofpraw_nxst_flow_monitor_reply_instances[] = {
-    { {0, NULL}, {1, 17, 65535, 0x2320, 2}, OFPRAW_NXST_FLOW_MONITOR_REPLY, 0 },
+    { {0, NULL}, {1, 37, 65535, 0x2320, 2}, OFPRAW_NXST_FLOW_MONITOR_REPLY, 0 },
 };
 static struct raw_instance ofpraw_nxt_set_flow_format_instances[] = {
     { {0, NULL}, {1, 4, 0, 0x2320, 12}, OFPRAW_NXT_SET_FLOW_FORMAT, 0 },
@@ -1782,40 +1782,40 @@ static struct raw_instance ofpraw_nxt_ct_flush_zone_instances[] = {
     { {0, NULL}, {7, 4, 0, 0x2320, 29}, OFPRAW_NXT_CT_FLUSH_ZONE, 0 },
 };
 static struct raw_instance ofpraw_nxst_ipfix_bridge_request_instances[] = {
-    { {0, NULL}, {1, 16, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
-    { {0, NULL}, {2, 18, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
-    { {0, NULL}, {3, 18, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
+    { {0, NULL}, {2, 38, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_nxst_ipfix_bridge_reply_instances[] = {
-    { {0, NULL}, {1, 17, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
-    { {0, NULL}, {2, 19, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
-    { {0, NULL}, {3, 19, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
-    { {0, NULL}, {4, 19, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
-    { {0, NULL}, {5, 19, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
-    { {0, NULL}, {6, 19, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
-    { {0, NULL}, {7, 19, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
+    { {0, NULL}, {1, 37, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
+    { {0, NULL}, {2, 39, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
+    { {0, NULL}, {3, 39, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
+    { {0, NULL}, {4, 39, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
+    { {0, NULL}, {5, 39, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
+    { {0, NULL}, {6, 39, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
+    { {0, NULL}, {7, 39, 65535, 0x2320, 3}, OFPRAW_NXST_IPFIX_BRIDGE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_nxst_ipfix_flow_request_instances[] = {
-    { {0, NULL}, {1, 16, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
-    { {0, NULL}, {2, 18, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
-    { {0, NULL}, {3, 18, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
-    { {0, NULL}, {4, 18, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
-    { {0, NULL}, {5, 18, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
-    { {0, NULL}, {6, 18, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
-    { {0, NULL}, {7, 18, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
+    { {0, NULL}, {1, 36, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
+    { {0, NULL}, {2, 38, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
+    { {0, NULL}, {3, 38, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
+    { {0, NULL}, {4, 38, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
+    { {0, NULL}, {5, 38, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
+    { {0, NULL}, {6, 38, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
+    { {0, NULL}, {7, 38, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_nxst_ipfix_flow_reply_instances[] = {
-    { {0, NULL}, {1, 17, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
-    { {0, NULL}, {2, 19, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
-    { {0, NULL}, {3, 19, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
-    { {0, NULL}, {4, 19, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
-    { {0, NULL}, {5, 19, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
-    { {0, NULL}, {6, 19, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
-    { {0, NULL}, {7, 19, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
+    { {0, NULL}, {1, 37, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
+    { {0, NULL}, {2, 39, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
+    { {0, NULL}, {3, 39, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
+    { {0, NULL}, {4, 39, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
+    { {0, NULL}, {5, 39, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
+    { {0, NULL}, {6, 39, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
+    { {0, NULL}, {7, 39, 65535, 0x2320, 4}, OFPRAW_NXST_IPFIX_FLOW_REPLY, 0 },
 };
 
 static struct raw_info raw_infos[] = {

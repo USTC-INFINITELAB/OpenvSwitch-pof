@@ -8004,6 +8004,7 @@ handle_openflow__(struct ofconn *ofconn, const struct ofpbuf *msg)
     case OFPTYPE_ERROR:
     case OFPTYPE_FEATURES_REPLY:
     case OFPTYPE_GET_CONFIG_REPLY:
+    case OFPTYPE_RESOURCE_REPORT:
     case OFPTYPE_PACKET_IN:
     case OFPTYPE_FLOW_REMOVED:
     case OFPTYPE_PORT_STATUS:

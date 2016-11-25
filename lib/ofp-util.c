@@ -4767,10 +4767,10 @@ ofputil_encode_flow_table_resource(enum ofputil_protocol protocol, ovs_be32 xid)
     ofts->meter_num = htonl((uint32_t)1024);
     ofts->resourceType = 0;
     ofts->slotID = htons((uint16_t)0);
-    ofts->type0 = 0;
-    ofts->type1 = 1;
-    ofts->type2 = 2;
-    ofts->type3 = 3;
+    ofts->tbl_rsc_desc[0].type=0;
+    ofts->tbl_rsc_desc[1].type=1;
+    ofts->tbl_rsc_desc[2].type=2;
+    ofts->tbl_rsc_desc[3].type=3;
     return msg;
 }
 
@@ -5848,7 +5848,7 @@ ofputil_decode_table_mod(const struct ofp_header *oh,
         const struct ofp11_table_mod *otm = b.data;
 
         pm->table_id = otm->table_id;
-        pm->miss = ofputil_decode_table_miss(otm->config, oh->version);
+        pm->miss = ofputil_decode_table_miss(htonl(0), oh->version);
     } else if (raw == OFPRAW_OFPT14_TABLE_MOD) {
         const struct ofp14_table_mod *otm = ofpbuf_pull(&b, sizeof *otm);
 
@@ -5915,8 +5915,8 @@ ofputil_encode_table_mod(const struct ofputil_table_mod *tm,
         b = ofpraw_alloc(OFPRAW_OFPT11_TABLE_MOD, ofp_version, 0);
         otm = ofpbuf_put_zeros(b, sizeof *otm);
         otm->table_id = tm->table_id;
-        otm->config = ofputil_encode_table_config(tm->miss, tm->eviction,
-                                                  tm->vacancy, ofp_version);
+        /*otm->config = ofputil_encode_table_config(tm->miss, tm->eviction,
+                                                  tm->vacancy, ofp_version);sqy*/
         break;
     }
     case OFP14_VERSION:
@@ -10006,6 +10006,7 @@ ofputil_is_bundlable(enum ofptype type)
     case OFPTYPE_FEATURES_REQUEST:
     case OFPTYPE_GET_CONFIG_REQUEST:
     case OFPTYPE_SET_CONFIG:
+    case OFPTYPE_RESOURCE_REPORT:
     case OFPTYPE_BARRIER_REQUEST:
     case OFPTYPE_ROLE_REQUEST:
     case OFPTYPE_ECHO_REPLY:
