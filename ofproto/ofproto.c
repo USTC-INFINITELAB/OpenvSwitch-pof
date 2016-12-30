@@ -256,6 +256,11 @@ static enum ofperr ofproto_flow_mod_init(struct ofproto *,
                                          const struct ofputil_flow_mod *fm,
                                          struct rule *)
     OVS_EXCLUDED(ofproto_mutex);
+static enum ofperr ofproto_pof_flow_mod_init(struct ofproto *,
+                                         struct ofproto_flow_mod *,
+                                         const struct ofputil_pof_flow_mod *fm,
+                                         struct rule *)
+    OVS_EXCLUDED(ofproto_mutex);
 static enum ofperr ofproto_flow_mod_start(struct ofproto *,
                                           struct ofproto_flow_mod *)
     OVS_REQUIRES(ofproto_mutex);
@@ -268,6 +273,10 @@ static void ofproto_flow_mod_finish(struct ofproto *,
     OVS_REQUIRES(ofproto_mutex);
 static enum ofperr handle_flow_mod__(struct ofproto *,
                                      const struct ofputil_flow_mod *,
+                                     const struct openflow_mod_requester *)
+    OVS_EXCLUDED(ofproto_mutex);
+static enum ofperr handle_flow_mod_pof__(struct ofproto *,
+                                     const struct ofputil_pof_flow_mod *,
                                      const struct openflow_mod_requester *)
     OVS_EXCLUDED(ofproto_mutex);
 static void calc_duration(long long int start, long long int now,
@@ -4703,6 +4712,54 @@ get_conjunctions(const struct ofputil_flow_mod *fm,
     *n_conjsp = n_conjs;
 }
 
+static enum ofperr
+add_pof_flow_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
+              const struct ofputil_pof_flow_mod *fm)
+    OVS_EXCLUDED(ofproto_mutex)
+{
+    struct oftable *table;
+    struct cls_rule cr;
+    uint8_t table_id;
+    enum ofperr error;
+
+    if (!check_table_id(ofproto, fm->table_id)) {
+        return OFPERR_OFPBRC_BAD_TABLE_ID;
+    }
+
+    /* Pick table. */
+    if (fm->table_id == 0xff) {
+            table_id = 0;
+    } else if (fm->table_id < ofproto->n_tables) {
+        table_id = fm->table_id;
+    } else {
+        return OFPERR_OFPBRC_BAD_TABLE_ID;
+    }
+
+    table = &ofproto->tables[table_id];
+    if (table->flags & OFTABLE_READONLY
+        && !(fm->flags & OFPUTIL_FF_NO_READONLY)) {
+        return OFPERR_OFPBRC_EPERM;
+    }
+
+    if (!ofm->temp_rule) {
+        cls_rule_init(&cr, &fm->match, fm->priority);
+
+        /* Allocate new rule.  Destroys 'cr'. */
+        error = ofproto_rule_create(ofproto, &cr, table - ofproto->tables,
+                                    fm->new_cookie, fm->idle_timeout,
+                                    fm->hard_timeout, fm->flags,
+                                    fm->importance, fm->ofpacts,
+                                    fm->ofpacts_len, &ofm->temp_rule);
+        if (error) {
+            return error;
+        }
+
+        get_conjunctions(fm, &ofm->conjs, &ofm->n_conjs);
+    }
+    return 0;
+}
+
+
 /* add_flow_init(), add_flow_start(), add_flow_revert(), and add_flow_finish()
  * implement OFPFC_ADD and the cases for OFPFC_MODIFY and OFPFC_MODIFY_STRICT
  * in which no matching flow already exists in the flow table.
@@ -5342,6 +5399,24 @@ modify_flows_start__(struct ofproto *ofproto, struct ofproto_flow_mod *ofm)
 }
 
 static enum ofperr
+modify_pof_flows_init_loose(struct ofproto *ofproto,
+                        struct ofproto_flow_mod *ofm,
+                        const struct ofputil_pof_flow_mod *fm)
+    OVS_EXCLUDED(ofproto_mutex)
+{
+    rule_criteria_init(&ofm->criteria, fm->table_id, &fm->match, 0,
+                       OVS_VERSION_MAX, fm->cookie, fm->cookie_mask, OFPP_ANY,
+                       OFPG_ANY);
+    rule_criteria_require_rw(&ofm->criteria,
+                             (fm->flags & OFPUTIL_FF_NO_READONLY) != 0);
+    /* Must create a new flow in advance for the case that no matches are
+     * found.  Also used for template for multiple modified flows. */
+    add_pof_flow_init(ofproto, ofm, fm);
+
+    return 0;
+}
+
+static enum ofperr
 modify_flows_init_loose(struct ofproto *ofproto,
                         struct ofproto_flow_mod *ofm,
                         const struct ofputil_flow_mod *fm)
@@ -5556,6 +5631,20 @@ delete_flows__(struct rule_collection *rules,
 }
 
 static enum ofperr
+delete_pof_flows_init_loose(struct ofproto *ofproto OVS_UNUSED,
+                        struct ofproto_flow_mod *ofm,
+                        const struct ofputil_pof_flow_mod *fm)
+    OVS_EXCLUDED(ofproto_mutex)
+{
+    rule_criteria_init(&ofm->criteria, fm->table_id, &fm->match, 0,
+                       OVS_VERSION_MAX, fm->cookie, fm->cookie_mask,
+                       fm->out_port, fm->out_group);
+    rule_criteria_require_rw(&ofm->criteria,
+                             (fm->flags & OFPUTIL_FF_NO_READONLY) != 0);
+    return 0;
+}
+
+static enum ofperr
 delete_flows_init_loose(struct ofproto *ofproto OVS_UNUSED,
                         struct ofproto_flow_mod *ofm,
                         const struct ofputil_flow_mod *fm)
@@ -5745,7 +5834,7 @@ handle_flow_mod(struct ofconn *ofconn, const struct ofp_header *oh)
     OVS_EXCLUDED(ofproto_mutex)
 {
     struct ofproto *ofproto = ofconn_get_ofproto(ofconn);
-    struct ofputil_flow_mod fm;
+    struct ofputil_pof_flow_mod fm;
     uint64_t ofpacts_stub[1024 / 8];
     struct ofpbuf ofpacts;
     enum ofperr error;
@@ -5756,17 +5845,38 @@ handle_flow_mod(struct ofconn *ofconn, const struct ofp_header *oh)
     }
 
     ofpbuf_use_stub(&ofpacts, ofpacts_stub, sizeof ofpacts_stub);
-    error = ofputil_decode_flow_mod(&fm, oh, ofconn_get_protocol(ofconn),
+    error = ofputil_decode_flow_mod_pof(&fm, oh, ofconn_get_protocol(ofconn),
                                     ofproto_get_tun_tab(ofproto), &ofpacts,
                                     u16_to_ofp(ofproto->max_ports),
                                     ofproto->n_tables);
     if (!error) {
         struct openflow_mod_requester req = { ofconn, oh };
-        error = handle_flow_mod__(ofproto, &fm, &req);
+        VLOG_INFO("+++++++++++sqy handle_flow_mod: before handle_flow_mod_pof__");
+        error = handle_flow_mod_pof__(ofproto, &fm, &req);
+        VLOG_INFO("+++++++++++sqy handle_flow_mod: after handle_flow_mod_pof__");
     }
 
     ofpbuf_uninit(&ofpacts);
     return error;
+}
+
+static enum ofperr
+handle_flow_mod_pof__(struct ofproto *ofproto, const struct ofputil_pof_flow_mod *fm,
+                  const struct openflow_mod_requester *req)
+    OVS_EXCLUDED(ofproto_mutex)
+{
+    struct ofproto_flow_mod ofm;
+    enum ofperr error;
+
+    error = ofproto_pof_flow_mod_init(ofproto, &ofm, fm, NULL);
+    if (error) {
+        return error;
+    }
+
+
+    /* todo sqy */
+
+    return 0;
 }
 
 static enum ofperr
@@ -7366,6 +7476,55 @@ ofproto_flow_mod_uninit(struct ofproto_flow_mod *ofm)
         ofm->conjs = NULL;
         ofm->n_conjs = 0;
     }
+}
+
+static enum ofperr
+ofproto_pof_flow_mod_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
+                      const struct ofputil_pof_flow_mod *fm, struct rule *rule)
+    OVS_EXCLUDED(ofproto_mutex)
+{
+    enum ofperr error;
+
+    /* Forward flow mod fields we need later. */
+    ofm->command = fm->command;
+    ofm->modify_cookie = fm->modify_cookie;
+
+    ofm->modify_may_add_flow = (fm->new_cookie != OVS_BE64_MAX
+                                && fm->cookie_mask == htonll(0));
+
+    /* Initialize state needed by ofproto_flow_mod_uninit(). */
+    ofm->temp_rule = rule;
+    ofm->criteria.version = OVS_VERSION_NOT_REMOVED;
+    ofm->conjs = NULL;
+    ofm->n_conjs = 0;
+
+    bool check_buffer_id = false;
+    VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: before add_pof_flow_init");
+
+    /*switch (ofm->command) {
+    case OFPFC_ADD:
+        error = add_pof_flow_init(ofproto, ofm, fm);
+        break;
+    case OFPFC_MODIFY:
+        check_buffer_id = true;
+        error = modify_pof_flows_init_loose(ofproto, ofm, fm);
+        break;
+    case OFPFC_DELETE:
+        error = delete_pof_flows_init_loose(ofproto, ofm, fm);
+        break;
+    default:
+        error = OFPERR_OFPFMFC_BAD_COMMAND;
+        break;
+    }
+    if (!error && check_buffer_id && fm->buffer_id != UINT32_MAX) {
+        error = OFPERR_OFPBRC_BUFFER_UNKNOWN;
+    }
+
+    if (error) {
+        ofproto_flow_mod_uninit(ofm);
+    }*/
+    VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: after add_pof_flow_init");
+    return 0;
 }
 
 static enum ofperr

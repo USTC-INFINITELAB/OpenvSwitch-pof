@@ -61,6 +61,18 @@ const char *flow_tun_flag_to_string(uint32_t flags);
 /* Maximum number of supported MPLS labels. */
 #define FLOW_MAX_MPLS_LABELS 3
 
+struct pof_flow {
+    ovs_be16 field_id;  /*0xffff means metadata,
+                          0x8XXX means from table parameter,
+                          otherwise means from packet data. */
+    ovs_be16 offset;  /*bit unit*/
+    ovs_be16 len;    /*length in bit unit*/
+    uint8_t pad[2];   /*8 bytes aligned*/
+
+    uint8_t value[POF_MAX_FIELD_LENGTH_IN_BYTE];
+    uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];
+};
+
 /*
  * A flow in the network.
  *

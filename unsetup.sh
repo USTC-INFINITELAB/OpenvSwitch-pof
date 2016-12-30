@@ -16,12 +16,12 @@ cd  /usr/src/dpdk-16.07
 cd /usr/src/OpenvSwitch-pof
 
 ovs-vsctl del-br br0
-ovs-appctl -t ovsdb-server exit
-ovs-appctl -t ovs-vswitchd exit
+#ovs-appctl -t ovsdb-server exit
+#ovs-appctl -t ovs-vswitchd exit
 
 #rmmod openvswitch
-#killall ovsdb-server
-#killall ovs-vswitchd
+killall ovsdb-server
+killall ovs-vswitchd
 rm /usr/local/etc/openvswitch/conf.db
 sleep 1s
 umount -t hugetlbfs none /dev/hugepages

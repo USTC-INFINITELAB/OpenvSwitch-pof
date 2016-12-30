@@ -365,7 +365,7 @@ void classifier_destroy(struct classifier *);
 bool classifier_set_prefix_fields(struct classifier *,
                                   const enum mf_field_id *trie_fields,
                                   unsigned int n_trie_fields);
-
+void pof_cls_rule_init(struct cls_rule *, const struct match_x *, int priority);
 void cls_rule_init(struct cls_rule *, const struct match *, int priority);
 void cls_rule_init_from_minimatch(struct cls_rule *, const struct minimatch *,
                                   int priority);

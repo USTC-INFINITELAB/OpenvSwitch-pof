@@ -119,6 +119,13 @@ enum ofp_version {
 #define OFP_DEFAULT_MISS_SEND_LEN   128
 #define POF_NAME_MAX_LENGTH   64
 #define POF_MAX_MATCH_FIELD_NUM 8
+#define POF_MAX_FIELD_LENGTH_IN_BYTE 16
+/*Define the max instruction length in unit of byte.(8 + POF_MAX_ACTION_NUMBER_PER_INSTRUCTION * (POF_MAX_ACTION_LENGTH + 4))*/
+#define POF_MAX_INSTRUCTION_LENGTH  296
+/*Define the max action number in one instruction.*/
+#define POF_MAX_ACTION_NUMBER_PER_INSTRUCTION 6
+/*Define the max action length in unit of byte.*/
+#define POF_MAX_ACTION_LENGTH 44
 /* Values below this cutoff are 802.3 packets and the two bytes
  * following MAC addresses are used as a frame length.  Otherwise, the
  * two bytes are used as the Ethernet type.

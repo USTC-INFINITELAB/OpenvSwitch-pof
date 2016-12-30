@@ -221,6 +221,21 @@ struct ofp11_match {
 };
 OFP_ASSERT(sizeof(struct ofp11_match) == OFPMT11_STANDARD_LENGTH);
 
+
+struct pof_match_x {
+
+    ovs_be16 field_id;  /*0xffff means metadata,
+                          0x8XXX means from table parameter,
+                          otherwise means from packet data. */
+    ovs_be16 offset;  /*bit unit*/
+    ovs_be16 len;    /*length in bit unit*/
+    uint8_t pad[2];   /*8 bytes aligned*/
+
+    uint8_t value[POF_MAX_FIELD_LENGTH_IN_BYTE];
+    uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];
+};
+OFP_ASSERT(sizeof(struct pof_match_x) == 40);
+
 /* Flow wildcards. */
 enum ofp11_flow_wildcards {
     OFPFW11_IN_PORT     = 1 << 0,  /* Switch input port. */
@@ -261,15 +276,16 @@ enum ofp11_instruction_type {
     OFPIT11_EXPERIMENTER = 0xFFFF  /* Experimenter instruction */
 };
 
-#define OFP11_INSTRUCTION_ALIGN 8
+#define OFP11_INSTRUCTION_ALIGN 304
 
 /* Generic ofp_instruction structure. */
 struct ofp11_instruction {
     ovs_be16 type;              /* Instruction type */
     ovs_be16 len;               /* Length of this struct in bytes. */
     uint8_t pad[4];             /* Align to 64-bits */
+    uint8_t  instruction_data[POF_MAX_INSTRUCTION_LENGTH];
 };
-OFP_ASSERT(sizeof(struct ofp11_instruction) == 8);
+OFP_ASSERT(sizeof(struct ofp11_instruction) == 304);
 
 /* Instruction structure for OFPIT_GOTO_TABLE */
 struct ofp11_instruction_goto_table {
@@ -346,33 +362,54 @@ OFP_ASSERT(sizeof(struct ofp11_table_mod) == 144);
 
 /* Flow setup and teardown (controller -> datapath). */
 struct ofp11_flow_mod {
-    ovs_be64 cookie;             /* Opaque controller-issued identifier. */
-    ovs_be64 cookie_mask;        /* Mask used to restrict the cookie bits
+
+    uint8_t command;
+    uint8_t match_field_num;
+    uint8_t instruction_num;
+    uint8_t pad[1];   /*8 bytes aligned*/
+    ovs_be32 counter_id;
+
+    ovs_be64 cookie;
+    ovs_be64 cookie_mask;
+
+    uint8_t table_id;
+    uint8_t table_type;   /*table type: MM,LPM,EM,DT*/
+    ovs_be16 idle_timeout;
+    ovs_be16 hard_timeout;
+    ovs_be16 priority;
+
+    ovs_be32  index;
+    ovs_be16 slotID;            /* For multiple slots. */
+    uint8_t pad2[2];   /*8 bytes aligned*/
+    struct pof_match_x match[POF_MAX_MATCH_FIELD_NUM];
+
+    /* ovs_be64 cookie;             Opaque controller-issued identifier. */
+    /* ovs_be64 cookie_mask;        Mask used to restrict the cookie bits
                                     that must match when the command is
                                     OFPFC_MODIFY* or OFPFC_DELETE*. A value
                                     of 0 indicates no restriction. */
     /* Flow actions. */
-    uint8_t table_id;            /* ID of the table to put the flow in */
-    uint8_t command;             /* One of OFPFC_*. */
-    ovs_be16 idle_timeout;       /* Idle time before discarding (seconds). */
-    ovs_be16 hard_timeout;       /* Max time before discarding (seconds). */
-    ovs_be16 priority;           /* Priority level of flow entry. */
-    ovs_be32 buffer_id;          /* Buffered packet to apply to (or -1).
+    /* uint8_t table_id;            ID of the table to put the flow in */
+    /*uint8_t command;              One of OFPFC_*. */
+    /* ovs_be16 idle_timeout;       Idle time before discarding (seconds). */
+     /* ovs_be16 hard_timeout;      Max time before discarding (seconds). */
+    /* ovs_be16 priority;           Priority level of flow entry. */
+    /*ovs_be32 buffer_id;           Buffered packet to apply to (or -1).
                                     Not meaningful for OFPFC_DELETE*. */
-    ovs_be32 out_port;           /* For OFPFC_DELETE* commands, require
+    /* ovs_be32 out_port;           For OFPFC_DELETE* commands, require
                                     matching entries to include this as an
                                     output port. A value of OFPP_ANY
                                     indicates no restriction. */
-    ovs_be32 out_group;          /* For OFPFC_DELETE* commands, require
+    /* ovs_be32 out_group;          For OFPFC_DELETE* commands, require
                                     matching entries to include this as an
                                     output group. A value of OFPG_ANY
                                     indicates no restriction. */
-    ovs_be16 flags;              /* One of OFPFF_*. */
-    ovs_be16 importance;         /* Eviction precedence (OF1.4+). */
-    /* Followed by an ofp11_match structure. */
+    /*ovs_be16 flags;               One of OFPFF_*. */
+    /* ovs_be16 importance;         Eviction precedence (OF1.4+). */
+    /* Followed by an pof_match_x structure. */
     /* Followed by an instruction set. */
 };
-OFP_ASSERT(sizeof(struct ofp11_flow_mod) == 40);
+OFP_ASSERT(sizeof(struct ofp11_flow_mod) == 360);
 
 /* Group types. Values in the range [128, 255] are reserved for experimental
  * use. */

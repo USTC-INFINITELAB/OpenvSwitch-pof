@@ -275,6 +275,46 @@ ofputil_match_to_ofp10_match(const struct match *match,
     memset(ofmatch->pad1, '\0', sizeof ofmatch->pad1);
     memset(ofmatch->pad2, '\0', sizeof ofmatch->pad2);
 }
+enum ofperr
+ofputil_pull_pof_match_x(struct ofpbuf *buf,
+                         struct match_x *match, uint16_t *padded_match_len)
+{
+    /*struct ofp11_match_header *omh = buf->data;*/
+    uint16_t match_len;
+    uint8_t i=0;
+
+    /*if (buf->size < sizeof *omh) {
+        return OFPERR_OFPBMC_BAD_LEN;
+    }*/
+
+    match_len = 40*POF_MAX_MATCH_FIELD_NUM;
+
+    struct pof_match_x *om;
+
+    /*VLOG_INFO("%d: match_len; %d: sizeof *om[POF_MAX_MATCH_FIELD_NUM]; %d: buf->size"
+              " control message", match_len, sizeof *om, buf->size);*/
+
+    if (buf->size < match_len) {
+        return OFPERR_OFPBMC_BAD_LEN;
+    }
+    if (padded_match_len) {
+        *padded_match_len = match_len;
+    }
+
+    for(i=0; i<POF_MAX_MATCH_FIELD_NUM; i++){
+        om = ofpbuf_pull(buf, sizeof *om);
+
+        match->flow[i].field_id = om->field_id;
+        match->flow[i].len = om->len;
+        match->flow[i].offset = om->offset;
+        size_t j;
+        for (j = 0; j < ARRAY_SIZE(om->value); j++) {
+            match->flow[i].value[j] = om->value[j] & om->mask[j];
+            match->flow[i].mask[j] = om->mask[j];
+        }
+    }
+    return 0;
+}
 
 enum ofperr
 ofputil_pull_ofp11_match(struct ofpbuf *buf, const struct tun_table *tun_table,
@@ -1556,6 +1596,125 @@ ofputil_encode_flow_mod_flags(enum ofputil_flow_mod_flags flags,
     return htons(raw_flags);
 }
 
+enum ofperr
+ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
+                        const struct ofp_header *oh,
+                        enum ofputil_protocol protocol,
+                        const struct tun_table *tun_table,
+                        struct ofpbuf *ofpacts,
+                        ofp_port_t max_port, uint8_t max_table)
+{
+    ovs_be16 raw_flags;
+    enum ofperr error;
+    struct ofpbuf b = ofpbuf_const_initializer(oh, ntohs(oh->length));
+
+        /* Standard OpenFlow 1.1+ flow_mod. */
+        const struct ofp11_flow_mod *ofm;
+        uint8_t i=0;
+        ofm = ofpbuf_pull(&b, sizeof *oh);
+
+        /*VLOG_INFO("++++++++sqy sizeof *ofm: %d; b.size: %d"
+                      " control message", sizeof *ofm, b.size);*/
+        ofm = ofpbuf_pull(&b, sizeof *ofm);
+
+        /*error = ofputil_pull_pof_match_x(&b, &fm->match, NULL);*/
+
+        for(i=0; i<ofm->match_field_num; i++){
+
+            fm->match.flow[i].field_id = ofm->match[i].field_id;
+            fm->match.flow[i].len = ofm->match[i].len;
+            fm->match.flow[i].offset = ofm->match[i].offset;
+            size_t j;
+            for (j = 0; j < ARRAY_SIZE(ofm->match[i].value); j++) {
+                fm->match.flow[i].value[j] = ofm->match[i].value[j] & ofm->match[i].mask[j];
+                fm->match.flow[i].mask[j] = ofm->match[i].mask[j];
+            }
+        }
+
+        /*VLOG_INFO("ofputil_decode_flow_mod_pof: ofputil_pull_pof_match_x success");*/
+
+        /* Translate the message. */
+        fm->priority = ntohs(ofm->priority);
+        if (ofm->command == OFPFC_ADD
+            || (oh->version == OFP11_VERSION
+                && (ofm->command == OFPFC_MODIFY ||
+                    ofm->command == OFPFC_MODIFY_STRICT)
+                && ofm->cookie_mask == htonll(0))) {
+            /* In OpenFlow 1.1 only, a "modify" or "modify-strict" that does
+             * not match on the cookie is treated as an "add" if there is no
+             * match. */
+            fm->cookie = htonll(0);
+            fm->cookie_mask = htonll(0);
+            fm->new_cookie = ofm->cookie;
+        } else {
+            fm->cookie = ofm->cookie;
+            fm->cookie_mask = ofm->cookie_mask;
+            fm->new_cookie = OVS_BE64_MAX;
+        }
+        fm->modify_cookie = false;
+        fm->command = ofm->command;
+
+        /* Get table ID.
+         *
+         * OF1.1 entirely forbids table_id == OFPTT_ALL.
+         * OF1.2+ allows table_id == OFPTT_ALL only for deletes. */
+        fm->table_id = ofm->table_id;
+        if (fm->table_id == OFPTT_ALL
+            && (oh->version == OFP11_VERSION
+                || (ofm->command != OFPFC_DELETE &&
+                    ofm->command != OFPFC_DELETE_STRICT))) {
+            return OFPERR_OFPFMFC_BAD_TABLE_ID;
+        }
+
+        fm->idle_timeout = ntohs(ofm->idle_timeout);
+        fm->hard_timeout = ntohs(ofm->hard_timeout);
+        if (oh->version >= OFP14_VERSION && ofm->command == OFPFC_ADD) {
+            fm->importance = ntohs(0);/*ofm->importance sqy*/
+        } else {
+            fm->importance = 0;
+        }
+
+        fm->out_group = OFPG_ANY;/*(ofm->command == OFPFC_DELETE ||
+                         ofm->command == OFPFC_DELETE_STRICT
+                         ? ntohl(ofm->out_group)
+                         : OFPG_ANY); sqy*/
+        raw_flags = htons(0);/*ofm->flags;*/
+
+    if (fm->command > OFPFC_DELETE_STRICT) {
+        return OFPERR_OFPFMFC_BAD_COMMAND;
+    }
+
+    VLOG_INFO("+++++++++++sqy ofputil_decode_flow_mod_pof: befoore ofpacts_pull_openflow_instructions");
+    error = ofpacts_pull_openflow_instructions(&b, ofm->instruction_num * OFP11_INSTRUCTION_ALIGN,
+                                               oh->version, ofpacts);
+    if (error) {
+        return error;
+    }
+    fm->ofpacts = ofpacts->data;
+    fm->ofpacts_len = ofpacts->size;
+
+    error = ofputil_decode_flow_mod_flags(raw_flags, fm->command,
+                                          oh->version, &fm->flags);
+    VLOG_INFO("+++++++++++sqy ofputil_decode_flow_mod_pof: after ofputil_decode_flow_mod_flags");
+    if (error) {
+        return error;
+    }
+
+    if (fm->flags & OFPUTIL_FF_EMERG) {
+        /* We do not support the OpenFlow 1.0 emergency flow cache, which
+         * is not required in OpenFlow 1.0.1 and removed from OpenFlow 1.1.
+         *
+         * OpenFlow 1.0 specifies the error code to use when idle_timeout
+         * or hard_timeout is nonzero.  Otherwise, there is no good error
+         * code, so just state that the flow table is full. */
+        return (fm->hard_timeout || fm->idle_timeout
+                ? OFPERR_OFPFMFC_BAD_EMERG_TIMEOUT
+                : OFPERR_OFPFMFC_TABLE_FULL);
+    }
+
+    return 0;
+}
+
 /* Converts an OFPT_FLOW_MOD or NXT_FLOW_MOD message 'oh' into an abstract
  * flow_mod in 'fm'.  Returns 0 if successful, otherwise an OpenFlow error
  * code.
@@ -1624,7 +1783,7 @@ ofputil_decode_flow_mod(struct ofputil_flow_mod *fm,
 
         fm->idle_timeout = ntohs(ofm->idle_timeout);
         fm->hard_timeout = ntohs(ofm->hard_timeout);
-        if (oh->version >= OFP14_VERSION && ofm->command == OFPFC_ADD) {
+        /*if (oh->version >= OFP14_VERSION && ofm->command == OFPFC_ADD) {
             fm->importance = ntohs(ofm->importance);
         } else {
             fm->importance = 0;
@@ -1638,8 +1797,8 @@ ofputil_decode_flow_mod(struct ofputil_flow_mod *fm,
         fm->out_group = (ofm->command == OFPFC_DELETE ||
                          ofm->command == OFPFC_DELETE_STRICT
                          ? ntohl(ofm->out_group)
-                         : OFPG_ANY);
-        raw_flags = ofm->flags;
+                         : OFPG_ANY);*/
+        raw_flags = 0;/*ofm->flags;*/
     } else {
         uint16_t command;
 
@@ -2184,15 +2343,15 @@ ofputil_encode_flow_mod(const struct ofputil_flow_mod *fm,
         ofm->idle_timeout = htons(fm->idle_timeout);
         ofm->hard_timeout = htons(fm->hard_timeout);
         ofm->priority = htons(fm->priority);
-        ofm->buffer_id = htonl(fm->buffer_id);
-        ofm->out_port = ofputil_port_to_ofp11(fm->out_port);
-        ofm->out_group = htonl(fm->out_group);
-        ofm->flags = raw_flags;
-        if (version >= OFP14_VERSION && fm->command == OFPFC_ADD) {
+        /*ofm->buffer_id = htonl(fm->buffer_id);*/
+        /*ofm->out_port = ofputil_port_to_ofp11(fm->out_port); sqy */
+        /*ofm->out_group = htonl(fm->out_group);*/
+        /*ofm->flags = raw_flags;*/
+        /*if (version >= OFP14_VERSION && fm->command == OFPFC_ADD) {
             ofm->importance = htons(fm->importance);
         } else {
             ofm->importance = 0;
-        }
+        }*/
         ofputil_put_ofp11_match(msg, &fm->match, protocol);
         ofpacts_put_openflow_instructions(fm->ofpacts, fm->ofpacts_len, msg,
                                           version);
