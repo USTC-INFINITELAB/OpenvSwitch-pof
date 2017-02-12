@@ -171,6 +171,14 @@ cls_rule_init__(struct cls_rule *rule, unsigned int priority)
     ovsrcu_init(&rule->cls_match, NULL);
 }
 
+
+void
+pof_cls_rule_init(struct cls_rule *rule, const struct match_x *match, int priority)
+{
+    cls_rule_init__(rule, priority);
+    pof_minimatch_init(CONST_CAST(struct minimatch *, &rule->match), match);
+}
+
 /* Initializes 'rule' to match packets specified by 'match' at the given
  * 'priority'.  'match' must satisfy the invariant described in the comment at
  * the definition of struct match.

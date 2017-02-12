@@ -2454,6 +2454,17 @@ flow_compose(struct dp_packet *p, const struct flow *flow)
     }
 }
 
+void
+pof_miniflow_init(struct miniflow *dst, const struct pof_flow src[])
+{
+    uint64_t *dst_u64 = miniflow_values(dst);
+    size_t idx;
+
+    FLOWMAP_FOR_EACH_INDEX(idx, dst->map) {
+        *dst_u64++ = pof_flow_u64_value(src, idx);
+    }
+}
+
 /* Compressed flow. */
 
 /* Completes an initialization of 'dst' as a miniflow copy of 'src' begun by
@@ -2471,6 +2482,18 @@ miniflow_init(struct miniflow *dst, const struct flow *src)
 
     FLOWMAP_FOR_EACH_INDEX(idx, dst->map) {
         *dst_u64++ = flow_u64_value(src, idx);
+    }
+}
+
+void
+pof_miniflow_map_init(struct miniflow *flow, const struct pof_flow src[])
+{
+    /* Initialize map, counting the number of nonzero elements. */
+    flowmap_init(&flow->map);
+    for (size_t i = 0; i < FLOW_U64S; i++) {
+        if (pof_flow_u64_value(src, i)) {
+            flowmap_set(&flow->map, i, 1);
+        }
     }
 }
 
@@ -2604,6 +2627,11 @@ miniflow_equal_flow_in_minimask(const struct miniflow *a, const struct flow *b,
     return true;
 }
 
+void
+pof_minimask_init(struct minimask *mask, const struct pof_flow_wildcards wc[])
+{
+    pof_miniflow_init(&mask->masks, &wc->masks);
+}
 
 void
 minimask_init(struct minimask *mask, const struct flow_wildcards *wc)

@@ -128,6 +128,12 @@ static void eviction_group_add_rule(struct rule *)
 static void eviction_group_remove_rule(struct rule *)
     OVS_REQUIRES(ofproto_mutex);
 
+
+static void pof_rule_criteria_init(struct rule_criteria *, uint8_t table_id,
+                               const struct match_x *match, int priority,
+                               ovs_version_t version,
+                               ovs_be64 cookie, ovs_be64 cookie_mask,
+                               ofp_port_t out_port, uint32_t out_group);
 static void rule_criteria_init(struct rule_criteria *, uint8_t table_id,
                                const struct match *match, int priority,
                                ovs_version_t version,
@@ -4065,6 +4071,34 @@ next_matching_table(const struct ofproto *ofproto,
          (TABLE) != NULL;                                         \
          (TABLE) = next_matching_table(OFPROTO, TABLE, TABLE_ID))
 
+static void
+pof_rule_criteria_init(struct rule_criteria *criteria, uint8_t table_id,
+                   const struct match_x *match, int priority,
+                   ovs_version_t version, ovs_be64 cookie,
+                   ovs_be64 cookie_mask, ofp_port_t out_port,
+                   uint32_t out_group)
+{
+    criteria->table_id = table_id;
+    pof_cls_rule_init(&criteria->cr, match, priority);
+    criteria->version = version;
+    criteria->cookie = cookie;
+    criteria->cookie_mask = cookie_mask;
+    criteria->out_port = out_port;
+    criteria->out_group = out_group;
+
+    /* We ordinarily want to skip hidden rules, but there has to be a way for
+     * code internal to OVS to modify and delete them, so if the criteria
+     * specify a priority that can only be for a hidden flow, then allow hidden
+     * rules to be selected.  (This doesn't allow OpenFlow clients to meddle
+     * with hidden flows because OpenFlow uses only a 16-bit field to specify
+     * priority.) */
+    criteria->include_hidden = priority > UINT16_MAX;
+
+    /* We assume that the criteria are being used to collect flows for reading
+     * but not modification.  Thus, we should collect read-only flows. */
+    criteria->include_readonly = true;
+}
+
 /* Initializes 'criteria' in a straightforward way based on the other
  * parameters.
  *
@@ -4676,6 +4710,43 @@ evict_rules_from_table(struct oftable *table)
 }
 
 static void
+pof_get_conjunctions(const struct ofputil_pof_flow_mod *fm,
+                 struct cls_conjunction **conjsp, size_t *n_conjsp)
+{
+    struct cls_conjunction *conjs = NULL;
+    int n_conjs = 0;
+
+    const struct ofpact *ofpact;
+    OFPACT_FOR_EACH (ofpact, fm->ofpacts, fm->ofpacts_len) {
+        if (ofpact->type == OFPACT_CONJUNCTION) {
+            n_conjs++;
+        } else if (ofpact->type != OFPACT_NOTE) {
+            /* "conjunction" may appear with "note" actions but not with any
+             * other type of actions. */
+            ovs_assert(!n_conjs);
+            break;
+        }
+    }
+    if (n_conjs) {
+        int i = 0;
+
+        conjs = xzalloc(n_conjs * sizeof *conjs);
+        OFPACT_FOR_EACH (ofpact, fm->ofpacts, fm->ofpacts_len) {
+            if (ofpact->type == OFPACT_CONJUNCTION) {
+                struct ofpact_conjunction *oc = ofpact_get_CONJUNCTION(ofpact);
+                conjs[i].clause = oc->clause;
+                conjs[i].n_clauses = oc->n_clauses;
+                conjs[i].id = oc->id;
+                i++;
+            }
+        }
+    }
+
+    *conjsp = conjs;
+    *n_conjsp = n_conjs;
+}
+
+static void
 get_conjunctions(const struct ofputil_flow_mod *fm,
                  struct cls_conjunction **conjsp, size_t *n_conjsp)
 {
@@ -4742,7 +4813,7 @@ add_pof_flow_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
     }
 
     if (!ofm->temp_rule) {
-        cls_rule_init(&cr, &fm->match, fm->priority);
+        pof_cls_rule_init(&cr, &fm->match, fm->priority);
 
         /* Allocate new rule.  Destroys 'cr'. */
         error = ofproto_rule_create(ofproto, &cr, table - ofproto->tables,
@@ -4754,7 +4825,7 @@ add_pof_flow_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
             return error;
         }
 
-        get_conjunctions(fm, &ofm->conjs, &ofm->n_conjs);
+        pof_get_conjunctions(fm, &ofm->conjs, &ofm->n_conjs);
     }
     return 0;
 }
@@ -5404,7 +5475,7 @@ modify_pof_flows_init_loose(struct ofproto *ofproto,
                         const struct ofputil_pof_flow_mod *fm)
     OVS_EXCLUDED(ofproto_mutex)
 {
-    rule_criteria_init(&ofm->criteria, fm->table_id, &fm->match, 0,
+    pof_rule_criteria_init(&ofm->criteria, fm->table_id, &fm->match, 0,
                        OVS_VERSION_MAX, fm->cookie, fm->cookie_mask, OFPP_ANY,
                        OFPG_ANY);
     rule_criteria_require_rw(&ofm->criteria,
@@ -5636,7 +5707,7 @@ delete_pof_flows_init_loose(struct ofproto *ofproto OVS_UNUSED,
                         const struct ofputil_pof_flow_mod *fm)
     OVS_EXCLUDED(ofproto_mutex)
 {
-    rule_criteria_init(&ofm->criteria, fm->table_id, &fm->match, 0,
+    pof_rule_criteria_init(&ofm->criteria, fm->table_id, &fm->match, 0,
                        OVS_VERSION_MAX, fm->cookie, fm->cookie_mask,
                        fm->out_port, fm->out_group);
     rule_criteria_require_rw(&ofm->criteria,
@@ -5873,6 +5944,9 @@ handle_flow_mod_pof__(struct ofproto *ofproto, const struct ofputil_pof_flow_mod
         return error;
     }
 
+    ovs_mutex_lock(&ofproto_mutex);
+    ofm.version = ofproto->tables_version + 1;
+    error = ofproto_flow_mod_start(ofproto, &ofm);
 
     /* todo sqy */
 
@@ -7501,7 +7575,7 @@ ofproto_pof_flow_mod_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
     bool check_buffer_id = false;
     VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: before add_pof_flow_init");
 
-    /*switch (ofm->command) {
+    switch (ofm->command) {
     case OFPFC_ADD:
         error = add_pof_flow_init(ofproto, ofm, fm);
         break;
@@ -7522,7 +7596,7 @@ ofproto_pof_flow_mod_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
 
     if (error) {
         ofproto_flow_mod_uninit(ofm);
-    }*/
+    }
     VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: after add_pof_flow_init");
     return 0;
 }

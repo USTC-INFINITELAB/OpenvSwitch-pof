@@ -307,10 +307,13 @@ ofputil_pull_pof_match_x(struct ofpbuf *buf,
         match->flow[i].field_id = om->field_id;
         match->flow[i].len = om->len;
         match->flow[i].offset = om->offset;
+        match->wc[i].masks.field_id = om->field_id;
+        match->wc[i].masks.len = om->len;
+        match->wc[i].masks.offset = om->offset;
         size_t j;
         for (j = 0; j < ARRAY_SIZE(om->value); j++) {
             match->flow[i].value[j] = om->value[j] & om->mask[j];
-            match->flow[i].mask[j] = om->mask[j];
+            match->wc[i].masks.value[j] = om->mask[j];
         }
     }
     return 0;
@@ -1627,7 +1630,7 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
             size_t j;
             for (j = 0; j < ARRAY_SIZE(ofm->match[i].value); j++) {
                 fm->match.flow[i].value[j] = ofm->match[i].value[j] & ofm->match[i].mask[j];
-                fm->match.flow[i].mask[j] = ofm->match[i].mask[j];
+                fm->match.wc[i].masks.value[j] = ofm->match[i].mask[j];
             }
         }
 

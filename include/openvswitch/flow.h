@@ -70,7 +70,7 @@ struct pof_flow {
     uint8_t pad[2];   /*8 bytes aligned*/
 
     uint8_t value[POF_MAX_FIELD_LENGTH_IN_BYTE];
-    uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];
+    /*uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];*/
 };
 
 /*
@@ -143,7 +143,8 @@ struct flow {
 BUILD_ASSERT_DECL(sizeof(struct flow) % sizeof(uint64_t) == 0);
 BUILD_ASSERT_DECL(sizeof(struct flow_tnl) % sizeof(uint64_t) == 0);
 
-#define FLOW_U64S (sizeof(struct flow) / sizeof(uint64_t))
+#define FLOW_U64S (sizeof(struct pof_flow) / sizeof(uint64_t))
+#define POF_FLOW_U64S (sizeof(struct pof_flow) / sizeof(uint64_t))
 
 /* Remember to update FLOW_WC_SEQ when changing 'struct flow'. */
 BUILD_ASSERT_DECL(offsetof(struct flow, igmp_group_ip4) + sizeof(uint32_t)
@@ -177,7 +178,9 @@ BUILD_ASSERT_DECL(FLOW_SEGMENT_3_ENDS_AT < sizeof(struct flow));
 struct flow_wildcards {
     struct flow masks;
 };
-
+struct pof_flow_wildcards {
+    struct pof_flow masks;
+};
 #define WC_MASK_FIELD(WC, FIELD) \
     memset(&(WC)->masks.FIELD, 0xff, sizeof (WC)->masks.FIELD)
 #define WC_MASK_FIELD_MASK(WC, FIELD, MASK)     \

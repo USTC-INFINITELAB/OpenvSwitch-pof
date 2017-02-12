@@ -1375,6 +1375,18 @@ match_print(const struct match *match)
     free(s);
 }
 
+void
+pof_minimatch_init(struct minimatch *dst, const struct match_x *src)
+{
+    struct miniflow tmp;
+
+    pof_miniflow_map_init(&tmp, src->flow);
+    /* Allocate two consecutive miniflows. */
+    miniflow_alloc(dst->flows, 1, &tmp);
+    pof_miniflow_init(dst->flow, src->flow);
+    pof_minimask_init(dst->mask, src->wc);
+}
+
 /* Initializes 'dst' as a copy of 'src'.  The caller must eventually free 'dst'
  * with minimatch_destroy(). */
 void

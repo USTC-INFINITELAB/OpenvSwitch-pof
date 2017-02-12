@@ -38,8 +38,8 @@ struct match {
 };
 
 struct match_x {
-    struct pof_match_x flow[POF_MAX_MATCH_FIELD_NUM];
-    /*struct pof_flow masks[POF_MAX_MATCH_FIELD_NUM];*/
+    struct pof_flow flow[POF_MAX_MATCH_FIELD_NUM];
+    struct pof_flow_wildcards wc[POF_MAX_MATCH_FIELD_NUM];
     struct tun_metadata_allocation tun_md;
 };
 
@@ -206,6 +206,7 @@ struct minimatch {
     };
 };
 
+void pof_minimatch_init(struct minimatch *, const struct match_x *);
 void minimatch_init(struct minimatch *, const struct match *);
 void minimatch_clone(struct minimatch *, const struct minimatch *);
 void minimatch_move(struct minimatch *dst, struct minimatch *src);
