@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+ 
 #include <config.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -5947,10 +5948,14 @@ handle_flow_mod_pof__(struct ofproto *ofproto, const struct ofputil_pof_flow_mod
     ovs_mutex_lock(&ofproto_mutex);
     ofm.version = ofproto->tables_version + 1;
     error = ofproto_flow_mod_start(ofproto, &ofm);
+    if (!error) {
+        ofproto_bump_tables_version(ofproto);
+        ofproto_flow_mod_finish(ofproto, &ofm, req);
+        ofmonitor_flush(ofproto->connmgr);
+    }
+    ovs_mutex_unlock(&ofproto_mutex);
 
-    /* todo sqy */
-
-    return 0;
+    return error;
 }
 
 static enum ofperr
