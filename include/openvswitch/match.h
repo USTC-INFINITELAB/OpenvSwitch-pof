@@ -38,8 +38,8 @@ struct match {
 };
 
 struct match_x {
-    struct pof_flow flow[POF_MAX_MATCH_FIELD_NUM];
-    struct pof_flow_wildcards wc[POF_MAX_MATCH_FIELD_NUM];
+    struct pof_flow flow;
+    struct pof_flow_wildcards wc;
     struct tun_metadata_allocation tun_md;
 };
 

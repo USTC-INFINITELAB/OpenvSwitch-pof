@@ -25,7 +25,9 @@
 #include "openvswitch/ofp-util.h"
 #include "packets.h"
 #include "util.h"
+#include "openvswitch/vlog.h"
 
+VLOG_DEFINE_THIS_MODULE(classifier);
 struct trie_ctx;
 
 /* A collection of "struct cls_conjunction"s currently embedded into a
@@ -176,7 +178,9 @@ void
 pof_cls_rule_init(struct cls_rule *rule, const struct match_x *match, int priority)
 {
     cls_rule_init__(rule, priority);
+    VLOG_INFO("+++++++++++sqy add_pof_flow_init:  before pof_minimatch_init ");
     pof_minimatch_init(CONST_CAST(struct minimatch *, &rule->match), match);
+    VLOG_INFO("+++++++++++sqy add_pof_flow_init:  after pof_minimatch_init ");
 }
 
 /* Initializes 'rule' to match packets specified by 'match' at the given

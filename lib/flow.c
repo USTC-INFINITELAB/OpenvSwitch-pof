@@ -40,7 +40,9 @@
 #include "random.h"
 #include "unaligned.h"
 #include "util.h"
+#include "openvswitch/vlog.h"
 
+VLOG_DEFINE_THIS_MODULE(flow);
 COVERAGE_DEFINE(flow_extract);
 COVERAGE_DEFINE(miniflow_malloc);
 
@@ -2455,14 +2457,15 @@ flow_compose(struct dp_packet *p, const struct flow *flow)
 }
 
 void
-pof_miniflow_init(struct miniflow *dst, const struct pof_flow src[])
+pof_miniflow_init(struct miniflow *dst, const struct pof_flow *src)
 {
     uint64_t *dst_u64 = miniflow_values(dst);
     size_t idx;
-
+    VLOG_INFO("+++++++++++sqy pof_miniflow_init:  before pof_flow_u64_value ");
     FLOWMAP_FOR_EACH_INDEX(idx, dst->map) {
         *dst_u64++ = pof_flow_u64_value(src, idx);
     }
+    VLOG_INFO("+++++++++++sqy pof_miniflow_init:  after pof_flow_u64_value ");
 }
 
 /* Compressed flow. */
@@ -2486,7 +2489,7 @@ miniflow_init(struct miniflow *dst, const struct flow *src)
 }
 
 void
-pof_miniflow_map_init(struct miniflow *flow, const struct pof_flow src[])
+pof_miniflow_map_init(struct miniflow *flow, const struct pof_flow *src)
 {
     /* Initialize map, counting the number of nonzero elements. */
     flowmap_init(&flow->map);
@@ -2628,7 +2631,7 @@ miniflow_equal_flow_in_minimask(const struct miniflow *a, const struct flow *b,
 }
 
 void
-pof_minimask_init(struct minimask *mask, const struct pof_flow_wildcards wc[])
+pof_minimask_init(struct minimask *mask, const struct pof_flow_wildcards *wc)
 {
     pof_miniflow_init(&mask->masks, &wc->masks);
 }

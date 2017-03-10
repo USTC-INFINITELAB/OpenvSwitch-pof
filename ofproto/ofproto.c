@@ -4793,7 +4793,6 @@ add_pof_flow_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
     struct cls_rule cr;
     uint8_t table_id;
     enum ofperr error;
-
     if (!check_table_id(ofproto, fm->table_id)) {
         return OFPERR_OFPBRC_BAD_TABLE_ID;
     }
@@ -4806,26 +4805,27 @@ add_pof_flow_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
     } else {
         return OFPERR_OFPBRC_BAD_TABLE_ID;
     }
-
     table = &ofproto->tables[table_id];
     if (table->flags & OFTABLE_READONLY
         && !(fm->flags & OFPUTIL_FF_NO_READONLY)) {
         return OFPERR_OFPBRC_EPERM;
     }
-
+    //VLOG_INFO("+++++++++++sqy add_pof_flow_init:  before pof_cls_rule_init ");
     if (!ofm->temp_rule) {
         pof_cls_rule_init(&cr, &fm->match, fm->priority);
 
         /* Allocate new rule.  Destroys 'cr'. */
+        //VLOG_INFO("+++++++++++sqy add_pof_flow_init:  before ofproto_rule_create ");
         error = ofproto_rule_create(ofproto, &cr, table - ofproto->tables,
                                     fm->new_cookie, fm->idle_timeout,
                                     fm->hard_timeout, fm->flags,
                                     fm->importance, fm->ofpacts,
                                     fm->ofpacts_len, &ofm->temp_rule);
+        // VLOG_INFO("+++++++++++sqy add_pof_flow_init:  after ofproto_rule_create ");
         if (error) {
             return error;
         }
-
+        //VLOG_INFO("+++++++++++sqy add_pof_flow_init:  before pof_get_conjunctions ");
         pof_get_conjunctions(fm, &ofm->conjs, &ofm->n_conjs);
     }
     return 0;
@@ -5923,9 +5923,9 @@ handle_flow_mod(struct ofconn *ofconn, const struct ofp_header *oh)
                                     ofproto->n_tables);
     if (!error) {
         struct openflow_mod_requester req = { ofconn, oh };
-        VLOG_INFO("+++++++++++sqy handle_flow_mod: before handle_flow_mod_pof__");
+        //VLOG_INFO("+++++++++++sqy handle_flow_mod: before handle_flow_mod_pof__");
         error = handle_flow_mod_pof__(ofproto, &fm, &req);
-        VLOG_INFO("+++++++++++sqy handle_flow_mod: after handle_flow_mod_pof__");
+        //VLOG_INFO("+++++++++++sqy handle_flow_mod: after handle_flow_mod_pof__");
     }
 
     ofpbuf_uninit(&ofpacts);
@@ -5955,7 +5955,7 @@ handle_flow_mod_pof__(struct ofproto *ofproto, const struct ofputil_pof_flow_mod
     }
     ovs_mutex_unlock(&ofproto_mutex);
 
-    return error;
+    return 0;
 }
 
 static enum ofperr
@@ -7578,7 +7578,7 @@ ofproto_pof_flow_mod_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
     ofm->n_conjs = 0;
 
     bool check_buffer_id = false;
-    VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: before add_pof_flow_init");
+    //VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: before add_pof_flow_init");
 
     switch (ofm->command) {
     case OFPFC_ADD:
@@ -7602,7 +7602,7 @@ ofproto_pof_flow_mod_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
     if (error) {
         ofproto_flow_mod_uninit(ofm);
     }
-    VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: after add_pof_flow_init");
+    //VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: after add_pof_flow_init");
     return 0;
 }
 

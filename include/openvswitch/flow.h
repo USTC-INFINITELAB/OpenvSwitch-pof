@@ -62,16 +62,17 @@ const char *flow_tun_flag_to_string(uint32_t flags);
 #define FLOW_MAX_MPLS_LABELS 3
 
 struct pof_flow {
-    ovs_be16 field_id;  /*0xffff means metadata,
+    ovs_be16 field_id[POF_MAX_MATCH_FIELD_NUM];  /*0xffff means metadata,
                           0x8XXX means from table parameter,
                           otherwise means from packet data. */
-    ovs_be16 offset;  /*bit unit*/
-    ovs_be16 len;    /*length in bit unit*/
-    uint8_t pad[2];   /*8 bytes aligned*/
+    ovs_be16 offset[POF_MAX_MATCH_FIELD_NUM];  /*bit unit*/
+    ovs_be16 len[POF_MAX_MATCH_FIELD_NUM];    /*length in bit unit*/
+    uint8_t pad[2][POF_MAX_MATCH_FIELD_NUM];   /*8 bytes aligned*/
 
-    uint8_t value[POF_MAX_FIELD_LENGTH_IN_BYTE];
+    uint8_t value[POF_MAX_MATCH_FIELD_NUM][POF_MAX_FIELD_LENGTH_IN_BYTE];
     /*uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];*/
 };
+
 
 /*
  * A flow in the network.

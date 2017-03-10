@@ -24,7 +24,9 @@
 #include "openvswitch/ofp-util.h"
 #include "packets.h"
 #include "tun-metadata.h"
+#include "openvswitch/vlog.h"
 
+VLOG_DEFINE_THIS_MODULE(match);
 /* Converts the flow in 'flow' into a match in 'match', with the given
  * 'wildcards'. */
 void
@@ -1379,12 +1381,13 @@ void
 pof_minimatch_init(struct minimatch *dst, const struct match_x *src)
 {
     struct miniflow tmp;
-
-    pof_miniflow_map_init(&tmp, src->flow);
+    pof_miniflow_map_init(&tmp, &src->flow);
     /* Allocate two consecutive miniflows. */
-    miniflow_alloc(dst->flows, 1, &tmp);
-    pof_miniflow_init(dst->flow, src->flow);
-    pof_minimask_init(dst->mask, src->wc);
+    miniflow_alloc(dst->flows, 2, &tmp);
+    pof_miniflow_init(dst->flow, &src->flow);
+    VLOG_INFO("+++++++++++sqy add_pof_flow_init:  before pof_minimask_init ");
+    pof_minimask_init(dst->mask, &src->wc);
+    VLOG_INFO("+++++++++++sqy add_pof_flow_init:  after pof_minimask_init ");
 }
 
 /* Initializes 'dst' as a copy of 'src'.  The caller must eventually free 'dst'

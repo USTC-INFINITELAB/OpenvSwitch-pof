@@ -41,7 +41,7 @@ modprobe uio_pci_generic
 #  sudo ifconfig ${port[$i]} down
 #  sudo ./tools/dpdk-devbind.py --bind=uio_pci_generic ${port[$i]}
 #done
-./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:05:00.0
+./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.1
 ./tools/dpdk-devbind.py --status
 echo "DPDK Environment Success"
 cd $OVS_DIR

@@ -304,16 +304,16 @@ ofputil_pull_pof_match_x(struct ofpbuf *buf,
     for(i=0; i<POF_MAX_MATCH_FIELD_NUM; i++){
         om = ofpbuf_pull(buf, sizeof *om);
 
-        match->flow[i].field_id = om->field_id;
-        match->flow[i].len = om->len;
-        match->flow[i].offset = om->offset;
-        match->wc[i].masks.field_id = om->field_id;
-        match->wc[i].masks.len = om->len;
-        match->wc[i].masks.offset = om->offset;
+        match->flow.field_id[i] = om->field_id;
+        match->flow.len[i] = om->len;
+        match->flow.offset[i] = om->offset;
+        match->wc.masks.field_id[i] = om->field_id;
+        match->wc.masks.len[i] = om->len;
+        match->wc.masks.offset[i] = om->offset;
         size_t j;
         for (j = 0; j < ARRAY_SIZE(om->value); j++) {
-            match->flow[i].value[j] = om->value[j] & om->mask[j];
-            match->wc[i].masks.value[j] = om->mask[j];
+            match->flow.value[i][j] = om->value[j] & om->mask[j];
+            match->wc.masks.value[i][j] = om->mask[j];
         }
     }
     return 0;
@@ -1624,17 +1624,19 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
 
         for(i=0; i<ofm->match_field_num; i++){
 
-            fm->match.flow[i].field_id = ofm->match[i].field_id;
-            fm->match.flow[i].len = ofm->match[i].len;
-            fm->match.flow[i].offset = ofm->match[i].offset;
+            fm->match.flow.field_id[i] = ofm->match[i].field_id;
+            fm->match.flow.len[i] = ofm->match[i].len;
+            fm->match.flow.offset[i] = ofm->match[i].offset;
+            fm->match.wc.masks.field_id[i] = ofm->match[i].field_id;
+            fm->match.wc.masks.len[i] = ofm->match[i].len;
+            fm->match.wc.masks.offset[i] = ofm->match[i].offset;
             size_t j;
             for (j = 0; j < ARRAY_SIZE(ofm->match[i].value); j++) {
-                fm->match.flow[i].value[j] = ofm->match[i].value[j] & ofm->match[i].mask[j];
-                fm->match.wc[i].masks.value[j] = ofm->match[i].mask[j];
+                fm->match.flow.value[i][j] = ofm->match[i].value[j] & ofm->match[i].mask[j];
+                fm->match.wc.masks.value[i][j] = ofm->match[i].mask[j];
             }
         }
 
-        /*VLOG_INFO("ofputil_decode_flow_mod_pof: ofputil_pull_pof_match_x success");*/
 
         /* Translate the message. */
         fm->priority = ntohs(ofm->priority);
