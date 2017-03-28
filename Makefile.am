@@ -116,6 +116,7 @@ EXTRA_DIST = \
 	ovs-pof.creator \
 	OVS206.creator \
 	ovs-pof.creator.user \
+        OVS206.creator.user \
 	ovs-pof.files \
 	OVS206.files \
 	ovs-pof.includes \

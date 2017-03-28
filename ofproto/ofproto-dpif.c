@@ -3921,9 +3921,12 @@ rule_dpif_lookup_in_table(struct ofproto_dpif *ofproto, ovs_version_t version,
                           uint8_t table_id, struct flow *flow,
                           struct flow_wildcards *wc)
 {
+    VLOG_INFO("+++++++++++sqy rule_dpif_lookup_in_table:  before rule_dpif_cast");
     struct classifier *cls = &ofproto->up.tables[table_id].cls;
     return rule_dpif_cast(rule_from_cls_rule(classifier_lookup(cls, version,
                                                                flow, wc)));
+
+    VLOG_INFO("+++++++++++sqy rule_dpif_lookup_in_table:  after rule_dpif_cast");
 }
 
 void
@@ -4027,12 +4030,14 @@ rule_dpif_lookup_from_table(struct ofproto_dpif *ofproto,
          next_id++, next_id += (next_id == TBL_INTERNAL))
     {
         *table_id = next_id;
+        VLOG_INFO("+++++++++++sqy rule_dpif_lookup_from_table:  before rule_dpif_lookup_in_table");
         rule = rule_dpif_lookup_in_table(ofproto, version, next_id, flow, wc);
+        VLOG_INFO("+++++++++++sqy rule_dpif_lookup_from_table:  after rule_dpif_lookup_in_table");
         if (stats) {
             struct oftable *tbl = &ofproto->up.tables[next_id];
             unsigned long orig;
 
-            atomic_add_relaxed(rule ? &tbl->n_matched : &tbl->n_missed,
+            atomic_add_relaxed(rule ? &tbl->n_matched : &tbl->n_missed, //sqy notes: run
                                stats->n_packets, &orig);
         }
         if (xcache) {
@@ -4041,10 +4046,10 @@ rule_dpif_lookup_from_table(struct ofproto_dpif *ofproto,
             entry = xlate_cache_add_entry(xcache, XC_TABLE);
             entry->table.ofproto = ofproto;
             entry->table.id = next_id;
-            entry->table.match = (rule != NULL);
+            entry->table.match = (rule != NULL);       //sqy notes: no run
         }
         if (rule) {
-            goto out;   /* Match. */
+            goto out;   /* Match. */         //sqy notes: run
         }
         if (honor_table_miss) {
             miss_config = ofproto_table_get_miss_config(&ofproto->up,

@@ -969,6 +969,7 @@ classifier_lookup__(const struct classifier *cls, ovs_version_t version,
     for (int i = 0; i < cls->n_tries; i++) {
         trie_ctx_init(&trie_ctx[i], &cls->tries[i]);
     }
+    VLOG_INFO("+++++++++++sqy classifier_lookup__:  before main loop");
 
     /* Main loop. */
     struct cls_subtable *subtable;
@@ -1014,12 +1015,13 @@ classifier_lookup__(const struct classifier *cls, ovs_version_t version,
             }
         }
     }
+    VLOG_INFO("+++++++++++sqy classifier_lookup__:  after main loop");
 
     /* In the common case, at this point we have no soft matches and we can
      * return immediately.  (We do the same thing if we have potential soft
      * matches but none of them are higher-priority than our hard match.) */
     if (hard_pri >= soft_pri) {
-        if (soft != soft_stub) {
+        if (soft != soft_stub) {  //sqy notes: equal and do not free
             free(soft);
         }
         return hard ? hard->cls_rule : NULL;
@@ -1172,6 +1174,7 @@ const struct cls_rule *
 classifier_lookup(const struct classifier *cls, ovs_version_t version,
                   struct flow *flow, struct flow_wildcards *wc)
 {
+    VLOG_INFO("+++++++++++sqy classifier_lookup:  before classifier_lookup__");
     return classifier_lookup__(cls, version, flow, wc, true);
 }
 
