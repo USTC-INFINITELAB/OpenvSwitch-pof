@@ -52,7 +52,8 @@ modprobe uio_pci_generic
 #  sudo ifconfig ${port[$i]} down
 #  sudo ./tools/dpdk-devbind.py --bind=uio_pci_generic ${port[$i]}
 #done
-./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.1
+./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:05:00.1
+./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:05:00.0
 ./tools/dpdk-devbind.py --status
 echo "DPDK Environment Success"
 cd $OVS_DIR
@@ -83,7 +84,7 @@ ovs-appctl vlog/set ofproto:ANY:dbg
 ovs-vsctl add-br br0 -- set bridge br0 datapath_type=netdev
 ovs-vsctl set-controller br0 tcp:192.168.109.160:6633
 ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
-#ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
+ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
 #ovs-ofctl show br0
 sleep 1s
 #ovs-appctl -t ovs-vswitchd exit

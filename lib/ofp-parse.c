@@ -538,6 +538,7 @@ parse_pof_str__(struct ofputil_pof_flow_mod *fm, int command, char *string,
     char *name, *value;
 
     *usable_protocols = OFPUTIL_P_ANY;
+    VLOG_INFO("%s: +++sqy  parse_pof_str__:string ",  string);
     if (command == -2) {
         size_t len;
 
@@ -560,7 +561,7 @@ parse_pof_str__(struct ofputil_pof_flow_mod *fm, int command, char *string,
         }
         string += len;
     }
-
+    VLOG_INFO("%s: +++sqy  parse_pof_str__:string1 ",  string);
     switch (command) {
     case -1:
         fields = F_OUT_PORT;
@@ -610,12 +611,12 @@ parse_pof_str__(struct ofputil_pof_flow_mod *fm, int command, char *string,
             return xstrdup("must specify an action");
         }
     }
-    VLOG_INFO("%s: +++sqy  parse_pof_str__ ",  act_str);
+    VLOG_INFO("%s: +++sqy  parse_pof_str__:act_str ",  act_str);
 
     while (ofputil_parse_key_value(&string, &name, &value)) {
         const struct protocol *p;
         char *error = NULL;
-        VLOG_INFO("%s: +++sqy  parse_pof_str__ ",  name);
+        VLOG_INFO("%s: +++sqy  parse_pof_str__:name ",  name);
 
         if (parse_protocol(name, &p)) {
             /*match_set_dl_type(&fm->match, htons(p->dl_type));
