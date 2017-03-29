@@ -1173,16 +1173,14 @@ prepare_dump_flows(int argc, char *argv[], bool aggregate,
     struct ofputil_pof_flow_stats_request fsr;
     struct vconn *vconn;
     char *error;
-    VLOG_INFO("+++++++++++sqy prepare_dump_flows: before parse_pof_flow_stats_request_str");
 
     error = parse_pof_flow_stats_request_str(&fsr, aggregate,
                                              argc > 2 ? argv[2] : "",
                                              &usable_protocols);
-    VLOG_INFO("+++++++++++sqy prepare_dump_flows: error = %s", error);
+    VLOG_INFO("+++++++++++sqy prepare_dump_flows: before parse_pof_flow_stats_request_str error = %s", error);
     if (error) {
         ovs_fatal(0, "%s", error);
     }
-    VLOG_INFO("+++++++++++sqy prepare_dump_flows: before open_vconn");
     protocol = open_vconn(argv[1], &vconn);
     VLOG_INFO("+++++++++++sqy prepare_dump_flows: before set_protocol_for_flow_dump");
     protocol = set_protocol_for_flow_dump(vconn, protocol, usable_protocols);
@@ -1198,7 +1196,6 @@ ofctl_dump_flows__(int argc, char *argv[], bool aggregate)
     struct ofpbuf *request;
     struct vconn *vconn;
 
-    VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: before prepare_dump_flows");
     vconn = prepare_dump_flows(argc, argv, aggregate, &request);
     VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: before dump_transaction");
     dump_transaction(vconn, request);
