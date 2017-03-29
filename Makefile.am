@@ -113,18 +113,12 @@ EXTRA_DIST = \
 	.project \
 	ovs-pof.config \
 	OVS206.config \
-        OVS204.config \
 	ovs-pof.creator \
 	OVS206.creator \
-        OVS204.creator \
-	ovs-pof.creator.user \
         OVS206.creator.user \
-	ovs-pof.files \
 	OVS206.files \
-        OVS204.files \
 	ovs-pof.includes \
 	OVS206.includes \
-        OVS204.includes \
         lib/ofp-msgs.inc \
 	build-aux/cccl \
 	build-aux/cksum-schema-check \

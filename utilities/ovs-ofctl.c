@@ -545,11 +545,14 @@ open_vconn__(const char *name, enum open_target target,
     free(datapath_type);
 
     if (strchr(name, ':')) {
+        VLOG_INFO("+++++++++++sqy open_vconn__:1 name = %s", name);
         run(vconn_open(name, get_allowed_ofp_versions(), DSCP_DEFAULT, vconnp),
             "connecting to %s", name);
     } else if (!open_vconn_socket(name, vconnp)) {
+        VLOG_INFO("+++++++++++sqy open_vconn__: name2");
         /* Fall Through. */
     } else if (!open_vconn_socket(bridge_path, vconnp)) {
+        VLOG_INFO("+++++++++++sqy open_vconn__: name 3");
         /* Fall Through. */
     } else if (!open_vconn_socket(socket_name, vconnp)) {
         /* Fall Through. */
@@ -1175,12 +1178,13 @@ prepare_dump_flows(int argc, char *argv[], bool aggregate,
     error = parse_pof_flow_stats_request_str(&fsr, aggregate,
                                              argc > 2 ? argv[2] : "",
                                              &usable_protocols);
-    VLOG_INFO("+++++++++++sqy prepare_dump_flows: after parse_pof_flow_stats_request_str");
+    VLOG_INFO("+++++++++++sqy prepare_dump_flows: error = %s", error);
     if (error) {
         ovs_fatal(0, "%s", error);
     }
-
+    VLOG_INFO("+++++++++++sqy prepare_dump_flows: before open_vconn");
     protocol = open_vconn(argv[1], &vconn);
+    VLOG_INFO("+++++++++++sqy prepare_dump_flows: before set_protocol_for_flow_dump");
     protocol = set_protocol_for_flow_dump(vconn, protocol, usable_protocols);
     VLOG_INFO("+++++++++++sqy prepare_dump_flows: before ofputil_encode_pof_flow_stats_request");
     *requestp = ofputil_encode_pof_flow_stats_request(&fsr, protocol);

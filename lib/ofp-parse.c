@@ -561,7 +561,6 @@ parse_pof_str__(struct ofputil_pof_flow_mod *fm, int command, char *string,
         }
         string += len;
     }
-    VLOG_INFO("%s: +++sqy  parse_pof_str__:string1 ",  string);
     switch (command) {
     case -1:
         fields = F_OUT_PORT;
@@ -590,7 +589,6 @@ parse_pof_str__(struct ofputil_pof_flow_mod *fm, int command, char *string,
     default:
         OVS_NOT_REACHED();
     }
-    VLOG_INFO("+++++++++++sqy parse_pof_str__: in parse_pof_str__");
     *fm = (struct ofputil_pof_flow_mod) {
         .match = MATCH_X_CATCHALL_INITIALIZER,
         .priority = OFP_DEFAULT_PRIORITY,
@@ -611,116 +609,11 @@ parse_pof_str__(struct ofputil_pof_flow_mod *fm, int command, char *string,
             return xstrdup("must specify an action");
         }
     }
-    VLOG_INFO("%s: +++sqy  parse_pof_str__:act_str ",  act_str);
 
-    while (ofputil_parse_key_value(&string, &name, &value)) {
-        const struct protocol *p;
-        char *error = NULL;
-        VLOG_INFO("%s: +++sqy  parse_pof_str__:name ",  name);
+    /*while (ofputil_parse_key_value(&string, &name, &value)) {    }
+     * here is needed by ovs-ofctl add-flow to parse the commad,
+     * while ovs-ofctl dump-flows does not need, so i omit here.*/
 
-        if (parse_protocol(name, &p)) {
-            /*match_set_dl_type(&fm->match, htons(p->dl_type));
-            if (p->nw_proto) {
-                match_set_nw_proto(&fm->match, p->nw_proto);
-            }*/
-        } else if (fields & F_FLAGS && !strcmp(name, "send_flow_rem")) {
-            fm->flags |= OFPUTIL_FF_SEND_FLOW_REM;
-        } else if (fields & F_FLAGS && !strcmp(name, "check_overlap")) {
-            fm->flags |= OFPUTIL_FF_CHECK_OVERLAP;
-        } else if (fields & F_FLAGS && !strcmp(name, "reset_counts")) {
-            fm->flags |= OFPUTIL_FF_RESET_COUNTS;
-            *usable_protocols &= OFPUTIL_P_OF12_UP;
-        } else if (fields & F_FLAGS && !strcmp(name, "no_packet_counts")) {
-            fm->flags |= OFPUTIL_FF_NO_PKT_COUNTS;
-            *usable_protocols &= OFPUTIL_P_OF13_UP;
-        } else if (fields & F_FLAGS && !strcmp(name, "no_byte_counts")) {
-            fm->flags |= OFPUTIL_FF_NO_BYT_COUNTS;
-            *usable_protocols &= OFPUTIL_P_OF13_UP;
-        } else if (!strcmp(name, "no_readonly_table")
-                   || !strcmp(name, "allow_hidden_fields")) {
-             /* ignore these fields. */
-        } else if (mf_from_name(name)) {
-            error = parse_field(mf_from_name(name), value, &fm->match,
-                                usable_protocols);
-        } else {
-            if (!*value) {
-                return xasprintf("field %s missing value", name);
-            }
-
-            if (!strcmp(name, "table")) {
-                error = str_to_u8(value, "table", &fm->table_id);
-                if (fm->table_id != 0xff) {
-                    *usable_protocols &= OFPUTIL_P_TID;
-                }
-            } else if (fields & F_OUT_PORT && !strcmp(name, "out_port")) {
-                if (!ofputil_port_from_string(value, &fm->out_port)) {
-                    error = xasprintf("%s is not a valid OpenFlow port",
-                                      value);
-                }
-            } else if (fields & F_OUT_PORT && !strcmp(name, "out_group")) {
-                *usable_protocols &= OFPUTIL_P_OF11_UP;
-                if (!ofputil_group_from_string(value, &fm->out_group)) {
-                    error = xasprintf("%s is not a valid OpenFlow group",
-                                      value);
-                }
-            } else if (fields & F_PRIORITY && !strcmp(name, "priority")) {
-                uint16_t priority = 0;
-
-                error = str_to_u16(value, name, &priority);
-                fm->priority = priority;
-            } else if (fields & F_TIMEOUT && !strcmp(name, "idle_timeout")) {
-                error = str_to_u16(value, name, &fm->idle_timeout);
-            } else if (fields & F_TIMEOUT && !strcmp(name, "hard_timeout")) {
-                error = str_to_u16(value, name, &fm->hard_timeout);
-            } else if (fields & F_IMPORTANCE && !strcmp(name, "importance")) {
-                error = str_to_u16(value, name, &fm->importance);
-            } else if (!strcmp(name, "cookie")) {
-                char *mask = strchr(value, '/');
-
-                if (mask) {
-                    /* A mask means we're searching for a cookie. */
-                    if (command == OFPFC_ADD) {
-                        return xstrdup("flow additions cannot use "
-                                       "a cookie mask");
-                    }
-                    *mask = '\0';
-                    error = str_to_be64(value, &fm->cookie);
-                    if (error) {
-                        return error;
-                    }
-                    error = str_to_be64(mask + 1, &fm->cookie_mask);
-
-                    /* Matching of the cookie is only supported through NXM or
-                     * OF1.1+. */
-                    if (fm->cookie_mask != htonll(0)) {
-                        *usable_protocols &= OFPUTIL_P_NXM_OF11_UP;
-                    }
-                } else {
-                    /* No mask means that the cookie is being set. */
-                    if (command != OFPFC_ADD && command != OFPFC_MODIFY
-                        && command != OFPFC_MODIFY_STRICT) {
-                        return xstrdup("cannot set cookie");
-                    }
-                    error = str_to_be64(value, &fm->new_cookie);
-                    fm->modify_cookie = true;
-                }
-            } else if (!strcmp(name, "duration")
-                       || !strcmp(name, "n_packets")
-                       || !strcmp(name, "n_bytes")
-                       || !strcmp(name, "idle_age")
-                       || !strcmp(name, "hard_age")) {
-                /* Ignore these, so that users can feed the output of
-                 * "ovs-ofctl dump-flows" back into commands that parse
-                 * flows. */
-            } else {
-                error = xasprintf("unknown keyword %s", name);
-            }
-        }
-
-        if (error) {
-            return error;
-        }
-    }
     /* Check for usable protocol interdependencies between match fields. omit by sqy*/
 
     if (!fm->cookie_mask && fm->new_cookie == OVS_BE64_MAX
@@ -730,40 +623,9 @@ parse_pof_str__(struct ofputil_pof_flow_mod *fm, int command, char *string,
          * default of zero. */
         fm->new_cookie = htonll(0);
     }
-    if (fields & F_ACTIONS) {
-        enum ofputil_protocol action_usable_protocols;
-        struct ofpbuf ofpacts;
-        char *error;
-
-        ofpbuf_init(&ofpacts, 32);
-        error = ofpacts_parse_instructions(act_str, &ofpacts,
-                                           &action_usable_protocols);
-        *usable_protocols &= action_usable_protocols;
-        if (!error) {
-            enum ofperr err;
-
-            err = ofpacts_check(ofpacts.data, ofpacts.size, &fm->match.flow,
-                                OFPP_MAX, fm->table_id, 255, usable_protocols);
-            if (!err && !*usable_protocols) {
-                err = OFPERR_OFPBAC_MATCH_INCONSISTENT;
-            }
-            if (err) {
-                error = xasprintf("actions are invalid with specified match "
-                                  "(%s)", ofperr_to_string(err));
-            }
-
-        }
-        if (error) {
-            ofpbuf_uninit(&ofpacts);
-            return error;
-        }
-
-        fm->ofpacts_len = ofpacts.size;
-        fm->ofpacts = ofpbuf_steal_data(&ofpacts);
-    } else {
-        fm->ofpacts_len = 0;
-        fm->ofpacts = NULL;
-    }
+    /*if (fields & F_ACTIONS) { } else {  }
+     * here is needed by ovs-ofctl add-flow to parse the actions,
+     * while ovs-ofctl dump-flows does not need, so i omit here.*/
 
     return NULL;
 }
@@ -805,13 +667,12 @@ parse_pof_str(struct ofputil_pof_flow_mod *fm, int command, const char *str_,
 {
     char *string = xstrdup(str_);
     char *error;
-    VLOG_INFO("+++++++++++sqy parse_pof_str: before parse_pof_str__");
     error = parse_pof_str__(fm, command, string, usable_protocols);
     if (error) {
         fm->ofpacts = NULL;
         fm->ofpacts_len = 0;
     }
-
+    VLOG_INFO("+++++++++++sqy parse_pof_str: after parse_pof_str__ error = %s", error);
     free(string);
     return error;
 }
@@ -1486,10 +1347,8 @@ parse_pof_flow_stats_request_str(struct ofputil_pof_flow_stats_request *fsr,
 {
     struct ofputil_pof_flow_mod fm;
     char *error;
-    VLOG_INFO("+++++++++++sqy parse_pof_flow_stats_request_str: before parse_pof_str");
-
     error = parse_pof_str(&fm, -1, string, usable_protocols);
-    VLOG_INFO("+++++++++++sqy parse_pof_flow_stats_request_str: after parse_pof_str");
+    VLOG_INFO("+++++++++++sqy parse_pof_flow_stats_request_str: error = %s", error);
     if (error) {
         return error;
     }
