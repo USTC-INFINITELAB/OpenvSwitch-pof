@@ -43,6 +43,10 @@ char *parse_ofp_str(struct ofputil_flow_mod *, int command, const char *str_,
                     enum ofputil_protocol *usable_protocols)
     OVS_WARN_UNUSED_RESULT;
 
+char *parse_pof_str(struct ofputil_pof_flow_mod *, int command, const char *str_,
+                    enum ofputil_protocol *usable_protocols)
+    OVS_WARN_UNUSED_RESULT;
+
 char *parse_ofp_flow_mod_str(struct ofputil_flow_mod *, const char *string,
                              int command,
                              enum ofputil_protocol *usable_protocols)
@@ -63,6 +67,12 @@ char *parse_ofp_flow_mod_file(const char *file_name, int command,
     OVS_WARN_UNUSED_RESULT;
 
 char *parse_ofp_flow_stats_request_str(struct ofputil_flow_stats_request *,
+                                       bool aggregate, const char *string,
+                                       enum ofputil_protocol *usable_protocols)
+    OVS_WARN_UNUSED_RESULT;
+
+
+char *parse_pof_flow_stats_request_str(struct ofputil_pof_flow_stats_request *,
                                        bool aggregate, const char *string,
                                        enum ofputil_protocol *usable_protocols)
     OVS_WARN_UNUSED_RESULT;

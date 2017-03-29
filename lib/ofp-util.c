@@ -599,6 +599,15 @@ ofputil_match_to_ofp11_match(const struct match *match,
     ofmatch->wildcards = htonl(wc);
 }
 
+/* Convert 'match_x' into the POF match structure 'pof_match_x'. */
+void
+ofputil_match_x_to_pof_match_x(const struct match_x *match,
+                             struct pof_match_x *ofmatch)
+{
+    VLOG_INFO("+++++++++++sqy ofputil_put_pof_match: in ofputil_match_x_to_pof_match_x");
+
+}
+
 /* Returns the "typical" length of a match for 'protocol', for use in
  * estimating space to preallocate. */
 int
@@ -666,6 +675,41 @@ ofputil_put_ofp11_match(struct ofpbuf *b, const struct match *match,
     case OFPUTIL_P_OF16_OXM:
         return oxm_put_match(b, match,
                              ofputil_protocol_to_ofp_version(protocol));
+    }
+
+    OVS_NOT_REACHED();
+}
+
+int
+ofputil_put_pof_match(struct ofpbuf *b, const struct match_x *match,
+                        enum ofputil_protocol protocol)
+{
+    switch (protocol) {
+    case OFPUTIL_P_OF10_STD:
+    case OFPUTIL_P_OF10_STD_TID:
+    case OFPUTIL_P_OF10_NXM:
+    case OFPUTIL_P_OF10_NXM_TID:
+        OVS_NOT_REACHED();
+
+    case OFPUTIL_P_OF11_STD: {
+        struct pof_match_x *om;
+
+        /* Make sure that no padding is needed. */
+        BUILD_ASSERT_DECL(sizeof *om % 8 == 0);
+
+        om = ofpbuf_put_uninit(b, sizeof *om);
+        ofputil_match_x_to_pof_match_x(match, om);
+        return sizeof *om;
+    }
+
+    case OFPUTIL_P_OF12_OXM:
+    case OFPUTIL_P_OF13_OXM:
+    case OFPUTIL_P_OF14_OXM:
+    case OFPUTIL_P_OF15_OXM:
+    case OFPUTIL_P_OF16_OXM:
+        VLOG_INFO("+++++++++++sqy ofputil_put_pof_match: before return oxm_put_match");
+        /*return oxm_put_match(b, match,
+                             ofputil_protocol_to_ofp_version(protocol));*/
     }
 
     OVS_NOT_REACHED();
@@ -2458,6 +2502,48 @@ ofputil_decode_ofpst11_flow_request(struct ofputil_flow_stats_request *fsr,
 }
 
 static enum ofperr
+ofputil_decode_pof_ofpst11_flow_request(struct ofputil_pof_flow_stats_request *fsr,
+                                    struct ofpbuf *b, bool aggregate,
+                                    const struct tun_table *tun_table)
+{
+    const struct ofp11_flow_stats_request *ofsr;
+    enum ofperr error;
+    struct pof_match_x *om;
+    int i=0;
+
+    ofsr = ofpbuf_pull(b, sizeof *ofsr);
+    fsr->aggregate = aggregate;
+    fsr->table_id = ofsr->table_id;
+    error = ofputil_port_from_ofp11(ofsr->out_port, &fsr->out_port);
+    if (error) {
+        return error;
+    }
+    fsr->out_group = ntohl(ofsr->out_group);
+    fsr->cookie = ofsr->cookie;
+    fsr->cookie_mask = ofsr->cookie_mask;
+
+    /*error = ofputil_pull_pof_match_x(&b, &fsr->match, NULL);*/
+
+    for(i=0; i<POF_MAX_MATCH_FIELD_NUM; i++){
+        om = ofpbuf_pull(b, sizeof *om);
+
+        fsr->match.flow.field_id[i] = om->field_id;
+        fsr->match.flow.len[i] = om->len;
+        fsr->match.flow.offset[i] = om->offset;
+        fsr->match.wc.masks.field_id[i] = om->field_id;
+        fsr->match.wc.masks.len[i] = om->len;
+        fsr->match.wc.masks.offset[i] = om->offset;
+        size_t j;
+        for (j = 0; j < ARRAY_SIZE(om->value); j++) {
+            fsr->match.flow.value[i][j] = om->value[j] & om->mask[j];
+            fsr->match.wc.masks.value[i][j] = om->mask[j];
+        }
+    }
+
+    return 0;
+}
+
+static enum ofperr
 ofputil_decode_nxst_flow_request(struct ofputil_flow_stats_request *fsr,
                                  struct ofpbuf *b, bool aggregate,
                                  const struct tun_table *tun_table)
@@ -2910,6 +2996,29 @@ ofputil_decode_flow_stats_request(struct ofputil_flow_stats_request *fsr,
     }
 }
 
+/* Converts an OFPST_FLOW, OFPST_AGGREGATE, NXST_FLOW, or NXST_AGGREGATE
+ * request 'oh', into an abstract flow_stats_request in 'fsr'.  Returns 0 if
+ * successful, otherwise an OpenFlow error code. */
+enum ofperr
+ofputil_decode_pof_flow_stats_request(struct ofputil_pof_flow_stats_request *fsr,
+                                  const struct ofp_header *oh,
+                                  const struct tun_table *tun_table)
+{
+    struct ofpbuf b = ofpbuf_const_initializer(oh, ntohs(oh->length));
+    enum ofpraw raw = ofpraw_pull_assert(&b);
+    switch ((int) raw) {
+    case OFPRAW_OFPST11_FLOW_REQUEST:
+        return ofputil_decode_pof_ofpst11_flow_request(fsr, &b, false, tun_table);
+
+    case OFPRAW_OFPST11_AGGREGATE_REQUEST:
+        return ofputil_decode_pof_ofpst11_flow_request(fsr, &b, true, tun_table);
+
+    default:
+        /* Hey, the caller lied. */
+        OVS_NOT_REACHED();
+    }
+}
+
 /* Converts abstract flow_stats_request 'fsr' into an OFPST_FLOW,
  * OFPST_AGGREGATE, NXST_FLOW, or NXST_AGGREGATE request 'oh' according to
  * 'protocol', and returns the message. */
@@ -2979,6 +3088,48 @@ ofputil_encode_flow_stats_request(const struct ofputil_flow_stats_request *fsr,
         break;
     }
 
+    default:
+        OVS_NOT_REACHED();
+    }
+
+    return msg;
+}
+
+struct ofpbuf *
+ofputil_encode_pof_flow_stats_request(const struct ofputil_pof_flow_stats_request *fsr,
+                                  enum ofputil_protocol protocol)
+{
+    struct ofpbuf *msg;
+    enum ofpraw raw;
+
+    switch (protocol) {
+    case OFPUTIL_P_OF11_STD:
+    case OFPUTIL_P_OF12_OXM:
+    case OFPUTIL_P_OF13_OXM:
+    case OFPUTIL_P_OF14_OXM:
+    case OFPUTIL_P_OF15_OXM:
+    case OFPUTIL_P_OF16_OXM: {
+        struct ofp11_flow_stats_request *ofsr;
+
+        raw = (fsr->aggregate
+               ? OFPRAW_OFPST11_AGGREGATE_REQUEST
+               : OFPRAW_OFPST11_FLOW_REQUEST);
+        msg = ofpraw_alloc(raw, ofputil_protocol_to_ofp_version(protocol),
+                           ofputil_match_typical_len(protocol));
+        ofsr = ofpbuf_put_zeros(msg, sizeof *ofsr);
+        ofsr->table_id = fsr->table_id;
+        ofsr->out_port = ofputil_port_to_ofp11(fsr->out_port);
+        ofsr->out_group = htonl(fsr->out_group);
+        ofsr->cookie = fsr->cookie;
+        ofsr->cookie_mask = fsr->cookie_mask;
+        ofputil_put_pof_match(msg, &fsr->match, protocol);
+        break;
+    }
+
+    case OFPUTIL_P_OF10_STD:
+    case OFPUTIL_P_OF10_STD_TID:
+    case OFPUTIL_P_OF10_NXM:
+    case OFPUTIL_P_OF10_NXM_TID:
     default:
         OVS_NOT_REACHED();
     }

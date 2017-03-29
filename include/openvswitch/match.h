@@ -45,6 +45,7 @@ struct match_x {
 
 /* Initializer for a "struct match" that matches every packet. */
 #define MATCH_CATCHALL_INITIALIZER { .flow = { .dl_type = 0 } }
+#define MATCH_X_CATCHALL_INITIALIZER { .flow = { .field_id[0] = 0 } }
 
 void match_init(struct match *,
                 const struct flow *, const struct flow_wildcards *);
@@ -213,6 +214,7 @@ void minimatch_move(struct minimatch *dst, struct minimatch *src);
 void minimatch_destroy(struct minimatch *);
 
 void minimatch_expand(const struct minimatch *, struct match *);
+void pof_minimatch_expand(const struct minimatch *, struct match_x *);
 
 bool minimatch_equal(const struct minimatch *a, const struct minimatch *b);
 

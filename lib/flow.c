@@ -2569,6 +2569,14 @@ miniflow_expand(const struct miniflow *src, struct flow *dst)
     flow_union_with_miniflow(dst, src);
 }
 
+/* Initializes 'dst' as a copy of 'src'. */
+void
+pof_miniflow_expand(const struct miniflow *src, struct pof_flow *dst)
+{
+    memset(dst, 0, sizeof *dst);
+    pof_flow_union_with_miniflow(dst, src);
+}
+
 /* Returns true if 'a' and 'b' are equal miniflows, false otherwise. */
 bool
 miniflow_equal(const struct miniflow *a, const struct miniflow *b)
@@ -2684,6 +2692,12 @@ void
 minimask_expand(const struct minimask *mask, struct flow_wildcards *wc)
 {
     miniflow_expand(&mask->masks, &wc->masks);
+}
+
+void
+pof_minimask_expand(const struct minimask *mask, struct pof_flow_wildcards *wc)
+{
+    pof_miniflow_expand(&mask->masks, &wc->masks);
 }
 
 /* Returns true if 'a' and 'b' are the same flow mask, false otherwise.

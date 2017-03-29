@@ -1444,6 +1444,15 @@ minimatch_expand(const struct minimatch *src, struct match *dst)
     memset(&dst->tun_md, 0, sizeof dst->tun_md);
 }
 
+/* Initializes 'dst' as a copy of 'src'. */
+void
+pof_minimatch_expand(const struct minimatch *src, struct match_x *dst)
+{
+    pof_miniflow_expand(src->flow, &dst->flow);
+    pof_minimask_expand(src->mask, &dst->wc);
+    memset(&dst->tun_md, 0, sizeof dst->tun_md);
+}
+
 /* Returns true if 'a' and 'b' match the same packets, false otherwise.  */
 bool
 minimatch_equal(const struct minimatch *a, const struct minimatch *b)

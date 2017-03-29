@@ -1167,20 +1167,24 @@ prepare_dump_flows(int argc, char *argv[], bool aggregate,
                    struct ofpbuf **requestp)
 {
     enum ofputil_protocol usable_protocols, protocol;
-    struct ofputil_flow_stats_request fsr;
+    struct ofputil_pof_flow_stats_request fsr;
     struct vconn *vconn;
     char *error;
+    VLOG_INFO("+++++++++++sqy prepare_dump_flows: before parse_pof_flow_stats_request_str");
 
-    error = parse_ofp_flow_stats_request_str(&fsr, aggregate,
+    error = parse_pof_flow_stats_request_str(&fsr, aggregate,
                                              argc > 2 ? argv[2] : "",
                                              &usable_protocols);
+    VLOG_INFO("+++++++++++sqy prepare_dump_flows: after parse_pof_flow_stats_request_str");
     if (error) {
         ovs_fatal(0, "%s", error);
     }
 
     protocol = open_vconn(argv[1], &vconn);
     protocol = set_protocol_for_flow_dump(vconn, protocol, usable_protocols);
-    *requestp = ofputil_encode_flow_stats_request(&fsr, protocol);
+    VLOG_INFO("+++++++++++sqy prepare_dump_flows: before ofputil_encode_pof_flow_stats_request");
+    *requestp = ofputil_encode_pof_flow_stats_request(&fsr, protocol);
+    VLOG_INFO("+++++++++++sqy prepare_dump_flows: after ofputil_encode_pof_flow_stats_request");
     return vconn;
 }
 
@@ -1190,8 +1194,11 @@ ofctl_dump_flows__(int argc, char *argv[], bool aggregate)
     struct ofpbuf *request;
     struct vconn *vconn;
 
+    VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: before prepare_dump_flows");
     vconn = prepare_dump_flows(argc, argv, aggregate, &request);
+    VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: before dump_transaction");
     dump_transaction(vconn, request);
+    VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: after dump_transaction");
     vconn_close(vconn);
 }
 

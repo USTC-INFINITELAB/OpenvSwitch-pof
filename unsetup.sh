@@ -16,8 +16,8 @@ cd  /home/sqy/dpdk-16.07
 cd /home/sqy/OpenvSwitch-pof
 
 #ovs-vsctl del-br br0
-#ovs-appctl -t ovsdb-server exit
-#ovs-appctl -t ovs-vswitchd exit
+ovs-appctl -t ovs-vswitchd exit
+ovs-appctl -t ovsdb-server exit
 
 #rmmod openvswitch
 killall ovsdb-server

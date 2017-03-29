@@ -33,7 +33,7 @@ mkdir /dev/hugepages
 fi
 
 mount -t hugetlbfs none /dev/hugepages
-ifconfig eth2 down
+#ifconfig eth2 down
 #    modprobe vfio-pci
 #   sudo /usr/bin/chmod a+x /dev/vfio
 #    sudo /usr/bin/chmod 0666 /dev/vfio/*
