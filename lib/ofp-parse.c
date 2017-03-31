@@ -626,7 +626,8 @@ parse_pof_str__(struct ofputil_pof_flow_mod *fm, int command, char *string,
     /*if (fields & F_ACTIONS) { } else {  }
      * here is needed by ovs-ofctl add-flow to parse the actions,
      * while ovs-ofctl dump-flows does not need, so i omit here.*/
-
+    fm->ofpacts_len = 0;
+    fm->ofpacts = NULL;
     return NULL;
 }
 

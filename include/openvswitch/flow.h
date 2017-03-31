@@ -35,7 +35,10 @@ BUILD_ASSERT_DECL(FLOW_N_REGS % 4 == 0); /* Handle xxregs. */
  * Each of these overlays a pair of Open vSwitch 32-bit registers, so there
  * are half as many of them.*/
 #define FLOW_N_XREGS (FLOW_N_REGS / 2)
-
+#define POF_N_FIELD_ID 8
+#define POF_N_OFFSET 8
+#define POF_N_LENGTH 8
+#define POF_N_VALUE 8
 /* Number of 128-bit registers.
  *
  * Each of these overlays four Open vSwitch 32-bit registers, so there

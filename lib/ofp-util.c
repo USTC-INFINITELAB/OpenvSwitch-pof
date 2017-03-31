@@ -599,15 +599,6 @@ ofputil_match_to_ofp11_match(const struct match *match,
     ofmatch->wildcards = htonl(wc);
 }
 
-/* Convert 'match_x' into the POF match structure 'pof_match_x'. */
-void
-ofputil_match_x_to_pof_match_x(const struct match_x *match,
-                             struct pof_match_x *ofmatch)
-{
-    VLOG_INFO("+++++++++++sqy ofputil_put_pof_match: in ofputil_match_x_to_pof_match_x");
-
-}
-
 /* Returns the "typical" length of a match for 'protocol', for use in
  * estimating space to preallocate. */
 int
@@ -698,7 +689,7 @@ ofputil_put_pof_match(struct ofpbuf *b, const struct match_x *match,
         BUILD_ASSERT_DECL(sizeof *om % 8 == 0);
 
         om = ofpbuf_put_uninit(b, sizeof *om);
-        ofputil_match_x_to_pof_match_x(match, om);
+        /*ofputil_match_x_to_pof_match_x(match, om);*/
         return sizeof *om;
     }
 
@@ -2569,6 +2560,35 @@ ofputil_decode_nxst_flow_request(struct ofputil_flow_stats_request *fsr,
     return 0;
 }
 
+
+static enum ofperr
+ofputil_decode_nxst_pof_flow_request(struct ofputil_pof_flow_stats_request *fsr,
+                                 struct ofpbuf *b, bool aggregate,
+                                 const struct tun_table *tun_table)
+{
+    const struct nx_flow_stats_request *nfsr;
+    enum ofperr error;
+
+    nfsr = ofpbuf_pull(b, sizeof *nfsr);
+    VLOG_INFO("+++++++++++sqy ofputil_decode_nxst_pof_flow_request: before nx_pull_pof_match ");
+    error = nx_pull_pof_match(b, ntohs(nfsr->match_len), &fsr->match,
+                          &fsr->cookie, &fsr->cookie_mask, tun_table);
+    VLOG_INFO("+++++++++++sqy ofputil_decode_nxst_pof_flow_request: after nx_pull_pof_match ");
+    if (error) {
+        return error;
+    }
+    if (b->size) {
+        return OFPERR_OFPBRC_BAD_LEN;
+    }
+
+    fsr->aggregate = aggregate;
+    fsr->out_port = u16_to_ofp(ntohs(nfsr->out_port));
+    fsr->out_group = OFPG_ANY;
+    fsr->table_id = nfsr->table_id;
+
+    return 0;
+}
+
 /* Constructs and returns an OFPT_QUEUE_GET_CONFIG request for the specified
  * 'port' and 'queue', suitable for OpenFlow version 'version'.
  *
@@ -3013,6 +3033,16 @@ ofputil_decode_pof_flow_stats_request(struct ofputil_pof_flow_stats_request *fsr
     case OFPRAW_OFPST11_AGGREGATE_REQUEST:
         return ofputil_decode_pof_ofpst11_flow_request(fsr, &b, true, tun_table);
 
+    case OFPRAW_NXST_FLOW_REQUEST: {
+        VLOG_INFO("+++++++++++sqy ofputil_decode_pof_flow_stats_request: OFPRAW_NXST_FLOW_REQUEST ");
+        return ofputil_decode_nxst_pof_flow_request(fsr, &b, false, tun_table);
+    }
+
+    case OFPRAW_NXST_AGGREGATE_REQUEST: {
+        VLOG_INFO("+++++++++++sqy ofputil_decode_pof_flow_stats_request: OFPRAW_NXST_AGGREGATE_REQUEST ");
+        return ofputil_decode_nxst_pof_flow_request(fsr, &b, true, tun_table);
+    }
+
     default:
         /* Hey, the caller lied. */
         OVS_NOT_REACHED();
@@ -3127,9 +3157,31 @@ ofputil_encode_pof_flow_stats_request(const struct ofputil_pof_flow_stats_reques
     }
 
     case OFPUTIL_P_OF10_STD:
-    case OFPUTIL_P_OF10_STD_TID:
+    case OFPUTIL_P_OF10_STD_TID: {
+        VLOG_INFO("+++++++++++sqy ofputil_encode_pof_flow_stats_request : OFPUTIL_P_OF10_STD_TID");
+    }
+
     case OFPUTIL_P_OF10_NXM:
-    case OFPUTIL_P_OF10_NXM_TID:
+    case OFPUTIL_P_OF10_NXM_TID: {
+        VLOG_INFO("+++++++++++sqy ofputil_encode_pof_flow_stats_request: OFPUTIL_P_OF10_NXM_TID");
+        struct nx_flow_stats_request *nfsr;
+        int match_len;
+
+        raw = (fsr->aggregate
+               ? OFPRAW_NXST_AGGREGATE_REQUEST
+               : OFPRAW_NXST_FLOW_REQUEST);
+        msg = ofpraw_alloc(raw, OFP10_VERSION, NXM_TYPICAL_LEN);
+        ofpbuf_put_zeros(msg, sizeof *nfsr);
+        match_len= nx_put_pof_match(msg, &fsr->match,
+                                 fsr->cookie, fsr->cookie_mask);
+
+        nfsr = msg->msg;
+        nfsr->out_port = htons(ofp_to_u16(fsr->out_port));
+        nfsr->match_len = htons(match_len);
+        nfsr->table_id = fsr->table_id;
+        break;
+    }
+
     default:
         OVS_NOT_REACHED();
     }
@@ -3436,6 +3488,59 @@ ofputil_append_flow_stats_reply(const struct ofputil_flow_stats *fs,
 
     ofpmp_postappend(replies, start_ofs);
     fs_->match.flow.tunnel.metadata.tab = orig_tun_table;
+}
+
+void
+ofputil_append_pof_flow_stats_reply(const struct ofputil_pof_flow_stats *fs,
+                                struct ovs_list *replies,
+                                const struct tun_table *tun_table)
+{
+    struct ofputil_pof_flow_stats *fs_ = CONST_CAST(struct ofputil_pof_flow_stats *,
+                                                fs);
+    const struct tun_table *orig_tun_table;
+    struct ofpbuf *reply = ofpbuf_from_list(ovs_list_back(replies));
+    size_t start_ofs = reply->size;
+    enum ofp_version version = ofpmp_version(replies);
+    enum ofpraw raw = ofpmp_decode_raw(replies);
+
+    if (raw == OFPRAW_OFPST11_FLOW_REPLY || raw == OFPRAW_OFPST13_FLOW_REPLY) {
+        VLOG_INFO("++++++++++sqy ofputil_append_pof_flow_stats_reply: OFPRAW_OFPST11_FLOW_REPLY");
+    } else if (raw == OFPRAW_OFPST10_FLOW_REPLY) {
+        VLOG_INFO("++++++++++sqy ofputil_append_pof_flow_stats_reply: OFPRAW_OFPST10_FLOW_REPLY");
+    } else if (raw == OFPRAW_NXST_FLOW_REPLY) {
+        VLOG_INFO("++++++++++sqy ofputil_append_pof_flow_stats_reply: OFPRAW_NXST_FLOW_REPLY");
+        struct nx_flow_stats *nfs;
+        int match_len;
+
+        ofpbuf_put_uninit(reply, sizeof *nfs);
+        match_len = nx_put_pof_match(reply, &fs->match, 0, 0);
+        ofpacts_put_openflow_actions(fs->ofpacts, fs->ofpacts_len, reply,
+                                     version);
+        VLOG_INFO("++++++++++sqy ofputil_append_pof_flow_stats_reply:after ofpacts_put_openflow_actions");
+        nfs = ofpbuf_at_assert(reply, start_ofs, sizeof *nfs);
+        nfs->length = htons(reply->size - start_ofs);
+        nfs->table_id = fs->table_id;
+        nfs->pad = 0;
+        nfs->duration_sec = htonl(fs->duration_sec);
+        nfs->duration_nsec = htonl(fs->duration_nsec);
+        nfs->priority = htons(fs->priority);
+        nfs->idle_timeout = htons(fs->idle_timeout);
+        nfs->hard_timeout = htons(fs->hard_timeout);
+        nfs->idle_age = htons(fs->idle_age < 0 ? 0
+                              : fs->idle_age < UINT16_MAX ? fs->idle_age + 1
+                              : UINT16_MAX);
+        nfs->hard_age = htons(fs->hard_age < 0 ? 0
+                              : fs->hard_age < UINT16_MAX ? fs->hard_age + 1
+                              : UINT16_MAX);
+        nfs->match_len = htons(match_len);
+        nfs->cookie = fs->cookie;
+        nfs->packet_count = htonll(fs->packet_count);
+        nfs->byte_count = htonll(fs->byte_count);
+    } else {
+        OVS_NOT_REACHED();
+    }
+
+    ofpmp_postappend(replies, start_ofs);
 }
 
 /* Converts abstract ofputil_aggregate_stats 'stats' into an OFPST_AGGREGATE or

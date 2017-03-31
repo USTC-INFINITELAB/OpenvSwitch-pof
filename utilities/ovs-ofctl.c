@@ -604,23 +604,23 @@ dump_transaction(struct vconn *vconn, struct ofpbuf *request)
         enum ofpraw request_raw;
         enum ofpraw reply_raw;
         bool done = false;
-
+        VLOG_INFO("+++++++++++sqy dump_transaction: before ofpraw_decode_partial");
         ofpraw_decode_partial(&request_raw, request->data, request->size);
         reply_raw = ofpraw_stats_request_to_reply(request_raw, oh->version);
-
+        VLOG_INFO("+++++++++++sqy dump_transaction: after ofpraw_stats_request_to_reply");
         send_openflow_buffer(vconn, request);
         while (!done) {
             ovs_be32 recv_xid;
             struct ofpbuf *reply;
-
+            VLOG_INFO("+++++++++++sqy dump_transaction: while (!done) ");
             run(vconn_recv_block(vconn, &reply),
                 "OpenFlow packet receive failed");
             recv_xid = ((struct ofp_header *) reply->data)->xid;
             if (send_xid == recv_xid) {
                 enum ofpraw raw;
-
+                VLOG_INFO("+++++++++++sqy dump_transaction: before ofp_print ");
                 ofp_print(stdout, reply->data, reply->size, verbosity + 1);
-
+                VLOG_INFO("+++++++++++sqy dump_transaction: before ofpraw_decode ");
                 ofpraw_decode(&raw, reply->data);
                 if (ofptype_from_ofpraw(raw) == OFPTYPE_ERROR) {
                     done = true;
@@ -636,10 +636,12 @@ dump_transaction(struct vconn *vconn, struct ofpbuf *request)
                          "!= expected %08"PRIx32, recv_xid, send_xid);
             }
             ofpbuf_delete(reply);
+
         }
+        VLOG_INFO("+++++++++++sqy dump_transaction: end while ");
     } else {
         struct ofpbuf *reply;
-
+        VLOG_INFO("+++++++++++sqy dump_transaction: ofpmsg_is not _stat_request ");
         run(vconn_transact(vconn, request, &reply), "talking to %s",
             vconn_get_name(vconn));
         ofp_print(stdout, reply->data, reply->size, verbosity + 1);

@@ -956,6 +956,154 @@ enum OVS_PACKED_ENUM mf_field_id {
 #error "Need to update MFF_REG* to match FLOW_N_XXREGS"
 #endif
 
+#if POF_N_FIELD_ID == 8
+    /* "field_id<N>".
+     *
+     * OpenFlow 1.5 ``extended register".  Each extended register
+     * overlays two of the Open vSwitch extension 32-bit registers:
+     * xreg0 overlays reg0 and reg1, with reg0 supplying the
+     * most-significant bits of xreg0 and reg1 the least-significant.
+     * xreg1 similarly overlays reg2 and reg3, and so on.
+     *
+     * These registers were introduced in OpenFlow 1.5, but EXT-244 in the ONF
+     * JIRA also publishes them as a (draft) OpenFlow extension to OpenFlow
+     * 1.3.
+     *
+     * Type: be16.
+     * Maskable: bitwise.
+     * Formatting: hexadecimal.
+     * Prerequisites: none.
+     * Access: read/write.
+     * NXM: NXM_NX_FIELD_ID0(119) since v2.6.              <0>
+     * NXM: NXM_NX_FIELD_ID1(120) since v2.6.              <1>
+     * NXM: NXM_NX_FIELD_ID2(121) since v2.6.              <2>
+     * NXM: NXM_NX_FIELD_ID3(122) since v2.6.              <3>
+     * NXM: NXM_NX_FIELD_ID4(123) since v2.6.              <4>
+     * NXM: NXM_NX_FIELD_ID5(124) since v2.6.              <5>
+     * NXM: NXM_NX_FIELD_ID6(125) since v2.6.              <6>
+     * NXM: NXM_NX_FIELD_ID7(126) since v2.6.              <7>
+     * OXM: none.
+     */
+    MFF_FIELD_ID0,
+    MFF_FIELD_ID1,
+    MFF_FIELD_ID2,
+    MFF_FIELD_ID3,
+    MFF_FIELD_ID4,
+    MFF_FIELD_ID5,
+    MFF_FIELD_ID6,
+    MFF_FIELD_ID7,
+#else
+#error "Need to update MFF_REG* to match POF_N_FIELD_ID"
+#endif
+
+#if POF_N_OFFSET == 8
+    /* "offset<N>".
+     *
+     * Destination address in Ethernet header.
+     *
+     * Before Open vSwitch 1.8, the allowed masks were restricted to
+     * 00:00:00:00:00:00, fe:ff:ff:ff:ff:ff, 01:00:00:00:00:00,
+     * ff:ff:ff:ff:ff:ff.
+     *
+     * Type: be16.
+     * Maskable: bitwise.
+     * Formatting: hexadecimal.
+     * Prerequisites: none.
+     * Access: read/write.
+     * NXM: NXM_NX_OFFSET0(127) since v2.6.              <0>
+     * NXM: NXM_NX_OFFSET1(128) since v2.6.              <1>
+     * NXM: NXM_NX_OFFSET2(129) since v2.6.              <2>
+     * NXM: NXM_NX_OFFSET3(130) since v2.6.              <3>
+     * NXM: NXM_NX_OFFSET4(131) since v2.6.              <4>
+     * NXM: NXM_NX_OFFSET5(132) since v2.6.              <5>
+     * NXM: NXM_NX_OFFSET6(133) since v2.6.              <6>
+     * NXM: NXM_NX_OFFSET7(134) since v2.6.              <7>
+     * OXM: none.
+     * OF1.0: exact match.
+     * OF1.1: bitwise mask.
+     */
+    MFF_OFFSET0,
+    MFF_OFFSET1,
+    MFF_OFFSET2,
+    MFF_OFFSET3,
+    MFF_OFFSET4,
+    MFF_OFFSET5,
+    MFF_OFFSET6,
+    MFF_OFFSET7,
+#else
+#error "Need to update MFF_REG* to match POF_N_OFFSET"
+#endif
+
+#if POF_N_LENGTH == 8
+    /* "length<N>".
+     *
+     * Destination address in Ethernet header.
+     *
+     * Before Open vSwitch 1.8, the allowed masks were restricted to
+     * 00:00:00:00:00:00, fe:ff:ff:ff:ff:ff, 01:00:00:00:00:00,
+     * ff:ff:ff:ff:ff:ff.
+     *
+     * Type: be16.
+     * Maskable: bitwise.
+     * Formatting: hexadecimal.
+     * Prerequisites: none.
+     * Access: read/write.
+     * NXM: NXM_NX_LENGTH0(135) since v2.6.              <0>
+     * NXM: NXM_NX_LENGTH1(136) since v2.6.              <1>
+     * NXM: NXM_NX_LENGTH2(137) since v2.6.              <2>
+     * NXM: NXM_NX_LENGTH3(138) since v2.6.              <3>
+     * NXM: NXM_NX_LENGTH4(139) since v2.6.              <4>
+     * NXM: NXM_NX_LENGTH5(140) since v2.6.              <5>
+     * NXM: NXM_NX_LENGTH6(141) since v2.6.              <6>
+     * NXM: NXM_NX_LENGTH7(142) since v2.6.              <7>
+     * OXM: none.
+     * OF1.0: exact match.
+     * OF1.1: bitwise mask.
+     */
+    MFF_LENGTH0,
+    MFF_LENGTH1,
+    MFF_LENGTH2,
+    MFF_LENGTH3,
+    MFF_LENGTH4,
+    MFF_LENGTH5,
+    MFF_LENGTH6,
+    MFF_LENGTH7,
+#else
+#error "Need to update MFF_REG* to match POF_N_LENGTH"
+#endif
+
+#if POF_N_VALUE == 8
+    /* "value<N>".
+     *
+     * The source address in the IPv6 header.
+     *
+     * Type: be128.
+     * Maskable: bitwise.
+     * Formatting: hexadecimal.
+     * Prerequisites: none.
+     * Access: read/write.
+     * NXM: NXM_NX_VALUE0(143) since v2.6.              <0>
+     * NXM: NXM_NX_VALUE1(144) since v2.6.              <1>
+     * NXM: NXM_NX_VALUE2(145) since v2.6.              <2>
+     * NXM: NXM_NX_VALUE3(146) since v2.6.              <3>
+     * NXM: NXM_NX_VALUE4(147) since v2.6.              <4>
+     * NXM: NXM_NX_VALUE5(148) since v2.6.              <5>
+     * NXM: NXM_NX_VALUE6(149) since v2.6.              <6>
+     * NXM: NXM_NX_VALUE7(150) since v2.6.              <7>
+     * OXM: none.
+     */
+    MFF_VALUE0,
+    MFF_VALUE1,
+    MFF_VALUE2,
+    MFF_VALUE3,
+    MFF_VALUE4,
+    MFF_VALUE5,
+    MFF_VALUE6,
+    MFF_VALUE7,
+#else
+#error "Need to update MFF_REG* to match POF_N_VALUE"
+#endif
+
 /* ## -------- ## */
 /* ## Ethernet ## */
 /* ## -------- ## */

@@ -178,6 +178,7 @@ void match_init_hidden_fields(struct match *);
 bool match_has_default_hidden_fields(const struct match *);
 
 void match_format(const struct match *, struct ds *, int priority);
+void pof_match_format(const struct match_x *, struct ds *, int priority);
 char *match_to_string(const struct match *, int priority);
 void match_print(const struct match *);
 

@@ -235,7 +235,6 @@ int ofputil_put_ofp11_match(struct ofpbuf *, const struct match *,
 int ofputil_put_pof_match(struct ofpbuf *, const struct match_x *,
                             enum ofputil_protocol);
 void ofputil_match_to_ofp11_match(const struct match *, struct ofp11_match *);
-void ofputil_match_x_to_pof_match_x(const struct match_x *, struct pof_match_x *);
 int ofputil_match_typical_len(enum ofputil_protocol);
 
 /* dl_type translation between OpenFlow and 'struct flow' format. */
@@ -475,6 +474,9 @@ int ofputil_decode_flow_stats_reply(struct ofputil_flow_stats *,
                                     bool flow_age_extension,
                                     struct ofpbuf *ofpacts);
 void ofputil_append_flow_stats_reply(const struct ofputil_flow_stats *,
+                                     struct ovs_list *replies,
+                                     const struct tun_table *);
+void ofputil_append_pof_flow_stats_reply(const struct ofputil_pof_flow_stats *,
                                      struct ovs_list *replies,
                                      const struct tun_table *);
 

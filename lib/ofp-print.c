@@ -1610,6 +1610,33 @@ ofp_print_flow_stats_request(struct ds *string, const struct ofp_header *oh)
     match_format(&fsr.match, string, OFP_DEFAULT_PRIORITY);
 }
 
+static void
+ofp_print_pof_flow_stats_request(struct ds *string, const struct ofp_header *oh)
+{
+    struct ofputil_pof_flow_stats_request fsr;
+    enum ofperr error;
+    VLOG_INFO("+++++++++++sqy ofp_print_pof_flow_stats_request: before ofputil_decode_pof_flow_stats_request ");
+    error = ofputil_decode_pof_flow_stats_request(&fsr, oh, NULL);
+    if (error) {
+        ofp_print_error(string, error);
+        return;
+    }
+
+    if (fsr.table_id != 0xff) {
+        ds_put_format(string, " table=%"PRIu8, fsr.table_id);
+    }
+
+    if (fsr.out_port != OFPP_ANY) {
+        ds_put_cstr(string, " out_port=");
+        ofputil_format_port(fsr.out_port, string);
+    }
+
+    ds_put_char(string, ' ');
+    VLOG_INFO("+++++++++++sqy ofp_print_pof_flow_stats_request: before pof_match_format ");
+    pof_match_format(&fsr.match, string, OFP_DEFAULT_PRIORITY);
+    VLOG_INFO("+++++++++++sqy ofp_print_pof_flow_stats_request: after pof_match_format ");
+}
+
 void
 ofp_print_flow_stats(struct ds *string, struct ofputil_flow_stats *fs)
 {
@@ -3504,7 +3531,7 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
     case OFPTYPE_FLOW_STATS_REQUEST:
     case OFPTYPE_AGGREGATE_STATS_REQUEST:
         ofp_print_stats(string, oh);
-        ofp_print_flow_stats_request(string, oh);
+        ofp_print_pof_flow_stats_request(string, oh);
         break;
 
     case OFPTYPE_TABLE_STATS_REQUEST:

@@ -536,6 +536,69 @@ nx_pull_raw(const uint8_t *p, unsigned int match_len, bool strict,
 }
 
 static enum ofperr
+nx_pull_pof_raw(const uint8_t *p, unsigned int match_len, bool strict,
+            struct match_x *match, ovs_be64 *cookie, ovs_be64 *cookie_mask,
+            const struct tun_table *tun_table)
+{
+    ovs_assert((cookie != NULL) == (cookie_mask != NULL));
+
+    /*match_init_catchall(match);
+    match->flow.tunnel.metadata.tab = tun_table;
+    if (cookie) {
+        *cookie = *cookie_mask = htonll(0);
+    }
+
+    struct ofpbuf b = ofpbuf_const_initializer(p, match_len);
+    while (b.size) {
+        const uint8_t *pos = b.data;
+        const struct mf_field *field;
+        union mf_value value;
+        union mf_value mask;
+        enum ofperr error;
+
+        error = nx_pull_match_entry(&b, cookie != NULL, &field, &value, &mask);
+        if (error) {
+            if (error == OFPERR_OFPBMC_BAD_FIELD && !strict) {
+                continue;
+            }
+        } else if (!field) {
+            if (!cookie) {
+                error = OFPERR_OFPBMC_BAD_FIELD;
+            } else if (*cookie_mask) {
+                error = OFPERR_OFPBMC_DUP_FIELD;
+            } else {
+                *cookie = value.be64;
+                *cookie_mask = mask.be64;
+            }
+        } else if (!mf_are_prereqs_ok(field, &match->flow, NULL)) {
+            error = OFPERR_OFPBMC_BAD_PREREQ;
+        } else if (!mf_is_all_wild(field, &match->wc)) {
+            error = OFPERR_OFPBMC_DUP_FIELD;
+        } else {
+            char *err_str;
+
+            mf_set(field, &value, &mask, match, &err_str);
+            if (err_str) {
+                VLOG_DBG_RL(&rl, "error parsing OXM at offset %"PRIdPTR" "
+                           "within match (%s)", pos - p, err_str);
+                free(err_str);
+                return OFPERR_OFPBMC_BAD_VALUE;
+            }
+        }
+
+        if (error) {
+            VLOG_DBG_RL(&rl, "error parsing OXM at offset %"PRIdPTR" "
+                        "within match (%s)", pos -
+                        p, ofperr_to_string(error));
+            return error;
+        }
+    }
+
+    match->flow.tunnel.metadata.tab = NULL;*/
+    return 0;
+}
+
+static enum ofperr
 nx_pull_match__(struct ofpbuf *b, unsigned int match_len, bool strict,
                 struct match *match,
                 ovs_be64 *cookie, ovs_be64 *cookie_mask,
@@ -557,6 +620,28 @@ nx_pull_match__(struct ofpbuf *b, unsigned int match_len, bool strict,
                        tun_table);
 }
 
+static enum ofperr
+nx_pull_pof_match__(struct ofpbuf *b, unsigned int match_len, bool strict,
+                struct match_x *match,
+                ovs_be64 *cookie, ovs_be64 *cookie_mask,
+                const struct tun_table *tun_table)
+{
+    uint8_t *p = NULL;
+
+    if (match_len) {
+        p = ofpbuf_try_pull(b, ROUND_UP(match_len, 8));
+        if (!p) {
+            VLOG_DBG_RL(&rl, "nx_match length %u, rounded up to a "
+                        "multiple of 8, is longer than space in message (max "
+                        "length %"PRIu32")", match_len, b->size);
+            return OFPERR_OFPBMC_BAD_LEN;
+        }
+    }
+
+    return nx_pull_pof_raw(p, match_len, strict, match, cookie, cookie_mask,
+                       tun_table);
+}
+
 /* Parses the nx_match formatted match description in 'b' with length
  * 'match_len'.  Stores the results in 'match'.  If 'cookie' and 'cookie_mask'
  * are valid pointers, then stores the cookie and mask in them if 'b' contains
@@ -571,6 +656,15 @@ nx_pull_match(struct ofpbuf *b, unsigned int match_len, struct match *match,
               const struct tun_table *tun_table)
 {
     return nx_pull_match__(b, match_len, true, match, cookie, cookie_mask,
+                           tun_table);
+}
+
+enum ofperr
+nx_pull_pof_match(struct ofpbuf *b, unsigned int match_len, struct match_x *match,
+              ovs_be64 *cookie, ovs_be64 *cookie_mask,
+              const struct tun_table *tun_table)
+{
+    return nx_pull_pof_match__(b, match_len, true, match, cookie, cookie_mask,
                            tun_table);
 }
 
@@ -1099,6 +1193,45 @@ nx_put_raw(struct ofpbuf *b, enum ofp_version oxm, const struct match *match,
     return match_len;
 }
 
+/* If 'match' is a catch-all rule that matches every packet, then this function
+* appends nothing to 'b' and returns 0. sqy */
+static int
+nx_put_pof_raw(struct ofpbuf *b, enum ofp_version oxm, const struct match_x *match,
+           ovs_be64 cookie, ovs_be64 cookie_mask)
+{
+    const struct pof_flow *flow = &match->flow;
+    const size_t start_len = b->size;
+    int match_len;
+    int i;
+
+    BUILD_ASSERT_DECL(FLOW_WC_SEQ == 36);
+    for (i = 0; i < POF_N_FIELD_ID; i++) {
+        VLOG_INFO("++++++++++sqy nx_put_pof_raw: for 1");
+        nxm_put_16m(b, MFF_FIELD_ID0 + i, oxm, flow->field_id[i],
+                    match->wc.masks.field_id[i]);
+        nxm_put_16m(b, MFF_OFFSET0 + i, oxm, flow->offset[i],
+                    match->wc.masks.offset[i]);
+        nxm_put_16m(b, MFF_LENGTH0 + i, oxm, flow->len[i],
+                    match->wc.masks.len[i]);
+        nxm_put(b, MFF_VALUE0 + i, oxm, flow->value[i], match->wc.masks.value[i],
+                sizeof flow->value[i]);
+    }
+    /* Cookie. */
+    if (cookie_mask) {
+        bool masked = cookie_mask != OVS_BE64_MAX;
+
+        cookie &= cookie_mask;
+        nx_put_header__(b, NXM_NX_COOKIE, masked);
+        ofpbuf_put(b, &cookie, sizeof cookie);
+        if (masked) {
+            ofpbuf_put(b, &cookie_mask, sizeof cookie_mask);
+        }
+    }
+    match_len = b->size - start_len;
+    VLOG_INFO("++++++++++sqy nx_put_pof_raw: match_len = %d ",match_len);
+    return match_len;
+}
+
 /* Appends to 'b' the nx_match format that expresses 'match', plus enough zero
  * bytes to pad the nx_match out to a multiple of 8.  For Flow Mod and Flow
  * Stats Requests messages, a 'cookie' and 'cookie_mask' may be supplied.
@@ -1114,6 +1247,16 @@ nx_put_match(struct ofpbuf *b, const struct match *match,
              ovs_be64 cookie, ovs_be64 cookie_mask)
 {
     int match_len = nx_put_raw(b, 0, match, cookie, cookie_mask);
+
+    ofpbuf_put_zeros(b, PAD_SIZE(match_len, 8));
+    return match_len;
+}
+
+int
+nx_put_pof_match(struct ofpbuf *b, const struct match_x *match,
+             ovs_be64 cookie, ovs_be64 cookie_mask)
+{
+    int match_len = nx_put_pof_raw(b, 0, match, cookie, cookie_mask);
 
     ofpbuf_put_zeros(b, PAD_SIZE(match_len, 8));
     return match_len;

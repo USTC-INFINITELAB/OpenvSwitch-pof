@@ -716,6 +716,7 @@ void minimask_combine(struct minimask *dst,
                       uint64_t storage[FLOW_U64S]);
 
 void minimask_expand(const struct minimask *, struct flow_wildcards *);
+void pof_minimask_expand(const struct minimask *, struct pof_flow_wildcards *);
 
 static inline uint32_t minimask_get_u32(const struct minimask *,
                                         unsigned int u32_ofs);

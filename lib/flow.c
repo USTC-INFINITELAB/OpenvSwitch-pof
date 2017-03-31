@@ -2461,11 +2461,9 @@ pof_miniflow_init(struct miniflow *dst, const struct pof_flow *src)
 {
     uint64_t *dst_u64 = miniflow_values(dst);
     size_t idx;
-    VLOG_INFO("+++++++++++sqy pof_miniflow_init:  before pof_flow_u64_value ");
     FLOWMAP_FOR_EACH_INDEX(idx, dst->map) {
         *dst_u64++ = pof_flow_u64_value(src, idx);
     }
-    VLOG_INFO("+++++++++++sqy pof_miniflow_init:  after pof_flow_u64_value ");
 }
 
 /* Compressed flow. */
