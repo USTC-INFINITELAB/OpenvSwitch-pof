@@ -28,9 +28,11 @@
 struct flow;
 struct ofpbuf;
 struct ofputil_flow_mod;
+struct ofputil_pof_flow_mod;
 struct ofputil_packet_out;
 struct ofputil_flow_monitor_request;
 struct ofputil_flow_stats_request;
+struct ofputil_pof_flow_stats_request;
 struct ofputil_group_mod;
 struct ofputil_meter_mod;
 struct ofputil_table_mod;

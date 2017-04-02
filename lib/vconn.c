@@ -248,7 +248,6 @@ vconn_open(const char *name, uint32_t allowed_versions, uint8_t dscp,
     error = class->open(name, allowed_versions, suffix_copy, &vconn, dscp);
     free(suffix_copy);
     if (error) {
-        VLOG_INFO("+++++++++++sqy vconn_open: error2 = %d", error);
         goto error;
     }
 

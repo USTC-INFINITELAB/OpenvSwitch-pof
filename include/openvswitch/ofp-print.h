@@ -27,6 +27,7 @@ struct ofp10_match;
 struct ofp_flow_mod;
 struct ofp_header;
 struct ofputil_flow_stats;
+struct ofputil_pof_flow_stats;
 struct ofputil_table_features;
 struct ofputil_table_stats;
 
@@ -44,6 +45,7 @@ char *ofp10_match_to_string(const struct ofp10_match *, int verbosity);
 char *ofp_packet_to_string(const void *data, size_t len);
 
 void ofp_print_flow_stats(struct ds *, struct ofputil_flow_stats *);
+void ofp_print_pof_flow_stats(struct ds *, struct ofputil_pof_flow_stats *);
 void ofp_print_version(const struct ofp_header *, struct ds *);
 void ofp_print_table_features(
     struct ds *, const struct ofputil_table_features *features,

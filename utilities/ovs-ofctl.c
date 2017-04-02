@@ -545,14 +545,11 @@ open_vconn__(const char *name, enum open_target target,
     free(datapath_type);
 
     if (strchr(name, ':')) {
-        VLOG_INFO("+++++++++++sqy open_vconn__:1 name = %s", name);
         run(vconn_open(name, get_allowed_ofp_versions(), DSCP_DEFAULT, vconnp),
             "connecting to %s", name);
     } else if (!open_vconn_socket(name, vconnp)) {
-        VLOG_INFO("+++++++++++sqy open_vconn__: name2");
         /* Fall Through. */
     } else if (!open_vconn_socket(bridge_path, vconnp)) {
-        VLOG_INFO("+++++++++++sqy open_vconn__: name 3");
         /* Fall Through. */
     } else if (!open_vconn_socket(socket_name, vconnp)) {
         /* Fall Through. */
@@ -604,23 +601,21 @@ dump_transaction(struct vconn *vconn, struct ofpbuf *request)
         enum ofpraw request_raw;
         enum ofpraw reply_raw;
         bool done = false;
-        VLOG_INFO("+++++++++++sqy dump_transaction: before ofpraw_decode_partial");
+
         ofpraw_decode_partial(&request_raw, request->data, request->size);
         reply_raw = ofpraw_stats_request_to_reply(request_raw, oh->version);
-        VLOG_INFO("+++++++++++sqy dump_transaction: after ofpraw_stats_request_to_reply");
+
         send_openflow_buffer(vconn, request);
         while (!done) {
             ovs_be32 recv_xid;
             struct ofpbuf *reply;
-            VLOG_INFO("+++++++++++sqy dump_transaction: while (!done) ");
+            
             run(vconn_recv_block(vconn, &reply),
                 "OpenFlow packet receive failed");
             recv_xid = ((struct ofp_header *) reply->data)->xid;
             if (send_xid == recv_xid) {
-                enum ofpraw raw;
-                VLOG_INFO("+++++++++++sqy dump_transaction: before ofp_print ");
-                ofp_print(stdout, reply->data, reply->size, verbosity + 1);
-                VLOG_INFO("+++++++++++sqy dump_transaction: before ofpraw_decode ");
+                enum ofpraw raw;               
+                ofp_print(stdout, reply->data, reply->size, verbosity + 1);                
                 ofpraw_decode(&raw, reply->data);
                 if (ofptype_from_ofpraw(raw) == OFPTYPE_ERROR) {
                     done = true;
@@ -638,7 +633,6 @@ dump_transaction(struct vconn *vconn, struct ofpbuf *request)
             ofpbuf_delete(reply);
 
         }
-        VLOG_INFO("+++++++++++sqy dump_transaction: end while ");
     } else {
         struct ofpbuf *reply;
         VLOG_INFO("+++++++++++sqy dump_transaction: ofpmsg_is not _stat_request ");
@@ -1179,16 +1173,15 @@ prepare_dump_flows(int argc, char *argv[], bool aggregate,
     error = parse_pof_flow_stats_request_str(&fsr, aggregate,
                                              argc > 2 ? argv[2] : "",
                                              &usable_protocols);
-    VLOG_INFO("+++++++++++sqy prepare_dump_flows: before parse_pof_flow_stats_request_str error = %s", error);
+    /*VLOG_INFO("+++++++++++sqy prepare_dump_flows: "
+              "before parse_pof_flow_stats_request_str error = %s", error);*/
     if (error) {
         ovs_fatal(0, "%s", error);
     }
     protocol = open_vconn(argv[1], &vconn);
-    VLOG_INFO("+++++++++++sqy prepare_dump_flows: before set_protocol_for_flow_dump");
     protocol = set_protocol_for_flow_dump(vconn, protocol, usable_protocols);
-    VLOG_INFO("+++++++++++sqy prepare_dump_flows: before ofputil_encode_pof_flow_stats_request");
     *requestp = ofputil_encode_pof_flow_stats_request(&fsr, protocol);
-    VLOG_INFO("+++++++++++sqy prepare_dump_flows: after ofputil_encode_pof_flow_stats_request");
+    /*VLOG_INFO("+++++++++++sqy prepare_dump_flows: after ofputil_encode_pof_flow_stats_request");*/
     return vconn;
 }
 
@@ -1199,7 +1192,6 @@ ofctl_dump_flows__(int argc, char *argv[], bool aggregate)
     struct vconn *vconn;
 
     vconn = prepare_dump_flows(argc, argv, aggregate, &request);
-    VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: before dump_transaction");
     dump_transaction(vconn, request);
     VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: after dump_transaction");
     vconn_close(vconn);

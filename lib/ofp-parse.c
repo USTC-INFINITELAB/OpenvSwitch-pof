@@ -538,7 +538,7 @@ parse_pof_str__(struct ofputil_pof_flow_mod *fm, int command, char *string,
     char *name, *value;
 
     *usable_protocols = OFPUTIL_P_ANY;
-    VLOG_INFO("%s: +++sqy  parse_pof_str__:string ",  string);
+    /*VLOG_INFO("%s: +++sqy  parse_pof_str__:string ",  string);*/
     if (command == -2) {
         size_t len;
 
@@ -673,7 +673,7 @@ parse_pof_str(struct ofputil_pof_flow_mod *fm, int command, const char *str_,
         fm->ofpacts = NULL;
         fm->ofpacts_len = 0;
     }
-    VLOG_INFO("+++++++++++sqy parse_pof_str: after parse_pof_str__ error = %s", error);
+    /*VLOG_INFO("+++++++++++sqy parse_pof_str: after parse_pof_str__ error = %s", error);*/
     free(string);
     return error;
 }
@@ -1349,7 +1349,7 @@ parse_pof_flow_stats_request_str(struct ofputil_pof_flow_stats_request *fsr,
     struct ofputil_pof_flow_mod fm;
     char *error;
     error = parse_pof_str(&fm, -1, string, usable_protocols);
-    VLOG_INFO("+++++++++++sqy parse_pof_flow_stats_request_str: error = %s", error);
+    /*VLOG_INFO("+++++++++++sqy parse_pof_flow_stats_request_str: error = %s", error);*/
     if (error) {
         return error;
     }

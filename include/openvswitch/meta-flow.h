@@ -30,6 +30,7 @@
 
 struct ds;
 struct match;
+struct match_x;
 
 /* Open vSwitch fields
  * ===================
@@ -956,7 +957,7 @@ enum OVS_PACKED_ENUM mf_field_id {
 #error "Need to update MFF_REG* to match FLOW_N_XXREGS"
 #endif
 
-#if POF_N_FIELD_ID == 8
+#if POF_N_FIELD_IDS == 8
     /* "field_id<N>".
      *
      * OpenFlow 1.5 ``extended register".  Each extended register
@@ -993,10 +994,10 @@ enum OVS_PACKED_ENUM mf_field_id {
     MFF_FIELD_ID6,
     MFF_FIELD_ID7,
 #else
-#error "Need to update MFF_REG* to match POF_N_FIELD_ID"
+#error "Need to update MFF_REG* to match POF_N_FIELD_IDS"
 #endif
 
-#if POF_N_OFFSET == 8
+#if POF_N_OFFSETS == 8
     /* "offset<N>".
      *
      * Destination address in Ethernet header.
@@ -1031,10 +1032,10 @@ enum OVS_PACKED_ENUM mf_field_id {
     MFF_OFFSET6,
     MFF_OFFSET7,
 #else
-#error "Need to update MFF_REG* to match POF_N_OFFSET"
+#error "Need to update MFF_REG* to match POF_N_OFFSETS"
 #endif
 
-#if POF_N_LENGTH == 8
+#if POF_N_LENGTHS == 8
     /* "length<N>".
      *
      * Destination address in Ethernet header.
@@ -1069,10 +1070,10 @@ enum OVS_PACKED_ENUM mf_field_id {
     MFF_LENGTH6,
     MFF_LENGTH7,
 #else
-#error "Need to update MFF_REG* to match POF_N_LENGTH"
+#error "Need to update MFF_REG* to match POF_N_LENGTHS"
 #endif
 
-#if POF_N_VALUE == 8
+#if POF_N_VALUES == 8
     /* "value<N>".
      *
      * The source address in the IPv6 header.
@@ -1101,7 +1102,7 @@ enum OVS_PACKED_ENUM mf_field_id {
     MFF_VALUE6,
     MFF_VALUE7,
 #else
-#error "Need to update MFF_REG* to match POF_N_VALUE"
+#error "Need to update MFF_REG* to match POF_N_VALUES"
 #endif
 
 /* ## -------- ## */
@@ -1942,6 +1943,46 @@ struct mf_bitmap {
 #error "Need to update CASE_MFF_REGS to match FLOW_N_REGS"
 #endif
 
+/* Use this macro as POF_N_FIELD_IDS: in a switch statement to choose all of the
+ * MFF_REGn cases. */
+#if POF_N_FIELD_IDS ==8
+#define CASE_MFF_FIELD_IDS                                             \
+    case MFF_FIELD_ID0: case MFF_FIELD_ID1: case MFF_FIELD_ID2: case MFF_FIELD_ID3:   \
+    case MFF_FIELD_ID4: case MFF_FIELD_ID5: case MFF_FIELD_ID6: case MFF_FIELD_ID7:
+#else
+#error "Need to update CASE_MFF_REGS to match CASE_MFF_FIELD_IDS"
+#endif
+
+/* Use this macro as POF_N_OFFSETS: in a switch statement to choose all of the
+ * MFF_REGn cases. */
+#if POF_N_OFFSETS ==8
+#define CASE_MFF_OFFSETS                                             \
+    case MFF_OFFSET0: case MFF_OFFSET1: case MFF_OFFSET2: case MFF_OFFSET3:   \
+    case MFF_OFFSET4: case MFF_OFFSET5: case MFF_OFFSET6: case MFF_OFFSET7:
+#else
+#error "Need to update CASE_MFF_REGS to match POF_N_OFFSETS"
+#endif
+
+/* Use this macro as POF_N_LENGTHS: in a switch statement to choose all of the
+ * MFF_REGn cases. */
+#if POF_N_LENGTHS ==8
+#define CASE_MFF_LENGTHS                                             \
+    case MFF_LENGTH0: case MFF_LENGTH1: case MFF_LENGTH2: case MFF_LENGTH3:   \
+    case MFF_LENGTH4: case MFF_LENGTH5: case MFF_LENGTH6: case MFF_LENGTH7:
+#else
+#error "Need to update CASE_MFF_REGS to match POF_N_LENGTHS"
+#endif
+
+/* Use this macro as POF_N_VALUES: in a switch statement to choose all of the
+ * MFF_REGn cases. */
+#if POF_N_VALUES ==8
+#define CASE_MFF_VALUES                                             \
+    case MFF_VALUE0: case MFF_VALUE1: case MFF_VALUE2: case MFF_VALUE3:   \
+    case MFF_VALUE4: case MFF_VALUE5: case MFF_VALUE6: case MFF_VALUE7:
+#else
+#error "Need to update CASE_MFF_REGS to match POF_N_VALUES"
+#endif
+
 /* Use this macro as CASE_MFF_XREGS: in a switch statement to choose all of the
  * MFF_REGn cases. */
 #if FLOW_N_XREGS == 8
@@ -2228,6 +2269,7 @@ mf_from_id(enum mf_field_id id)
 
 /* Inspecting wildcarded bits. */
 bool mf_is_all_wild(const struct mf_field *, const struct flow_wildcards *);
+bool pof_mf_is_all_wild(const struct mf_field *, const struct pof_flow_wildcards *);
 
 bool mf_is_mask_valid(const struct mf_field *, const union mf_value *mask);
 void mf_get_mask(const struct mf_field *, const struct flow_wildcards *,
@@ -2248,8 +2290,12 @@ bool mf_is_value_valid(const struct mf_field *, const union mf_value *value);
 
 void mf_get_value(const struct mf_field *, const struct flow *,
                   union mf_value *value);
+void pof_mf_get_value(const struct mf_field *, const struct pof_flow *,
+                  union mf_value *value);
 void mf_set_value(const struct mf_field *, const union mf_value *value,
                   struct match *, char **err_str);
+void pof_mf_set_value(const struct mf_field *, const union mf_value *value,
+                  struct match_x *, char **err_str);
 void mf_set_flow_value(const struct mf_field *, const union mf_value *value,
                        struct flow *);
 void mf_set_flow_value_masked(const struct mf_field *,
@@ -2270,6 +2316,8 @@ void mf_get(const struct mf_field *, const struct match *,
 /* Returns the set of usable protocols. */
 uint32_t mf_set(const struct mf_field *, const union mf_value *value,
                 const union mf_value *mask, struct match *, char **err_str);
+uint32_t pof_mf_set(const struct mf_field *, const union mf_value *value,
+                const union mf_value *mask, struct match_x *, char **err_str);
 
 void mf_set_wild(const struct mf_field *, struct match *, char **err_str);
 

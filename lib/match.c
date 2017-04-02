@@ -63,6 +63,14 @@ match_init_catchall(struct match *match)
     memset(&match->tun_md, 0, sizeof match->tun_md);
 }
 
+void
+pof_match_init_catchall(struct match_x *match)
+{
+    memset(&match->flow, 0, sizeof match->flow);
+    pof_flow_wildcards_init_catchall(&match->wc);
+    memset(&match->tun_md, 0, sizeof match->tun_md);
+}
+
 /* For each bit or field wildcarded in 'match', sets the corresponding bit or
  * field in 'flow' to all-0-bits.  It is important to maintain this invariant
  * in a match that might be inserted into a classifier.
@@ -110,6 +118,57 @@ match_set_reg(struct match *match, unsigned int reg_idx, uint32_t value)
     match_set_reg_masked(match, reg_idx, value, UINT32_MAX);
 }
 
+void
+pof_match_set_field_id(struct match_x *match, unsigned int field_id_idx, ovs_be16 value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);*/
+    ovs_assert(field_id_idx < POF_N_FIELD_IDS);
+    match->wc.masks.field_id[field_id_idx] = OVS_BE16_MAX;
+    match->flow.field_id[field_id_idx] = value & OVS_BE16_MAX;
+}
+
+void
+pof_match_set_offset(struct match_x *match, unsigned int offset_idx, ovs_be16 value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);*/
+    ovs_assert(offset_idx < POF_N_OFFSETS);
+    match->wc.masks.offset[offset_idx] = OVS_BE16_MAX;
+    match->flow.offset[offset_idx] = value & OVS_BE16_MAX;
+}
+
+void
+pof_match_set_length(struct match_x *match, unsigned int length_idx, ovs_be16 value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);*/
+    ovs_assert(length_idx < POF_N_LENGTHS);
+    match->wc.masks.len[length_idx] = OVS_BE16_MAX;
+    match->flow.len[length_idx] = value & OVS_BE16_MAX;
+}
+
+void
+pof_match_set_value(struct match_x *match, unsigned int value_idx, const struct in6_addr *value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);*/
+    int i=0;
+    ovs_assert(value_idx < POF_N_VALUES);
+    for(i=0; i<POF_MAX_FIELD_LENGTH_IN_BYTE;i++){
+        match->wc.masks.value[value_idx][i] =1;
+        match->flow.value[value_idx][i] = *((uint8_t*)value+i);
+    }
+}
+
+void
+pof_match_set_value_masked(struct match_x *match, unsigned int value_idx,
+                           const struct in6_addr *value,const struct in6_addr *mask)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);*/
+    int i=0;
+    ovs_assert(value_idx < POF_N_VALUES);
+    for(i=0; i<POF_MAX_FIELD_LENGTH_IN_BYTE;i++){
+        match->wc.masks.value[value_idx][i] =*((uint8_t*) mask+i);
+        match->flow.value[value_idx][i] = *((uint8_t*)value+i);
+    }
+}
 void
 match_set_reg_masked(struct match *match, unsigned int reg_idx,
                      uint32_t value, uint32_t mask)
@@ -1361,80 +1420,42 @@ match_format(const struct match *match, struct ds *s, int priority)
 void
 pof_match_format(const struct match_x *match, struct ds *s, int priority)
 {
-    const struct flow_wildcards *wc = &match->wc;
+    VLOG_INFO("+++++++++++sqy pof_match_format: start pof_match_format ");
+    const struct pof_flow_wildcards *wc = &match->wc;
     size_t start_len = s->length;
-    const struct flow *f = &match->flow;
+    const struct pof_flow *f = &match->flow;
     bool skip_type = false;
 
     bool skip_proto = false;
 
-    int i;
+    int i=0;
 
     BUILD_ASSERT_DECL(FLOW_WC_SEQ == 36);
 
-    /*if (priority != OFP_DEFAULT_PRIORITY) {
-        ds_put_format(s, "%spriority=%s%d,",
+
+    if (priority != OFP_DEFAULT_PRIORITY) {
+        ds_put_format(s, "%spriority=%s%d, ",
                       colors.special, colors.end, priority);
     }
 
-    format_uint32_masked(s, "pkt_mark", f->pkt_mark, wc->masks.pkt_mark);
-
-    if (wc->masks.actset_output) {
-        ds_put_format(s, "%sactset_output=%s", colors.param, colors.end);
-        ofputil_format_port(f->actset_output, s);
-        ds_put_char(s, ',');
-    }
-
-    for (i = 0; i < FLOW_N_REGS; i++) {
-        #define REGNAME_LEN 20
-        char regname[REGNAME_LEN];
-        if (snprintf(regname, REGNAME_LEN, "reg%d", i) >= REGNAME_LEN) {
-            strcpy(regname, "reg?");
+    while (wc->masks.len[i]==OVS_BE16_MAX) {
+        /*#define FIELD_IDNAME_LEN 20
+        char field_idname[FIELD_IDNAME_LEN];
+        if (snprintf(field_idname, FIELD_IDNAME_LEN, "field_id%d", i) >= FIELD_IDNAME_LEN) {
+            strcpy(field_idname, "field_id?");
         }
-        format_uint32_masked(s, regname, f->regs[i], wc->masks.regs[i]);
+        format_be16_masked(s, field_idname, f->field_id[i], wc->masks.field_id[i]);*/
+
+        ds_put_format(s, "%sfield_id=%s0x%04"PRIx16",",
+                      colors.param, colors.end, ntohs( f->field_id[i]));
+        ds_put_format(s, "%soffset=%s0x%04"PRIx16",",
+                      colors.param, colors.end, ntohs( f->offset[i]));
+        ds_put_format(s, "%slength=%s0x%04"PRIx16",",
+                      colors.param, colors.end, ntohs( f->len[i]));
+        format_ipv6_netmask(s, "value", (const struct in6_addr *)f->value[i],
+                            (const struct in6_addr *)wc->masks.value[i]);
+        i=i+1;
     }
-
-    format_flow_tunnel(s, match);
-
-    format_eth_masked(s, "dl_src", f->dl_src, wc->masks.dl_src);
-    format_eth_masked(s, "dl_dst", f->dl_dst, wc->masks.dl_dst);
-
-    if (f->dl_type == htons(ETH_TYPE_IPV6)) {
-        format_ipv6_netmask(s, "ipv6_src", &f->ipv6_src, &wc->masks.ipv6_src);
-        format_ipv6_netmask(s, "ipv6_dst", &f->ipv6_dst, &wc->masks.ipv6_dst);
-        if (wc->masks.ipv6_label) {
-            if (wc->masks.ipv6_label == OVS_BE32_MAX) {
-                ds_put_format(s, "%sipv6_label=%s0x%05"PRIx32",",
-                              colors.param, colors.end,
-                              ntohl(f->ipv6_label));
-            } else {
-                ds_put_format(s, "%sipv6_label=%s0x%05"PRIx32"/0x%05"PRIx32",",
-                              colors.param, colors.end, ntohl(f->ipv6_label),
-                              ntohl(wc->masks.ipv6_label));
-            }
-        }
-    } else if (f->dl_type == htons(ETH_TYPE_ARP) ||
-               f->dl_type == htons(ETH_TYPE_RARP)) {
-        format_ip_netmask(s, "arp_spa", f->nw_src, wc->masks.nw_src);
-        format_ip_netmask(s, "arp_tpa", f->nw_dst, wc->masks.nw_dst);
-    } else {
-        format_ip_netmask(s, "nw_src", f->nw_src, wc->masks.nw_src);
-        format_ip_netmask(s, "nw_dst", f->nw_dst, wc->masks.nw_dst);
-    }
-
-    format_be32_masked(s, "mpls_lse1", f->mpls_lse[1], wc->masks.mpls_lse[1]);
-    format_be32_masked(s, "mpls_lse2", f->mpls_lse[2], wc->masks.mpls_lse[2]);
-
-
-    if (is_ip_any(f) && f->nw_proto == IPPROTO_TCP && wc->masks.tcp_flags) {
-        format_flags_masked(s, "tcp_flags", packet_tcp_flag_to_string,
-                            ntohs(f->tcp_flags), TCP_FLAGS(wc->masks.tcp_flags),
-                            TCP_FLAGS(OVS_BE16_MAX));
-    }
-
-    if (s->length > start_len) {
-        ds_chomp(s, ',');
-    }*/
 }
 
 /* Converts 'match' to a string and returns the string.  If 'priority' is

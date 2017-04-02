@@ -1266,6 +1266,11 @@ flow_wildcards_init_catchall(struct flow_wildcards *wc)
 {
     memset(&wc->masks, 0, sizeof wc->masks);
 }
+void
+pof_flow_wildcards_init_catchall(struct pof_flow_wildcards *wc)
+{
+    memset(&wc->masks, 0, sizeof wc->masks);
+}
 
 /* Converts a flow into flow wildcards.  It sets the wildcard masks based on
  * the packet headers extracted to 'flow'.  It will not set the mask for fields

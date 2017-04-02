@@ -473,6 +473,11 @@ int ofputil_decode_flow_stats_reply(struct ofputil_flow_stats *,
                                     struct ofpbuf *msg,
                                     bool flow_age_extension,
                                     struct ofpbuf *ofpacts);
+int ofputil_decode_pof_flow_stats_reply(struct ofputil_pof_flow_stats *,
+                                    struct ofpbuf *msg,
+                                    bool flow_age_extension,
+                                    struct ofpbuf *ofpacts);
+
 void ofputil_append_flow_stats_reply(const struct ofputil_flow_stats *,
                                      struct ovs_list *replies,
                                      const struct tun_table *);

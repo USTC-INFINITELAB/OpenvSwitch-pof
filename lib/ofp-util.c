@@ -1662,13 +1662,15 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
             fm->match.flow.field_id[i] = ofm->match[i].field_id;
             fm->match.flow.len[i] = ofm->match[i].len;
             fm->match.flow.offset[i] = ofm->match[i].offset;
-            fm->match.wc.masks.field_id[i] = ofm->match[i].field_id;
-            fm->match.wc.masks.len[i] = ofm->match[i].len;
-            fm->match.wc.masks.offset[i] = ofm->match[i].offset;
+            fm->match.wc.masks.field_id[i] = OVS_BE16_MAX;
+            fm->match.wc.masks.len[i] = OVS_BE16_MAX;
+            fm->match.wc.masks.offset[i] = OVS_BE16_MAX;
             size_t j;
             for (j = 0; j < ARRAY_SIZE(ofm->match[i].value); j++) {
-                fm->match.flow.value[i][j] = ofm->match[i].value[j] & ofm->match[i].mask[j];
+                fm->match.flow.value[i][j] = ofm->match[i].value[j];
                 fm->match.wc.masks.value[i][j] = ofm->match[i].mask[j];
+                /*VLOG_INFO("++++++++sqy ofputil_decode_flow_mod_pof %d: value: %d; mask: %d",
+                          i, fm->match.flow.value[i][j], fm->match.wc.masks.value[i][j]);*/
             }
         }
 
@@ -3163,7 +3165,7 @@ ofputil_encode_pof_flow_stats_request(const struct ofputil_pof_flow_stats_reques
 
     case OFPUTIL_P_OF10_NXM:
     case OFPUTIL_P_OF10_NXM_TID: {
-        VLOG_INFO("+++++++++++sqy ofputil_encode_pof_flow_stats_request: OFPUTIL_P_OF10_NXM_TID");
+        /*VLOG_INFO("+++++++++++sqy ofputil_encode_pof_flow_stats_request: OFPUTIL_P_OF10_NXM_TID");*/
         struct nx_flow_stats_request *nfsr;
         int match_len;
 
@@ -3333,6 +3335,89 @@ ofputil_decode_flow_stats_reply(struct ofputil_flow_stats *fs,
             return EINVAL;
         }
         if (nx_pull_match(msg, match_len, &fs->match, NULL, NULL, NULL)) {
+            return EINVAL;
+        }
+        instructions_len = length - sizeof *nfs - ROUND_UP(match_len, 8);
+
+        fs->cookie = nfs->cookie;
+        fs->table_id = nfs->table_id;
+        fs->duration_sec = ntohl(nfs->duration_sec);
+        fs->duration_nsec = ntohl(nfs->duration_nsec);
+        fs->priority = ntohs(nfs->priority);
+        fs->idle_timeout = ntohs(nfs->idle_timeout);
+        fs->hard_timeout = ntohs(nfs->hard_timeout);
+        fs->importance = 0;
+        fs->idle_age = -1;
+        fs->hard_age = -1;
+        if (flow_age_extension) {
+            if (nfs->idle_age) {
+                fs->idle_age = ntohs(nfs->idle_age) - 1;
+            }
+            if (nfs->hard_age) {
+                fs->hard_age = ntohs(nfs->hard_age) - 1;
+            }
+        }
+        fs->packet_count = ntohll(nfs->packet_count);
+        fs->byte_count = ntohll(nfs->byte_count);
+        fs->flags = 0;
+    } else {
+        OVS_NOT_REACHED();
+    }
+
+    if (ofpacts_pull_openflow_instructions(msg, instructions_len, oh->version,
+                                           ofpacts)) {
+        VLOG_WARN_RL(&bad_ofmsg_rl, "OFPST_FLOW reply bad instructions");
+        return EINVAL;
+    }
+    fs->ofpacts = ofpacts->data;
+    fs->ofpacts_len = ofpacts->size;
+
+    return 0;
+}
+
+int
+ofputil_decode_pof_flow_stats_reply(struct ofputil_pof_flow_stats *fs,
+                                struct ofpbuf *msg,
+                                bool flow_age_extension,
+                                struct ofpbuf *ofpacts)
+{
+    const struct ofp_header *oh;
+    size_t instructions_len;
+    enum ofperr error;
+    enum ofpraw raw;
+
+    error = (msg->header ? ofpraw_decode(&raw, msg->header)
+             : ofpraw_pull(&raw, msg));
+    if (error) {
+        return error;
+    }
+    oh = msg->header;
+
+    if (!msg->size) {
+        return EOF;
+    } else if (raw == OFPRAW_OFPST11_FLOW_REPLY){
+       VLOG_INFO("+++++++++++sqy ofputil_decode_pof_flow_stats_reply: OFPRAW_OFPST11_FLOW_REPLY ");
+    } else if (raw == OFPRAW_OFPST10_FLOW_REPLY) {
+       VLOG_INFO("+++++++++++sqy ofputil_decode_pof_flow_stats_reply: OFPRAW_OFPST10_FLOW_REPLY ");
+    } else if (raw == OFPRAW_NXST_FLOW_REPLY) {
+        const struct nx_flow_stats *nfs;
+        size_t match_len, length;
+
+        nfs = ofpbuf_try_pull(msg, sizeof *nfs);
+        if (!nfs) {
+            VLOG_WARN_RL(&bad_ofmsg_rl, "NXST_FLOW reply has %"PRIu32" leftover "
+                         "bytes at end", msg->size);
+            return EINVAL;
+        }
+
+        length = ntohs(nfs->length);
+        match_len = ntohs(nfs->match_len);
+        if (length < sizeof *nfs + ROUND_UP(match_len, 8)) {
+            VLOG_WARN_RL(&bad_ofmsg_rl, "NXST_FLOW reply with match_len=%"PRIuSIZE" "
+                         "claims invalid length %"PRIuSIZE, match_len, length);
+            return EINVAL;
+        }
+        if (nx_pull_pof_match(msg, match_len, &fs->match, NULL, NULL, NULL)) {
             return EINVAL;
         }
         instructions_len = length - sizeof *nfs - ROUND_UP(match_len, 8);

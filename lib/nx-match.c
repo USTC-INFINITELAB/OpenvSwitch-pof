@@ -457,14 +457,17 @@ nx_pull_match_entry(struct ofpbuf *b, bool allow_cookie,
 
     error = nx_pull_entry__(b, allow_cookie, &header, field, value, mask);
     if (error) {
+        VLOG_INFO("+++++++++++sqy nx_pull_match_entry: error1 ");
         return error;
     }
     if (field && *field) {
         if (!mf_is_mask_valid(*field, mask)) {
+            VLOG_INFO("+++++++++++sqy nx_pull_match_entry: error2 ");
             VLOG_DBG_RL(&rl, "bad mask for field %s", (*field)->name);
             return OFPERR_OFPBMC_BAD_MASK;
         }
         if (!mf_is_value_valid(*field, value)) {
+            VLOG_INFO("+++++++++++sqy nx_pull_match_entry: error3 ");
             VLOG_DBG_RL(&rl, "bad value for field %s", (*field)->name);
             return OFPERR_OFPBMC_BAD_VALUE;
         }
@@ -541,9 +544,7 @@ nx_pull_pof_raw(const uint8_t *p, unsigned int match_len, bool strict,
             const struct tun_table *tun_table)
 {
     ovs_assert((cookie != NULL) == (cookie_mask != NULL));
-
-    /*match_init_catchall(match);
-    match->flow.tunnel.metadata.tab = tun_table;
+    pof_match_init_catchall(match);
     if (cookie) {
         *cookie = *cookie_mask = htonll(0);
     }
@@ -555,29 +556,30 @@ nx_pull_pof_raw(const uint8_t *p, unsigned int match_len, bool strict,
         union mf_value value;
         union mf_value mask;
         enum ofperr error;
-
+        VLOG_INFO("+++++++++++sqy nx_pull_pof_raw: nx_pull_match_entry times+++++++++++++ ");
         error = nx_pull_match_entry(&b, cookie != NULL, &field, &value, &mask);
         if (error) {
+            VLOG_INFO("+++++++++++sqy nx_pull_pof_raw: while error1 ");
             if (error == OFPERR_OFPBMC_BAD_FIELD && !strict) {
                 continue;
             }
         } else if (!field) {
             if (!cookie) {
+                VLOG_INFO("+++++++++++sqy nx_pull_pof_raw: while error2 ");
                 error = OFPERR_OFPBMC_BAD_FIELD;
             } else if (*cookie_mask) {
+                VLOG_INFO("+++++++++++sqy nx_pull_pof_raw: while error3 ");
                 error = OFPERR_OFPBMC_DUP_FIELD;
             } else {
                 *cookie = value.be64;
                 *cookie_mask = mask.be64;
             }
-        } else if (!mf_are_prereqs_ok(field, &match->flow, NULL)) {
-            error = OFPERR_OFPBMC_BAD_PREREQ;
-        } else if (!mf_is_all_wild(field, &match->wc)) {
+        } else if (!pof_mf_is_all_wild(field, &match->wc)) {
+            VLOG_INFO("+++++++++++sqy nx_pull_pof_raw: while error4 ");
             error = OFPERR_OFPBMC_DUP_FIELD;
         } else {
             char *err_str;
-
-            mf_set(field, &value, &mask, match, &err_str);
+            pof_mf_set(field, &value, &mask, match, &err_str);
             if (err_str) {
                 VLOG_DBG_RL(&rl, "error parsing OXM at offset %"PRIdPTR" "
                            "within match (%s)", pos - p, err_str);
@@ -594,7 +596,6 @@ nx_pull_pof_raw(const uint8_t *p, unsigned int match_len, bool strict,
         }
     }
 
-    match->flow.tunnel.metadata.tab = NULL;*/
     return 0;
 }
 
@@ -1205,8 +1206,7 @@ nx_put_pof_raw(struct ofpbuf *b, enum ofp_version oxm, const struct match_x *mat
     int i;
 
     BUILD_ASSERT_DECL(FLOW_WC_SEQ == 36);
-    for (i = 0; i < POF_N_FIELD_ID; i++) {
-        VLOG_INFO("++++++++++sqy nx_put_pof_raw: for 1");
+    for (i = 0; i < POF_N_FIELD_IDS; i++) {
         nxm_put_16m(b, MFF_FIELD_ID0 + i, oxm, flow->field_id[i],
                     match->wc.masks.field_id[i]);
         nxm_put_16m(b, MFF_OFFSET0 + i, oxm, flow->offset[i],
@@ -1228,7 +1228,7 @@ nx_put_pof_raw(struct ofpbuf *b, enum ofp_version oxm, const struct match_x *mat
         }
     }
     match_len = b->size - start_len;
-    VLOG_INFO("++++++++++sqy nx_put_pof_raw: match_len = %d ",match_len);
+    /*VLOG_INFO("++++++++++sqy nx_put_pof_raw: match_len = %d ",match_len);*/
     return match_len;
 }
 
