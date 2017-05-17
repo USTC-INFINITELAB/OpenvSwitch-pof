@@ -36,3 +36,14 @@ ovsdb
 tests
 vswitchd
 vtep
+ovn/northd
+python/ovs
+build-aux
+python/build
+tests/dpdk
+python/ovs/db
+python
+utilities
+ovn/utilities
+datapath/linux/compat/build-aux
+python/ovs/unixctl

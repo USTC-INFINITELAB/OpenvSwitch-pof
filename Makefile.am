@@ -111,14 +111,10 @@ EXTRA_DIST = \
         dpdk_unsetup.sh \
 	.cproject \
 	.project \
-	ovs-pof.config \
 	OVS206.config \
-	ovs-pof.creator \
 	OVS206.creator \
-	ovs-pof.creator.user \
-	ovs-pof.files \
+        OVS206.creator.user \
 	OVS206.files \
-	ovs-pof.includes \
 	OVS206.includes \
         lib/ofp-msgs.inc \
 	build-aux/cccl \
