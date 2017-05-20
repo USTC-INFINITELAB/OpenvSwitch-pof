@@ -105,6 +105,8 @@ EXTRA_DIST = \
 	.travis/osx-prepare.sh \
 	appveyor.yml \
 	boot.sh \
+        setup.sh \
+        unsetup.sh \
 	build-aux/cccl \
 	build-aux/cksum-schema-check \
 	build-aux/calculate-schema-cksum \
