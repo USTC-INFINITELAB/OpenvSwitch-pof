@@ -187,7 +187,7 @@ struct ofp_switch_config {
     ovs_be16 miss_send_len;     /* Max bytes of new flow that datapath should
                                    send to the controller. */
 };
-OFP_ASSERT(sizeof(struct ofp_switch_config) == 4);
+OFP_ASSERT(sizeof(struct ofp_switch_config) == 8);
 
 /* Common flags to indicate behavior of the physical port.  These flags are
  * used in ofp_port to describe the current configuration.  They are used in
