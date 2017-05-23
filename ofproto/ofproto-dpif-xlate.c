@@ -5488,8 +5488,8 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
 
     if (!xin->ofpacts && !ctx.rule) {
         VLOG_INFO("+++++++++++sqy xlate_actions:  before rule_dpif_lookup_from_table");
-        ctx.rule = rule_dpif_lookup_from_table(
-            ctx.xbridge->ofproto, ctx.xin->tables_version, flow, ctx.wc,
+        ctx.rule = rule_dpif_lookup_from_table_pof(
+            ctx.xbridge->ofproto, ctx.xin->tables_version, flow, xin->packet, ctx.wc,
             ctx.xin->resubmit_stats, &ctx.table_id,
             flow->in_port.ofp_port, true, true, ctx.xin->xcache);
         VLOG_INFO("+++++++++++sqy xlate_actions:  after rule_dpif_lookup_from_table");

@@ -119,6 +119,14 @@ static const struct cls_match *find_match_wc(const struct cls_subtable *,
                                              struct trie_ctx *,
                                              unsigned int n_tries,
                                              struct flow_wildcards *);
+static const struct cls_match *find_match_wc_pof(const struct cls_subtable *,
+                                             ovs_version_t version,
+                                             const struct flow *,
+                                             const struct dp_packet *packet,
+                                             struct trie_ctx *,
+                                             unsigned int n_tries,
+                                             struct flow_wildcards *);
+
 static struct cls_match *find_equal(const struct cls_subtable *,
                                     const struct miniflow *, uint32_t hash);
 
@@ -941,6 +949,224 @@ free_conjunctive_matches(struct hmap *matches,
  * 'flow' is non-const to allow for temporary modifications during the lookup.
  * Any changes are restored before returning. */
 static const struct cls_rule *
+classifier_lookup_pof__(const struct classifier *cls, ovs_version_t version,
+                    struct flow *flow, struct dp_packet *packet, struct flow_wildcards *wc,
+                    bool allow_conjunctive_matches)
+{
+    struct trie_ctx trie_ctx[CLS_MAX_TRIES];
+    const struct cls_match *match;
+    /* Highest-priority flow in 'cls' that certainly matches 'flow'. */
+    const struct cls_match *hard = NULL;
+    int hard_pri = INT_MIN;     /* hard ? hard->priority : INT_MIN. */
+
+    /* Highest-priority conjunctive flows in 'cls' matching 'flow'.  Since
+     * these are (components of) conjunctive flows, we can only know whether
+     * the full conjunctive flow matches after seeing multiple of them.  Thus,
+     * we refer to these as "soft matches". */
+    struct cls_conjunction_set *soft_stub[64];
+    struct cls_conjunction_set **soft = soft_stub;
+    size_t n_soft = 0, allocated_soft = ARRAY_SIZE(soft_stub);
+    int soft_pri = INT_MIN;    /* n_soft ? MAX(soft[*]->priority) : INT_MIN. */
+
+    /* Synchronize for cls->n_tries and subtable->trie_plen.  They can change
+     * when table configuration changes, which happens typically only on
+     * startup. */
+    atomic_thread_fence(memory_order_acquire);
+
+    /* Initialize trie contexts for find_match_wc(). */
+    for (int i = 0; i < cls->n_tries; i++) {
+        trie_ctx_init(&trie_ctx[i], &cls->tries[i]);
+    }
+    VLOG_INFO("+++++++++++sqy classifier_lookup__:  before main loop");
+
+    /* Main loop. */
+    struct cls_subtable *subtable;
+    PVECTOR_FOR_EACH_PRIORITY (subtable, hard_pri + 1, 2, sizeof *subtable,
+                               &cls->subtables) {
+        struct cls_conjunction_set *conj_set;
+
+        /* Skip subtables with no match, or where the match is lower-priority
+         * than some certain match we've already found. */
+        match = find_match_wc_pof(subtable, version, flow, packet, trie_ctx, cls->n_tries,
+                              wc);
+        if (!match || match->priority <= hard_pri) {
+            continue;
+        }
+
+        conj_set = ovsrcu_get(struct cls_conjunction_set *, &match->conj_set);
+        if (!conj_set) {
+            /* 'match' isn't part of a conjunctive match.  It's the best
+             * certain match we've got so far, since we know that it's
+             * higher-priority than hard_pri.
+             *
+             * (There might be a higher-priority conjunctive match.  We can't
+             * tell yet.) */
+            hard = match;
+            hard_pri = hard->priority;
+        } else if (allow_conjunctive_matches) {
+            /* 'match' is part of a conjunctive match.  Add it to the list. */
+            if (OVS_UNLIKELY(n_soft >= allocated_soft)) {
+                struct cls_conjunction_set **old_soft = soft;
+
+                allocated_soft *= 2;
+                soft = xmalloc(allocated_soft * sizeof *soft);
+                memcpy(soft, old_soft, n_soft * sizeof *soft);
+                if (old_soft != soft_stub) {
+                    free(old_soft);
+                }
+            }
+            soft[n_soft++] = conj_set;
+
+            /* Keep track of the highest-priority soft match. */
+            if (soft_pri < match->priority) {
+                soft_pri = match->priority;
+            }
+        }
+    }
+    VLOG_INFO("+++++++++++sqy classifier_lookup__:  after main loop");
+
+    /* In the common case, at this point we have no soft matches and we can
+     * return immediately.  (We do the same thing if we have potential soft
+     * matches but none of them are higher-priority than our hard match.) */
+    if (hard_pri >= soft_pri) {
+        if (soft != soft_stub) {  //sqy notes: equal and do not free
+            free(soft);
+        }
+        return hard ? hard->cls_rule : NULL;
+    }
+
+    /* At this point, we have some soft matches.  We might also have a hard
+     * match; if so, its priority is lower than the highest-priority soft
+     * match. */
+
+    /* Soft match loop.
+     *
+     * Check whether soft matches are real matches. */
+    for (;;) {
+        /* Delete soft matches that are null.  This only happens in second and
+         * subsequent iterations of the soft match loop, when we drop back from
+         * a high-priority soft match to a lower-priority one.
+         *
+         * Also, delete soft matches whose priority is less than or equal to
+         * the hard match's priority.  In the first iteration of the soft
+         * match, these can be in 'soft' because the earlier main loop found
+         * the soft match before the hard match.  In second and later iteration
+         * of the soft match loop, these can be in 'soft' because we dropped
+         * back from a high-priority soft match to a lower-priority soft match.
+         *
+         * It is tempting to delete soft matches that cannot be satisfied
+         * because there are fewer soft matches than required to satisfy any of
+         * their conjunctions, but we cannot do that because there might be
+         * lower priority soft or hard matches with otherwise identical
+         * matches.  (We could special case those here, but there's no
+         * need--we'll do so at the bottom of the soft match loop anyway and
+         * this duplicates less code.)
+         *
+         * It's also tempting to break out of the soft match loop if 'n_soft ==
+         * 1' but that would also miss lower-priority hard matches.  We could
+         * special case that also but again there's no need. */
+        for (int i = 0; i < n_soft; ) {
+            if (!soft[i] || soft[i]->priority <= hard_pri) {
+                soft[i] = soft[--n_soft];
+            } else {
+                i++;
+            }
+        }
+        if (!n_soft) {
+            break;
+        }
+
+        /* Find the highest priority among the soft matches.  (We know this
+         * must be higher than the hard match's priority; otherwise we would
+         * have deleted all of the soft matches in the previous loop.)  Count
+         * the number of soft matches that have that priority. */
+        soft_pri = INT_MIN;
+        int n_soft_pri = 0;
+        for (int i = 0; i < n_soft; i++) {
+            if (soft[i]->priority > soft_pri) {
+                soft_pri = soft[i]->priority;
+                n_soft_pri = 1;
+            } else if (soft[i]->priority == soft_pri) {
+                n_soft_pri++;
+            }
+        }
+        ovs_assert(soft_pri > hard_pri);
+
+        /* Look for a real match among the highest-priority soft matches.
+         *
+         * It's unusual to have many conjunctive matches, so we use stubs to
+         * avoid calling malloc() in the common case.  An hmap has a built-in
+         * stub for up to 2 hmap_nodes; possibly, we would benefit a variant
+         * with a bigger stub. */
+        struct conjunctive_match cm_stubs[16];
+        struct hmap matches;
+
+        hmap_init(&matches);
+        for (int i = 0; i < n_soft; i++) {
+            uint32_t id;
+
+            if (soft[i]->priority == soft_pri
+                && find_conjunctive_match(soft[i], n_soft_pri, &matches,
+                                          cm_stubs, ARRAY_SIZE(cm_stubs),
+                                          &id)) {
+                uint32_t saved_conj_id = flow->conj_id;
+                const struct cls_rule *rule;
+
+                flow->conj_id = id;
+                rule = classifier_lookup_pof__(cls, version, flow, packet, wc, false);
+                flow->conj_id = saved_conj_id;
+
+                if (rule) {
+                    free_conjunctive_matches(&matches,
+                                             cm_stubs, ARRAY_SIZE(cm_stubs));
+                    if (soft != soft_stub) {
+                        free(soft);
+                    }
+                    return rule;
+                }
+            }
+        }
+        free_conjunctive_matches(&matches, cm_stubs, ARRAY_SIZE(cm_stubs));
+
+        /* There's no real match among the highest-priority soft matches.
+         * However, if any of those soft matches has a lower-priority but
+         * otherwise identical flow match, then we need to consider those for
+         * soft or hard matches.
+         *
+         * The next iteration of the soft match loop will delete any null
+         * pointers we put into 'soft' (and some others too). */
+        for (int i = 0; i < n_soft; i++) {
+            if (soft[i]->priority != soft_pri) {
+                continue;
+            }
+
+            /* Find next-lower-priority flow with identical flow match. */
+            match = next_visible_rule_in_list(soft[i]->match, version);
+            if (match) {
+                soft[i] = ovsrcu_get(struct cls_conjunction_set *,
+                                     &match->conj_set);
+                if (!soft[i]) {
+                    /* The flow is a hard match; don't treat as a soft
+                     * match. */
+                    if (match->priority > hard_pri) {
+                        hard = match;
+                        hard_pri = hard->priority;
+                    }
+                }
+            } else {
+                /* No such lower-priority flow (probably the common case). */
+                soft[i] = NULL;
+            }
+        }
+    }
+
+    if (soft != soft_stub) {
+        free(soft);
+    }
+    return hard ? hard->cls_rule : NULL;
+}
+
+static const struct cls_rule *
 classifier_lookup__(const struct classifier *cls, ovs_version_t version,
                     struct flow *flow, struct flow_wildcards *wc,
                     bool allow_conjunctive_matches)
@@ -1170,6 +1396,14 @@ classifier_lookup__(const struct classifier *cls, ovs_version_t version,
  *
  * 'flow' is non-const to allow for temporary modifications during the lookup.
  * Any changes are restored before returning. */
+const struct cls_rule *
+classifier_lookup_pof(const struct classifier *cls, ovs_version_t version,
+                  struct flow *flow, struct dp_packet *packet, struct flow_wildcards *wc)
+{
+    VLOG_INFO("+++++++++++sqy classifier_lookup:  before classifier_lookup__");
+    return classifier_lookup_pof__(cls, version, flow, packet, wc, true);
+}
+
 const struct cls_rule *
 classifier_lookup(const struct classifier *cls, ovs_version_t version,
                   struct flow *flow, struct flow_wildcards *wc)
@@ -1650,6 +1884,79 @@ find_match(const struct cls_subtable *subtable, ovs_version_t version,
         }
     }
 
+    return NULL;
+}
+
+static const struct cls_match *
+find_match_wc_pof(const struct cls_subtable *subtable, ovs_version_t version,
+              const struct flow *flow, const struct dp_packet *packet, struct trie_ctx trie_ctx[CLS_MAX_TRIES],
+              unsigned int n_tries, struct flow_wildcards *wc)
+{
+    if (OVS_UNLIKELY(!wc)) {
+        return find_match(subtable, version, flow,
+                          flow_hash_in_minimask(flow, &subtable->mask, 0));
+    }
+
+    uint32_t basis = 0, hash;
+    const struct cls_match *rule = NULL;
+    struct flowmap stages_map = FLOWMAP_EMPTY_INITIALIZER;
+    unsigned int mask_offset = 0;
+    int i;
+
+    /* Try to finish early by checking fields in segments. */
+    for (i = 0; i < subtable->n_indices; i++) {
+        if (check_tries(trie_ctx, n_tries, subtable->trie_plen,
+                        subtable->index_maps[i], flow, wc)) {
+            /* 'wc' bits for the trie field set, now unwildcard the preceding
+             * bits used so far. */
+            goto no_match;
+        }
+
+        /* Accumulate the map used so far. */
+        stages_map = flowmap_or(stages_map, subtable->index_maps[i]);
+
+        hash = flow_hash_in_minimask_range(flow, &subtable->mask,
+                                           subtable->index_maps[i],
+                                           &mask_offset, &basis);
+
+        if (!ccmap_find(&subtable->indices[i], hash)) {
+            goto no_match;
+        }
+    }
+    /* Trie check for the final range. */
+    if (check_tries(trie_ctx, n_tries, subtable->trie_plen,
+                    subtable->index_maps[i], flow, wc)) {
+        goto no_match;
+    }
+    hash = flow_hash_in_minimask_range(flow, &subtable->mask,
+                                       subtable->index_maps[i],
+                                       &mask_offset, &basis);
+    rule = find_match(subtable, version, flow, hash);
+    if (!rule && subtable->ports_mask_len) {
+        /* The final stage had ports, but there was no match.  Instead of
+         * unwildcarding all the ports bits, use the ports trie to figure out a
+         * smaller set of bits to unwildcard. */
+        unsigned int mbits;
+        ovs_be32 value, plens, mask;
+
+        mask = MINIFLOW_GET_BE32(&subtable->mask.masks, tp_src);
+        value = ((OVS_FORCE ovs_be32 *)flow)[TP_PORTS_OFS32] & mask;
+        mbits = trie_lookup_value(&subtable->ports_trie, &value, &plens, 32);
+
+        ((OVS_FORCE ovs_be32 *)&wc->masks)[TP_PORTS_OFS32] |=
+            mask & be32_prefix_mask(mbits);
+
+        goto no_match;
+    }
+
+    /* Must unwildcard all the fields, as they were looked at. */
+    flow_wildcards_fold_minimask(wc, &subtable->mask);
+    return rule;
+
+no_match:
+    /* Unwildcard the bits in stages so far, as they were used in determining
+     * there is no match. */
+    flow_wildcards_fold_minimask_in_map(wc, &subtable->mask, stages_map);
     return NULL;
 }
 
