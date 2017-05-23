@@ -5119,7 +5119,7 @@ ofputil_put_switch_config(const struct ofputil_switch_config *config,
         osc->flags |= htons(OFPC_INVALID_TTL_TO_CONTROLLER);
     }
     osc->miss_send_len = htons(config->miss_send_len);
-    /*osc->dev_id = 00;sqy*/
+    osc->dev_id = 00;/*sqy*/
     return b;
 }
 

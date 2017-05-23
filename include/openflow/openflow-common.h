@@ -182,7 +182,7 @@ enum ofp_config_flags {
 
 /* Switch configuration. */
 struct ofp_switch_config {
-    /*ovs_be32 dev_id;*/
+    ovs_be32 dev_id;
     ovs_be16 flags;             /* OFPC_* flags. */
     ovs_be16 miss_send_len;     /* Max bytes of new flow that datapath should
                                    send to the controller. */
