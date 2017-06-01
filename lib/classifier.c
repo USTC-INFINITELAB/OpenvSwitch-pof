@@ -26,6 +26,8 @@
 #include "packets.h"
 #include "util.h"
 #include "openvswitch/vlog.h"
+#include "dp-packet.h"
+#include "string.h"
 
 VLOG_DEFINE_THIS_MODULE(classifier);
 struct trie_ctx;
@@ -548,13 +550,13 @@ classifier_replace(struct classifier *cls, const struct cls_rule *rule,
     uint32_t basis;
     uint32_t hash;
     unsigned int i;
-
     /* 'new' is initially invisible to lookups. */
     new = cls_match_alloc(rule, version, conjs, n_conjs);
     ovsrcu_set(&CONST_CAST(struct cls_rule *, rule)->cls_match, new);
 
     subtable = find_subtable(cls, rule->match.mask);
     if (!subtable) {
+        /*VLOG_INFO("+++++++++++sqy classifier_insert-> classifier_replace: subtable_insert 222222");*/
         subtable = insert_subtable(cls, rule->match.mask);
     }
 
@@ -654,7 +656,8 @@ classifier_replace(struct classifier *cls, const struct cls_rule *rule,
                                 &old->node);
 
                 /* Return displaced rule.  Caller is responsible for keeping it
-                 * around until all threads quiesce. */
+                 * around until all threads quiesce.
+                VLOG_INFO("+++++++++++sqy classifier_insert-> classifier_replace: find old similar rule");*/
                 return old;
             }
         } else {
@@ -694,7 +697,7 @@ classifier_replace(struct classifier *cls, const struct cls_rule *rule,
     if (cls->publish) {
         pvector_publish(&cls->subtables);
     }
-
+    /*VLOG_INFO("+++++++++++sqy classifier_insert-> classifier_replace: no old rule is found and insert new rule");*/
     return NULL;
 }
 
@@ -987,8 +990,10 @@ classifier_lookup_pof__(const struct classifier *cls, ovs_version_t version,
 
         /* Skip subtables with no match, or where the match is lower-priority
          * than some certain match we've already found. */
+        VLOG_INFO("+++++++++++sqy classifier_lookup_pof__:  before find_match_wc_pof");
         match = find_match_wc_pof(subtable, version, flow, packet, trie_ctx, cls->n_tries,
                               wc);
+        VLOG_INFO("+++++++++++sqy classifier_lookup_pof__:  after find_match_wc_pof");
         if (!match || match->priority <= hard_pri) {
             continue;
         }
@@ -1843,6 +1848,29 @@ check_tries(struct trie_ctx trie_ctx[CLS_MAX_TRIES], unsigned int n_tries,
  * flow->map and mask->masks.map are the same, and that this version
  * takes the 'wc'. */
 static inline bool
+miniflow_and_mask_matches_flow_pof(const struct miniflow *flow,
+                               const struct minimask *mask,
+                               const struct pof_flow *target)
+{
+    const uint64_t *flowp = miniflow_get_values(flow);
+    const uint64_t *maskp = miniflow_get_values(&mask->masks);
+    const uint64_t *target_u64 = (const uint64_t *)target;
+    map_t map;
+
+    FLOWMAP_FOR_EACH_MAP (map, mask->masks.map) {
+        size_t idx;
+
+        MAP_FOR_EACH_INDEX (idx, map) {
+            if ((*flowp++ ^ target_u64[idx]) & *maskp++) {
+                return false;
+            }
+        }
+        target_u64 += MAP_T_BITS;
+    }
+    return true;
+}
+
+static inline bool
 miniflow_and_mask_matches_flow(const struct miniflow *flow,
                                const struct minimask *mask,
                                const struct flow *target)
@@ -1863,6 +1891,158 @@ miniflow_and_mask_matches_flow(const struct miniflow *flow,
         target_u64 += MAP_T_BITS;
     }
     return true;
+}
+
+/***********************************************************************
+ * Copy the piece of original data to the result data buffer.
+ * Form:     uint32_t pofbf_copy_bit(uint8_t *data_ori, \
+ *                                   uint8_t *data_res, \
+ *                                   uint16_t offset_b, \
+ *                                   uint16_t len_b)
+ * Input:    original data, offset(bit unit), length(bit unit)
+ * Output:   result data
+ * Return:   POF_OK or Error code
+ * Discribe: This function copies the piece of original data to the result
+ *           data buffer.
+ ***********************************************************************/
+void pofbf_copy_bit(const uint8_t *data_ori, uint8_t *data_res, uint16_t offset_b, uint16_t len_b){
+    uint32_t process_len_b = 0, offset_b_x;
+    uint16_t offset_B;
+    uint8_t  *ptr;
+
+    if(NULL==data_ori || NULL==data_res){
+        return;
+    }
+
+    offset_B = (uint16_t)(offset_b / 8);
+    offset_b_x = offset_b % 8;
+    ptr = (uint8_t *)(data_ori + offset_B);
+
+    while(process_len_b < len_b){
+        *(data_res++) = POF_MOVE_BIT_LEFT(*ptr, offset_b_x) \
+            | POF_MOVE_BIT_RIGHT(*(++ptr), 8 - offset_b_x);
+        process_len_b += 8;
+    }
+
+    data_res--;
+    *data_res = *data_res & POF_MOVE_BIT_LEFT(0xff, process_len_b - len_b);
+
+    return;
+}
+
+/***********************************************************************
+ * Cover the piece of data using the specified value.
+ * Form:     uint32_t pofbf_cover_bit(uint8_t *data_ori, \
+ *                                    uint8_t *value, \
+ *                                    uint16_t pos_b, \
+ *                                    uint16_t len_b)
+ * Input:    original data, value, position offset(bit unit), length(bit unit)
+ * Output:   data
+ * Return:   POF_OK or Error code
+ * Discribe: This function covers the piece of data using the specified
+ *           value. The value is not a number, but a data buffer. Caller
+ *           should make sure that data_ori and value are not NULL.
+ ***********************************************************************/
+void pofbf_cover_bit(uint8_t *data_ori, const uint8_t *value, uint16_t pos_b, uint16_t len_b){
+    uint32_t process_len_b = 0;
+    uint16_t pos_b_x, len_B, after_len_b_x;
+    uint8_t *ptr;
+
+    pos_b_x = pos_b % 8;
+    len_B = (uint16_t)((len_b - 1) / 8 + 1);
+    after_len_b_x = (len_b + pos_b - 1) % 8 + 1;
+    ptr = data_ori + (uint16_t)(pos_b / 8);
+
+    if(len_b <= (8 - pos_b_x)){
+        *ptr = (*ptr & POF_MOVE_BIT_LEFT(0xff, (8-pos_b_x)) \
+            | (POF_MOVE_BIT_RIGHT(*value, pos_b_x) & POF_MOVE_BIT_LEFT(0xff, 8-after_len_b_x)) \
+            | (*ptr & POF_MOVE_BIT_RIGHT(0xff, after_len_b_x)));
+        return;
+    }
+
+    *ptr = *ptr & POF_MOVE_BIT_LEFT(0xff, (8-pos_b_x)) \
+        | POF_MOVE_BIT_RIGHT(*value, pos_b_x);
+
+    process_len_b = 8 - pos_b_x;
+    while(process_len_b < (len_b-8)){
+        *(++ptr) = POF_MOVE_BIT_LEFT(*value, 8-pos_b_x) | POF_MOVE_BIT_RIGHT(*(++value), pos_b_x);
+        process_len_b += 8;
+    }
+
+    *(ptr+1) = (POF_MOVE_BIT_LEFT(*value, 8-pos_b_x) | POF_MOVE_BIT_RIGHT(*(++value), pos_b_x) \
+        & POF_MOVE_BIT_LEFT(0xff, 8 - (len_b - process_len_b))) \
+        | (*(ptr+1) & POF_MOVE_BIT_RIGHT(0xff, len_b - process_len_b));
+
+    return;
+}
+
+static inline const struct pof_flow *
+pof_flow_gen_from_packet(const struct minimask *mask, const struct dp_packet *packet)
+{
+    struct pof_flow_wildcards pwc;
+    struct pof_flow pflow;
+    pof_minimask_expand(mask, &pwc);
+    uint16_t temp_i, j=0;
+    /*size_t len_B = dp_packet_size(packet);*/
+    void *packetBuf = dp_packet_data(packet);
+    for(temp_i=0; temp_i<POF_MAX_MATCH_FIELD_NUM; temp_i++){
+        if(pwc.masks.len[temp_i] == 0){
+            pflow.field_id[temp_i] = 0;
+            pflow.len[temp_i] = 0;
+            pflow.offset[temp_i] = 0;
+            size_t j;
+            for (j = 0; j < POF_MAX_FIELD_LENGTH_IN_BYTE; j++) {
+                pflow.value[temp_i][j] = 0;
+            }
+            VLOG_INFO("+++++++++++sqy pof_flow_gen_from_packet:  6");
+        }
+        else{
+            pflow.field_id[temp_i] = pwc.masks.field_id[temp_i];
+            pflow.len[temp_i] = pwc.masks.len[temp_i];
+            pflow.offset[temp_i] = pwc.masks.offset[temp_i];
+            uint8_t tmp[POF_MAX_FIELD_LENGTH_IN_BYTE] = {0};
+            if(pwc.masks.field_id[temp_i] == 0xFFFF){
+            /* pofbf_copy_bit(metadata, tmp, matchTmp->offset, matchTmp->len);*/
+            }else{
+                VLOG_INFO("+++++++++++sqy pof_flow_gen_from_packet:  8");
+                pofbf_copy_bit(packetBuf, tmp, pwc.masks.offset[temp_i], pwc.masks.len[temp_i]);
+            }
+            pofbf_copy_bit(pflow.value[temp_i], tmp, 0, pwc.masks.len[temp_i]);
+            j++;
+            VLOG_INFO("++++++++sqy pof_flow_gen_from_packet field_id:%d: len: %d; offset: %d",
+                      pflow.field_id[temp_i], pflow.len[temp_i], pflow.offset[temp_i]);
+            VLOG_INFO("++++++++sqy pof_flow_gen_from_packet field_id2:%d: len2: %d; offset2: %d",
+                     pwc.masks.field_id[temp_i], pwc.masks.len[temp_i], pwc.masks.offset[temp_i]);
+            /*pofbf_cover_bit(key, tmp, offset_b, wc->len[i]);*/
+        }
+    }
+    VLOG_INFO("+++++++++++sqy pof_flow_gen_from_packet:  before return");
+    if (j>0) return &pflow;
+    else return NULL;
+
+}
+
+static inline const struct cls_match *
+find_match_pof(const struct cls_subtable *subtable, ovs_version_t version,
+           const struct pof_flow *flow, uint32_t hash)
+{
+    const struct cls_match *head, *rule;
+
+    CMAP_FOR_EACH_WITH_HASH (head, cmap_node, hash, &subtable->rules) {
+
+        if (OVS_LIKELY(miniflow_and_mask_matches_flow_pof(&head->flow,
+                                                      &subtable->mask,
+                                                      flow))) {
+            /* Return highest priority rule that is visible. */
+            CLS_MATCH_FOR_EACH (rule, head) {
+                if (OVS_LIKELY(cls_match_visible_in_version(rule, version))) {
+                    return rule;
+                }
+            }
+        }
+    }
+
+    return NULL;
 }
 
 static inline const struct cls_match *
@@ -1892,55 +2072,74 @@ find_match_wc_pof(const struct cls_subtable *subtable, ovs_version_t version,
               const struct flow *flow, const struct dp_packet *packet, struct trie_ctx trie_ctx[CLS_MAX_TRIES],
               unsigned int n_tries, struct flow_wildcards *wc)
 {
-    if (OVS_UNLIKELY(!wc)) {
-        return find_match(subtable, version, flow,
-                          flow_hash_in_minimask(flow, &subtable->mask, 0));
-    }
 
+    VLOG_INFO("+++++++++++sqy find_match_wc_pof:  before pof_flow_gen_from_packet");
+    struct pof_flow_wildcards pwc;
+    struct pof_flow pflow;
+    pof_minimask_expand(&subtable->mask, &pwc);
+    uint16_t temp_i, j=0;
+    uint32_t len_B = dp_packet_size(packet);
+    VLOG_INFO("++++++++sqy pof_flow_gen_from_packet len_B:%d", len_B);
+    if (len_B==0 || packet==NULL) goto no_match;
+    printf("Packet:\n");
+    ofp_print_packet(stdout, dp_packet_data(packet), dp_packet_size(packet));
+    char *packetBuf = (char *) dp_packet_base(packet) + __packet_data(packet);
+    for(temp_i=0; temp_i<POF_MAX_MATCH_FIELD_NUM; temp_i++){
+        if(pwc.masks.len[temp_i] == 0){
+            pflow.field_id[temp_i] = 0;
+            pflow.len[temp_i] = 0;
+            pflow.offset[temp_i] = 0;
+            size_t j;
+            for (j = 0; j < POF_MAX_FIELD_LENGTH_IN_BYTE; j++) {
+                pflow.value[temp_i][j] = 0;
+            }
+        }
+        else{
+            pflow.field_id[temp_i] = pwc.masks.field_id[temp_i];
+            pflow.len[temp_i] = pwc.masks.len[temp_i];
+            pflow.offset[temp_i] = pwc.masks.offset[temp_i];
+            uint8_t tmp[POF_MAX_FIELD_LENGTH_IN_BYTE] = {0};
+            if(pwc.masks.field_id[temp_i] == 0xFFFF){
+            /* pofbf_copy_bit(metadata, tmp, matchTmp->offset, matchTmp->len);*/
+                VLOG_INFO("+++++++++++sqy pof_flow_gen_from_packet: here is incomplete.");
+            }else{
+                memcpy(pflow.value[temp_i], packetBuf + ntohs(pwc.masks.offset[temp_i])/8, ntohs(pwc.masks.len[temp_i])/8);
+            }
+            j++;
+            VLOG_INFO("++++++++sqy pof_flow_gen_from_packet field_id:%d: len: %d; offset: %d",
+                      ntohs(pflow.field_id[temp_i]), ntohs(pflow.len[temp_i]), ntohs(pflow.offset[temp_i]));
+            VLOG_INFO("++++++++sqy pof_flow_gen_from_packet field_id2:%d: len2: %d; offset2: %d",
+                     ntohs(pwc.masks.field_id[temp_i]), ntohs(pwc.masks.len[temp_i]), ntohs(pwc.masks.offset[temp_i]));
+        }
+    }
+    VLOG_INFO("+++++++++++sqy find_match_wc_pof:  after pof_flow_gen_from_packet");
+    if (j==0) goto no_match;
+
+    if (OVS_UNLIKELY(!wc)) {
+        VLOG_INFO("+++++++++++sqy find_match_wc_pof:  before find_match_pof 1");
+        return find_match_pof(subtable, version, &pflow,
+                          flow_hash_in_minimask_pof(&pflow, &subtable->mask, 0));
+    }
     uint32_t basis = 0, hash;
     const struct cls_match *rule = NULL;
     struct flowmap stages_map = FLOWMAP_EMPTY_INITIALIZER;
     unsigned int mask_offset = 0;
     int i;
-
-    /* Try to finish early by checking fields in segments. */
-    for (i = 0; i < subtable->n_indices; i++) {
-        if (check_tries(trie_ctx, n_tries, subtable->trie_plen,
-                        subtable->index_maps[i], flow, wc)) {
-            /* 'wc' bits for the trie field set, now unwildcard the preceding
-             * bits used so far. */
-            goto no_match;
-        }
-
-        /* Accumulate the map used so far. */
-        stages_map = flowmap_or(stages_map, subtable->index_maps[i]);
-
-        hash = flow_hash_in_minimask_range(flow, &subtable->mask,
-                                           subtable->index_maps[i],
-                                           &mask_offset, &basis);
-
-        if (!ccmap_find(&subtable->indices[i], hash)) {
-            goto no_match;
-        }
-    }
-    /* Trie check for the final range. */
-    if (check_tries(trie_ctx, n_tries, subtable->trie_plen,
-                    subtable->index_maps[i], flow, wc)) {
-        goto no_match;
-    }
-    hash = flow_hash_in_minimask_range(flow, &subtable->mask,
+    hash = flow_hash_in_minimask_range_pof(&pflow, &subtable->mask,
                                        subtable->index_maps[i],
                                        &mask_offset, &basis);
-    rule = find_match(subtable, version, flow, hash);
+    rule = find_match_pof(subtable, version, &pflow, hash);
+
     if (!rule && subtable->ports_mask_len) {
         /* The final stage had ports, but there was no match.  Instead of
          * unwildcarding all the ports bits, use the ports trie to figure out a
          * smaller set of bits to unwildcard. */
+        VLOG_INFO("+++++++++++sqy find_match_wc_pof:  !rule && subtable->ports_mask_len");
         unsigned int mbits;
         ovs_be32 value, plens, mask;
 
         mask = MINIFLOW_GET_BE32(&subtable->mask.masks, tp_src);
-        value = ((OVS_FORCE ovs_be32 *)flow)[TP_PORTS_OFS32] & mask;
+        value = ((OVS_FORCE ovs_be32 *)&pflow)[TP_PORTS_OFS32] & mask;
         mbits = trie_lookup_value(&subtable->ports_trie, &value, &plens, 32);
 
         ((OVS_FORCE ovs_be32 *)&wc->masks)[TP_PORTS_OFS32] |=
@@ -1950,13 +2149,15 @@ find_match_wc_pof(const struct cls_subtable *subtable, ovs_version_t version,
     }
 
     /* Must unwildcard all the fields, as they were looked at. */
-    flow_wildcards_fold_minimask(wc, &subtable->mask);
+    pof_flow_wildcards_fold_minimask(&pwc, &subtable->mask);
+    VLOG_INFO("+++++++++++sqy find_match_wc_pof:  find rule");
     return rule;
 
 no_match:
     /* Unwildcard the bits in stages so far, as they were used in determining
      * there is no match. */
-    flow_wildcards_fold_minimask_in_map(wc, &subtable->mask, stages_map);
+    pof_flow_wildcards_fold_minimask_in_map(&pwc, &subtable->mask, stages_map);
+        VLOG_INFO("+++++++++++sqy find_match_wc_pof:  after no_match");
     return NULL;
 }
 

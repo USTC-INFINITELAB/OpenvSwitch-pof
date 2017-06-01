@@ -2576,8 +2576,10 @@ miniflow_expand(const struct miniflow *src, struct flow *dst)
 void
 pof_miniflow_expand(const struct miniflow *src, struct pof_flow *dst)
 {
-    memset(dst, 0, sizeof *dst);
+    /*VLOG_INFO("+++++++++++sqy pof_miniflow_expand: before memset");*/
+    memset(dst, 0, sizeof *dst);    
     pof_flow_union_with_miniflow(dst, src);
+    /*VLOG_INFO("+++++++++++sqy pof_miniflow_expand: after pof_flow_union_with_miniflow");*/
 }
 
 /* Returns true if 'a' and 'b' are equal miniflows, false otherwise. */
@@ -2700,7 +2702,9 @@ minimask_expand(const struct minimask *mask, struct flow_wildcards *wc)
 void
 pof_minimask_expand(const struct minimask *mask, struct pof_flow_wildcards *wc)
 {
+    /*VLOG_INFO("+++++++++++sqy pof_minimask_expand: before pof_miniflow_expand");*/
     pof_miniflow_expand(&mask->masks, &wc->masks);
+    /*VLOG_INFO("+++++++++++sqy pof_minimask_expand: after pof_miniflow_expand");*/
 }
 
 /* Returns true if 'a' and 'b' are the same flow mask, false otherwise.

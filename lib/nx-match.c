@@ -1207,14 +1207,18 @@ nx_put_pof_raw(struct ofpbuf *b, enum ofp_version oxm, const struct match_x *mat
 
     BUILD_ASSERT_DECL(FLOW_WC_SEQ == 36);
     for (i = 0; i < POF_N_FIELD_IDS; i++) {
+        if (flow->len[i] > 0){
         nxm_put_16m(b, MFF_FIELD_ID0 + i, oxm, flow->field_id[i],
-                    match->wc.masks.field_id[i]);
+                    OVS_BE16_MAX);/*match->wc.masks.field_id[i],match->wc.masks.offset[i],match->wc.masks.len[i]*/
         nxm_put_16m(b, MFF_OFFSET0 + i, oxm, flow->offset[i],
-                    match->wc.masks.offset[i]);
+                    OVS_BE16_MAX);
         nxm_put_16m(b, MFF_LENGTH0 + i, oxm, flow->len[i],
-                    match->wc.masks.len[i]);
+                    OVS_BE16_MAX);
         nxm_put(b, MFF_VALUE0 + i, oxm, flow->value[i], match->wc.masks.value[i],
                 sizeof flow->value[i]);
+        VLOG_INFO("++++++++sqy pof_flow_gen_from_packet field_id:%d: len: %d; offset: %d",
+                   ntohs(flow->field_id[i]), ntohs(flow->len[i]), ntohs(flow->offset[i]));
+        }
     }
     /* Cookie. */
     if (cookie_mask) {
