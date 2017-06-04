@@ -117,6 +117,17 @@ struct rule_dpif *rule_dpif_lookup_from_table(struct ofproto_dpif *,
                                               bool honor_table_miss,
                                               struct xlate_cache *xcache);
 
+struct rule_dpif *rule_dpif_lookup_from_table_pof(struct ofproto_dpif *,
+                                              ovs_version_t, struct flow *,
+                                              struct dp_packet *,
+                                              struct flow_wildcards *,
+                                              const struct dpif_flow_stats *,
+                                              uint8_t *table_id,
+                                              ofp_port_t in_port,
+                                              bool may_packet_in,
+                                              bool honor_table_miss,
+                                              struct xlate_cache *xcache);
+
 static inline void rule_dpif_ref(struct rule_dpif *);
 static inline void rule_dpif_unref(struct rule_dpif *);
 

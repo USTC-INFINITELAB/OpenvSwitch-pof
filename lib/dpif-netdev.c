@@ -3797,6 +3797,7 @@ dp_netdev_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet_,
     if (OVS_UNLIKELY(!dp->upcall_cb)) {
         return ENODEV;
     }
+    VLOG_INFO("+++++++++++sqy dp_netdev_upcall: before dp->upcall_cb");
 
     if (OVS_UNLIKELY(!VLOG_DROP_DBG(&upcall_rl))) {
         struct ds ds = DS_EMPTY_INITIALIZER;
@@ -3822,7 +3823,7 @@ dp_netdev_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet_,
         free(packet_str);
 
         ds_destroy(&ds);
-    }
+    }    
 
     return dp->upcall_cb(packet_, flow, ufid, pmd->core_id, type, userdata,
                          actions, wc, put_actions, dp->upcall_aux);
@@ -3998,10 +3999,12 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
     ofpbuf_clear(put_actions);
 
     dpif_flow_hash(pmd->dp->dpif, &match.flow, sizeof match.flow, &ufid);
+    VLOG_INFO("+++++++++++sqy handle_packet_upcall: before dp_netdev_upcall");
     error = dp_netdev_upcall(pmd, packet, &match.flow, &match.wc,
                              &ufid, DPIF_UC_MISS, NULL, actions,
                              put_actions);
-    if (OVS_UNLIKELY(error && error != ENOSPC)) {
+    VLOG_INFO("+++++++++++sqy handle_packet_upcall: after dp_netdev_upcall");
+    if (OVS_UNLIKELY(error && error != ENOSPC)) {  //sqy notes: no run
         dp_packet_delete(packet);
         (*lost_cnt)++;
         return;
@@ -4014,7 +4017,7 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
      * Netlink and struct flow representations, we have to do the same
      * here. */
     if (!match.wc.masks.vlan_tci) {
-        match.wc.masks.vlan_tci = htons(0xffff);
+        match.wc.masks.vlan_tci = htons(0xffff);  //sqy notes: run here
     }
 
     /* We can't allow the packet batching in the next loop to execute
@@ -4026,7 +4029,7 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
 
     add_actions = put_actions->size ? put_actions : actions;
     if (OVS_LIKELY(error != ENOSPC)) {
-        struct dp_netdev_flow *netdev_flow;
+        struct dp_netdev_flow *netdev_flow;  //sqy notes: run here
 
         /* XXX: There's a race window where a flow covering this packet
          * could have already been installed since we last did the flow
@@ -4110,8 +4113,10 @@ fast_path_processing(struct dp_netdev_pmd_thread *pmd,
             }
 
             miss_cnt++;
+            VLOG_INFO("+++++++++++sqy fast_path_processing: before handle_packet_upcall");
             handle_packet_upcall(pmd, packets[i], &keys[i], &actions,
                                  &put_actions, &lost_cnt, now);
+            VLOG_INFO("+++++++++++sqy fast_path_processing: after handle_packet_upcall");
         }
 
         ofpbuf_uninit(&actions);
@@ -4173,13 +4178,16 @@ dp_netdev_input__(struct dp_netdev_pmd_thread *pmd,
     odp_port_t in_port;
 
     n_batches = 0;
+    VLOG_INFO("+++++++++++sqy dp_netdev_input__: before emc_processing");
     newcnt = emc_processing(pmd, packets, keys, batches, &n_batches,
                             md_is_valid, port_no);
     if (OVS_UNLIKELY(newcnt)) {
         packets->count = newcnt;
         /* Get ingress port from first packet's metadata. */
         in_port = packets->packets[0]->md.in_port.odp_port;
+        VLOG_INFO("+++++++++++sqy dp_netdev_input__: before fast_path_processing");
         fast_path_processing(pmd, packets, keys, batches, &n_batches, in_port, now);
+        VLOG_INFO("+++++++++++sqy dp_netdev_input__: after fast_path_processing");
     }
 
     for (i = 0; i < n_batches; i++) {

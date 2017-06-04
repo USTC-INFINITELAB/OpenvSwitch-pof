@@ -232,6 +232,8 @@ enum ofperr ofputil_match_from_ofp11_match(const struct ofp11_match *,
                                            struct match *);
 int ofputil_put_ofp11_match(struct ofpbuf *, const struct match *,
                             enum ofputil_protocol);
+int ofputil_put_pof_match(struct ofpbuf *, const struct match_x *,
+                            enum ofputil_protocol);
 void ofputil_match_to_ofp11_match(const struct match *, struct ofp11_match *);
 int ofputil_match_typical_len(enum ofputil_protocol);
 
@@ -405,11 +407,27 @@ struct ofputil_flow_stats_request {
     uint8_t table_id;
 };
 
+/* Flow stats or aggregate stats request, independent of protocol. */
+struct ofputil_pof_flow_stats_request {
+    bool aggregate;             /* Aggregate results? */
+    struct match_x match;
+    ovs_be64 cookie;
+    ovs_be64 cookie_mask;
+    ofp_port_t out_port;
+    uint32_t out_group;
+    uint8_t table_id;
+};
+
 enum ofperr ofputil_decode_flow_stats_request(
     struct ofputil_flow_stats_request *, const struct ofp_header *,
     const struct tun_table *);
+enum ofperr ofputil_decode_pof_flow_stats_request(
+    struct ofputil_pof_flow_stats_request *, const struct ofp_header *,
+    const struct tun_table *);
 struct ofpbuf *ofputil_encode_flow_stats_request(
     const struct ofputil_flow_stats_request *, enum ofputil_protocol);
+struct ofpbuf *ofputil_encode_pof_flow_stats_request(
+    const struct ofputil_pof_flow_stats_request *, enum ofputil_protocol);
 
 /* Flow stats reply, independent of protocol. */
 struct ofputil_flow_stats {
@@ -431,11 +449,39 @@ struct ofputil_flow_stats {
     uint16_t importance;        /* Eviction precedence. */
 };
 
+/* Flow stats reply, independent of protocol. */
+struct ofputil_pof_flow_stats {
+    struct match_x match;
+    ovs_be64 cookie;
+    uint8_t table_id;
+    uint16_t priority;
+    uint16_t idle_timeout;
+    uint16_t hard_timeout;
+    uint32_t duration_sec;
+    uint32_t duration_nsec;
+    int idle_age;               /* Seconds since last packet, -1 if unknown. */
+    int hard_age;               /* Seconds since last change, -1 if unknown. */
+    uint64_t packet_count;      /* Packet count, UINT64_MAX if unknown. */
+    uint64_t byte_count;        /* Byte count, UINT64_MAX if unknown. */
+    const struct ofpact *ofpacts;
+    size_t ofpacts_len;
+    enum ofputil_flow_mod_flags flags;
+    uint16_t importance;        /* Eviction precedence. */
+};
+
 int ofputil_decode_flow_stats_reply(struct ofputil_flow_stats *,
                                     struct ofpbuf *msg,
                                     bool flow_age_extension,
                                     struct ofpbuf *ofpacts);
+int ofputil_decode_pof_flow_stats_reply(struct ofputil_pof_flow_stats *,
+                                    struct ofpbuf *msg,
+                                    bool flow_age_extension,
+                                    struct ofpbuf *ofpacts);
+
 void ofputil_append_flow_stats_reply(const struct ofputil_flow_stats *,
+                                     struct ovs_list *replies,
+                                     const struct tun_table *);
+void ofputil_append_pof_flow_stats_reply(const struct ofputil_pof_flow_stats *,
                                      struct ovs_list *replies,
                                      const struct tun_table *);
 

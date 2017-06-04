@@ -1266,6 +1266,11 @@ flow_wildcards_init_catchall(struct flow_wildcards *wc)
 {
     memset(&wc->masks, 0, sizeof wc->masks);
 }
+void
+pof_flow_wildcards_init_catchall(struct pof_flow_wildcards *wc)
+{
+    memset(&wc->masks, 0, sizeof wc->masks);
+}
 
 /* Converts a flow into flow wildcards.  It sets the wildcard masks based on
  * the packet headers extracted to 'flow'.  It will not set the mask for fields
@@ -2461,11 +2466,9 @@ pof_miniflow_init(struct miniflow *dst, const struct pof_flow *src)
 {
     uint64_t *dst_u64 = miniflow_values(dst);
     size_t idx;
-    VLOG_INFO("+++++++++++sqy pof_miniflow_init:  before pof_flow_u64_value ");
     FLOWMAP_FOR_EACH_INDEX(idx, dst->map) {
         *dst_u64++ = pof_flow_u64_value(src, idx);
     }
-    VLOG_INFO("+++++++++++sqy pof_miniflow_init:  after pof_flow_u64_value ");
 }
 
 /* Compressed flow. */
@@ -2567,6 +2570,16 @@ miniflow_expand(const struct miniflow *src, struct flow *dst)
 {
     memset(dst, 0, sizeof *dst);
     flow_union_with_miniflow(dst, src);
+}
+
+/* Initializes 'dst' as a copy of 'src'. */
+void
+pof_miniflow_expand(const struct miniflow *src, struct pof_flow *dst)
+{
+    /*VLOG_INFO("+++++++++++sqy pof_miniflow_expand: before memset");*/
+    memset(dst, 0, sizeof *dst);    
+    pof_flow_union_with_miniflow(dst, src);
+    /*VLOG_INFO("+++++++++++sqy pof_miniflow_expand: after pof_flow_union_with_miniflow");*/
 }
 
 /* Returns true if 'a' and 'b' are equal miniflows, false otherwise. */
@@ -2684,6 +2697,14 @@ void
 minimask_expand(const struct minimask *mask, struct flow_wildcards *wc)
 {
     miniflow_expand(&mask->masks, &wc->masks);
+}
+
+void
+pof_minimask_expand(const struct minimask *mask, struct pof_flow_wildcards *wc)
+{
+    /*VLOG_INFO("+++++++++++sqy pof_minimask_expand: before pof_miniflow_expand");*/
+    pof_miniflow_expand(&mask->masks, &wc->masks);
+    /*VLOG_INFO("+++++++++++sqy pof_minimask_expand: after pof_miniflow_expand");*/
 }
 
 /* Returns true if 'a' and 'b' are the same flow mask, false otherwise.

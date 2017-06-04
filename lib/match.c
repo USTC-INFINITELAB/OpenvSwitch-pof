@@ -63,6 +63,14 @@ match_init_catchall(struct match *match)
     memset(&match->tun_md, 0, sizeof match->tun_md);
 }
 
+void
+pof_match_init_catchall(struct match_x *match)
+{
+    memset(&match->flow, 0, sizeof match->flow);
+    pof_flow_wildcards_init_catchall(&match->wc);
+    memset(&match->tun_md, 0, sizeof match->tun_md);
+}
+
 /* For each bit or field wildcarded in 'match', sets the corresponding bit or
  * field in 'flow' to all-0-bits.  It is important to maintain this invariant
  * in a match that might be inserted into a classifier.
@@ -110,6 +118,57 @@ match_set_reg(struct match *match, unsigned int reg_idx, uint32_t value)
     match_set_reg_masked(match, reg_idx, value, UINT32_MAX);
 }
 
+void
+pof_match_set_field_id(struct match_x *match, unsigned int field_id_idx, ovs_be16 value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);*/
+    ovs_assert(field_id_idx < POF_N_FIELD_IDS);
+    match->wc.masks.field_id[field_id_idx] = OVS_BE16_MAX;
+    match->flow.field_id[field_id_idx] = value & OVS_BE16_MAX;
+}
+
+void
+pof_match_set_offset(struct match_x *match, unsigned int offset_idx, ovs_be16 value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);*/
+    ovs_assert(offset_idx < POF_N_OFFSETS);
+    match->wc.masks.offset[offset_idx] = OVS_BE16_MAX;
+    match->flow.offset[offset_idx] = value & OVS_BE16_MAX;
+}
+
+void
+pof_match_set_length(struct match_x *match, unsigned int length_idx, ovs_be16 value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);*/
+    ovs_assert(length_idx < POF_N_LENGTHS);
+    match->wc.masks.len[length_idx] = OVS_BE16_MAX;
+    match->flow.len[length_idx] = value & OVS_BE16_MAX;
+}
+
+void
+pof_match_set_value(struct match_x *match, unsigned int value_idx, const struct in6_addr *value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);*/
+    int i=0;
+    ovs_assert(value_idx < POF_N_VALUES);
+    for(i=0; i<POF_MAX_FIELD_LENGTH_IN_BYTE;i++){
+        match->wc.masks.value[value_idx][i] =1;
+        match->flow.value[value_idx][i] = *((uint8_t*)value+i);
+    }
+}
+
+void
+pof_match_set_value_masked(struct match_x *match, unsigned int value_idx,
+                           const struct in6_addr *value,const struct in6_addr *mask)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);*/
+    int i=0;
+    ovs_assert(value_idx < POF_N_VALUES);
+    for(i=0; i<POF_MAX_FIELD_LENGTH_IN_BYTE;i++){
+        match->wc.masks.value[value_idx][i] =*((uint8_t*) mask+i);
+        match->flow.value[value_idx][i] = *((uint8_t*)value+i);
+    }
+}
 void
 match_set_reg_masked(struct match *match, unsigned int reg_idx,
                      uint32_t value, uint32_t mask)
@@ -1358,6 +1417,47 @@ match_format(const struct match *match, struct ds *s, int priority)
     }
 }
 
+void
+pof_match_format(const struct match_x *match, struct ds *s, int priority)
+{
+    VLOG_INFO("+++++++++++sqy pof_match_format: start pof_match_format ");
+    const struct pof_flow_wildcards *wc = &match->wc;
+    size_t start_len = s->length;
+    const struct pof_flow *f = &match->flow;
+    bool skip_type = false;
+
+    bool skip_proto = false;
+
+    int i=0;
+
+    BUILD_ASSERT_DECL(FLOW_WC_SEQ == 36);
+
+
+    if (priority != OFP_DEFAULT_PRIORITY) {
+        ds_put_format(s, "%spriority=%s%d, ",
+                      colors.special, colors.end, priority);
+    }
+
+    while (wc->masks.len[i]==OVS_BE16_MAX) {
+        /*#define FIELD_IDNAME_LEN 20
+        char field_idname[FIELD_IDNAME_LEN];
+        if (snprintf(field_idname, FIELD_IDNAME_LEN, "field_id%d", i) >= FIELD_IDNAME_LEN) {
+            strcpy(field_idname, "field_id?");
+        }
+        format_be16_masked(s, field_idname, f->field_id[i], wc->masks.field_id[i]);*/
+
+        ds_put_format(s, "%sfield_id=%s0x%04"PRIx16",",
+                      colors.param, colors.end, ntohs( f->field_id[i]));
+        ds_put_format(s, "%soffset=%s0x%04"PRIx16",",
+                      colors.param, colors.end, ntohs( f->offset[i]));
+        ds_put_format(s, "%slength=%s0x%04"PRIx16",",
+                      colors.param, colors.end, ntohs( f->len[i]));
+        format_ipv6_netmask(s, "value", (const struct in6_addr *)f->value[i],
+                            (const struct in6_addr *)wc->masks.value[i]);
+        i=i+1;
+    }
+}
+
 /* Converts 'match' to a string and returns the string.  If 'priority' is
  * different from OFP_DEFAULT_PRIORITY, includes it in the string.  The caller
  * must free the string (with free()). */
@@ -1385,9 +1485,7 @@ pof_minimatch_init(struct minimatch *dst, const struct match_x *src)
     /* Allocate two consecutive miniflows. */
     miniflow_alloc(dst->flows, 2, &tmp);
     pof_miniflow_init(dst->flow, &src->flow);
-    VLOG_INFO("+++++++++++sqy add_pof_flow_init:  before pof_minimask_init ");
     pof_minimask_init(dst->mask, &src->wc);
-    VLOG_INFO("+++++++++++sqy add_pof_flow_init:  after pof_minimask_init ");
 }
 
 /* Initializes 'dst' as a copy of 'src'.  The caller must eventually free 'dst'
@@ -1441,6 +1539,15 @@ minimatch_expand(const struct minimatch *src, struct match *dst)
 {
     miniflow_expand(src->flow, &dst->flow);
     minimask_expand(src->mask, &dst->wc);
+    memset(&dst->tun_md, 0, sizeof dst->tun_md);
+}
+
+/* Initializes 'dst' as a copy of 'src'. */
+void
+pof_minimatch_expand(const struct minimatch *src, struct match_x *dst)
+{
+    pof_miniflow_expand(src->flow, &dst->flow);
+    pof_minimask_expand(src->mask, &dst->wc);
     memset(&dst->tun_md, 0, sizeof dst->tun_md);
 }
 

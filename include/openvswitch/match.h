@@ -45,11 +45,13 @@ struct match_x {
 
 /* Initializer for a "struct match" that matches every packet. */
 #define MATCH_CATCHALL_INITIALIZER { .flow = { .dl_type = 0 } }
+#define MATCH_X_CATCHALL_INITIALIZER { .flow = { .field_id[0] = 0 } }
 
 void match_init(struct match *,
                 const struct flow *, const struct flow_wildcards *);
 void match_wc_init(struct match *match, const struct flow *flow);
 void match_init_catchall(struct match *);
+void pof_match_init_catchall(struct match_x *);
 
 void match_zero_wildcarded_fields(struct match *);
 
@@ -63,6 +65,20 @@ void match_set_conj_id(struct match *, uint32_t value);
 void match_set_reg(struct match *, unsigned int reg_idx, uint32_t value);
 void match_set_reg_masked(struct match *, unsigned int reg_idx,
                           uint32_t value, uint32_t mask);
+
+void pof_match_set_field_id(struct match_x *, unsigned int field_id_idx, ovs_be16 value);
+void pof_match_set_field_id_masked(struct match_x *, unsigned int field_id_idx,
+                                   ovs_be16 value, ovs_be16 mask);
+void pof_match_set_offset(struct match_x *, unsigned int offset_idx, ovs_be16 value);
+void pof_match_set_offset_masked(struct match_x *, unsigned int offset_idx,
+                                 ovs_be16 value, ovs_be16 mask);
+void pof_match_set_length(struct match_x *, unsigned int length_idx, ovs_be16 value);
+void pof_match_set_length_masked(struct match_x *, unsigned int length_idx,
+                                 ovs_be16 value, ovs_be16 mask);
+void pof_match_set_value(struct match_x *, unsigned int value_idx, const struct in6_addr *src);
+void pof_match_set_value_masked(struct match_x *, unsigned int value_idx,
+                                 const struct in6_addr *value, const struct in6_addr *mask);
+
 void match_set_xreg(struct match *, unsigned int xreg_idx, uint64_t value);
 void match_set_xreg_masked(struct match *, unsigned int xreg_idx,
                            uint64_t value, uint64_t mask);
@@ -177,6 +193,7 @@ void match_init_hidden_fields(struct match *);
 bool match_has_default_hidden_fields(const struct match *);
 
 void match_format(const struct match *, struct ds *, int priority);
+void pof_match_format(const struct match_x *, struct ds *, int priority);
 char *match_to_string(const struct match *, int priority);
 void match_print(const struct match *);
 
@@ -213,6 +230,7 @@ void minimatch_move(struct minimatch *dst, struct minimatch *src);
 void minimatch_destroy(struct minimatch *);
 
 void minimatch_expand(const struct minimatch *, struct match *);
+void pof_minimatch_expand(const struct minimatch *, struct match_x *);
 
 bool minimatch_equal(const struct minimatch *a, const struct minimatch *b);
 
