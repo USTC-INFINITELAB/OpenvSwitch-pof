@@ -717,7 +717,6 @@ vconn_send_block(struct vconn *vconn, struct ofpbuf *msg)
     int retval;
 
     fatal_signal_run();
-
     while ((retval = vconn_send(vconn, msg)) == EAGAIN) {
         vconn_run(vconn);
         vconn_run_wait(vconn);
@@ -882,6 +881,7 @@ vconn_transact_noreply(struct vconn *vconn, struct ofpbuf *request,
 
     /* Send barrier. */
     error = vconn_send_barrier(vconn, &barrier_xid);
+
     if (error) {
         return error;
     }

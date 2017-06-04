@@ -1,6 +1,10 @@
 #set -e
 
+<<<<<<< HEAD
 cd  /home/sqy/dpdk-16.07
+=======
+cd  /home/xyh/dpdk-16.07
+>>>>>>> d6a5c69dee9a2ea3fb2eb6111c2b90c060f5a77f
 #./tools/dpdk-devbind.py  --status
 #echo "Input the number of unbind DPDK ports (even): (Enter)"
 #read n
@@ -14,7 +18,11 @@ cd  /home/sqy/dpdk-16.07
 ./tools/dpdk-devbind.py --bind=igb 0000:05:00.1
 ./tools/dpdk-devbind.py --bind=igb 0000:05:00.0
 ./tools/dpdk-devbind.py  --status
+<<<<<<< HEAD
 cd /home/sqy/OpenvSwitch-pof
+=======
+cd /home/xyh/OpenvSwitch-pof
+>>>>>>> d6a5c69dee9a2ea3fb2eb6111c2b90c060f5a77f
 
 #ovs-vsctl del-br br0
 ovs-appctl -t ovs-vswitchd exit

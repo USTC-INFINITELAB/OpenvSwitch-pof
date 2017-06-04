@@ -7582,7 +7582,6 @@ ofproto_pof_flow_mod_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
     ofm->n_conjs = 0;
 
     bool check_buffer_id = false;
-    //VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: before add_pof_flow_init");
 
     switch (ofm->command) {
     case OFPFC_ADD:
@@ -7606,7 +7605,6 @@ ofproto_pof_flow_mod_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
     if (error) {
         ofproto_flow_mod_uninit(ofm);
     }
-    //VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: after add_pof_flow_init");
     return 0;
 }
 
