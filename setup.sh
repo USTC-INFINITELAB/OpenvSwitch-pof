@@ -1,21 +1,13 @@
 set -e
 
 #安装ovs-dpdk
-<<<<<<< HEAD
 export DPDK_DIR=/home/sqy/dpdk-16.07
-=======
-export DPDK_DIR=/home/xyh/dpdk-16.07
->>>>>>> d6a5c69dee9a2ea3fb2eb6111c2b90c060f5a77f
 cd $DPDK_DIR
 #dpdk configure
 export DPDK_TARGET=x86_64-native-linuxapp-gcc
 export DPDK_BUILD=$DPDK_DIR/$DPDK_TARGET
 #rm -r x86_64-native-linuxapp-gcc
-<<<<<<< HEAD
 if [ ! -d /home/sqy/dpdk-16.07/x86_64-native-linuxapp-gcc ]
-=======
-if [ ! -d /home/xyh/dpdk-16.07/x86_64-native-linuxapp-gcc ]
->>>>>>> d6a5c69dee9a2ea3fb2eb6111c2b90c060f5a77f
 then
 make install T=$DPDK_TARGET DESTDIR=install
 fi
@@ -23,17 +15,10 @@ fi
 #make install T=$DPDK_TARGET DESTDIR=install
 # For IVSHMEM, Set `export DPDK_TARGET=x86_64-ivshmem-linuxapp-gcc`
 
-<<<<<<< HEAD
 cd /home/sqy
 export OVS_DIR=/home/sqy/OpenvSwitch-pof
 cd $OVS_DIR
 # ./boot.sh
-=======
-cd /home/xyh
-export OVS_DIR=/home/xyh/OpenvSwitch-pof
-cd $OVS_DIR
-#sudo ./boot.sh
->>>>>>> d6a5c69dee9a2ea3fb2eb6111c2b90c060f5a77f
 #./configure --with-dpdk=$DPDK_BUILD
 ./configure CFLAGS="-g -O0" --with-dpdk=$DPDK_BUILD
 make -j24
@@ -97,17 +82,11 @@ ovs-vswitchd unix:$DB_SOCK --pidfile --detach
 ovs-appctl vlog/set ANY:ANY:INFO
 ovs-appctl vlog/set ofproto:ANY:dbg
 ovs-vsctl add-br br0 -- set bridge br0 datapath_type=netdev
-<<<<<<< HEAD
-ovs-vsctl set-controller br0 tcp:192.168.109.160:6633
+
+ovs-vsctl set-controller br0 tcp:192.168.109.207:6633
 ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
 ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
 #ovs-ofctl show br0
-=======
-#ovs-vsctl set-controller br0 tcp:192.168.109.160:6633
-ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
-ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
-ovs-ofctl show br0
->>>>>>> d6a5c69dee9a2ea3fb2eb6111c2b90c060f5a77f
 sleep 1s
 #ovs-appctl -t ovs-vswitchd exit
 #ovs-vswitchd --pidfile

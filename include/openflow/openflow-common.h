@@ -130,6 +130,13 @@ enum ofp_version {
  * following MAC addresses are used as a frame length.  Otherwise, the
  * two bytes are used as the Ethernet type.
  */
+/* Left shift. */
+#define POF_MOVE_BIT_LEFT(x,n)              ((x) << (n))
+
+/* Right shift. */
+#define POF_MOVE_BIT_RIGHT(x,n)             ((x) >> (n))
+
+
 #define OFP_DL_TYPE_ETH2_CUTOFF   0x0600
 
 /* Value of dl_type to indicate that the frame does not include an

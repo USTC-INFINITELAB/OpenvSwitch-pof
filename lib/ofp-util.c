@@ -1703,13 +1703,32 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
             fm->match.flow.field_id[i] = ofm->match[i].field_id;
             fm->match.flow.len[i] = ofm->match[i].len;
             fm->match.flow.offset[i] = ofm->match[i].offset;
-            fm->match.wc.masks.field_id[i] = OVS_BE16_MAX;
-            fm->match.wc.masks.len[i] = OVS_BE16_MAX;
-            fm->match.wc.masks.offset[i] = OVS_BE16_MAX;
+            fm->match.wc.masks.field_id[i] = ofm->match[i].field_id;
+            fm->match.wc.masks.len[i] = ofm->match[i].len;
+            fm->match.wc.masks.offset[i] = ofm->match[i].offset;
+            VLOG_INFO("++++++++sqy pof_flow_gen_from_packet field_id:%d: len: %d; offset: %d",
+                       ntohs(ofm->match[i].field_id), ntohs(ofm->match[i].len), ntohs(ofm->match[i].offset));
             size_t j;
             for (j = 0; j < ARRAY_SIZE(ofm->match[i].value); j++) {
                 fm->match.flow.value[i][j] = ofm->match[i].value[j];
                 fm->match.wc.masks.value[i][j] = ofm->match[i].mask[j];
+                /*VLOG_INFO("++++++++sqy ofputil_decode_flow_mod_pof %d: value: %d; mask: %d",
+                          i, fm->match.flow.value[i][j], fm->match.wc.masks.value[i][j]);*/
+            }
+        }
+
+        for( ; i<POF_MAX_MATCH_FIELD_NUM; i++){
+
+            fm->match.flow.field_id[i] = 0;
+            fm->match.flow.len[i] = 0;
+            fm->match.flow.offset[i] = 0;
+            fm->match.wc.masks.field_id[i] = 0;
+            fm->match.wc.masks.len[i] = 0;
+            fm->match.wc.masks.offset[i] = 0;
+            size_t j;
+            for (j = 0; j < ARRAY_SIZE(ofm->match[i].value); j++) {
+                fm->match.flow.value[i][j] = 0;
+                fm->match.wc.masks.value[i][j] = 0;
                 /*VLOG_INFO("++++++++sqy ofputil_decode_flow_mod_pof %d: value: %d; mask: %d",
                           i, fm->match.flow.value[i][j], fm->match.wc.masks.value[i][j]);*/
             }

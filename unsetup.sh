@@ -29,11 +29,11 @@ ovs-appctl -t ovs-vswitchd exit
 ovs-appctl -t ovsdb-server exit
 
 #rmmod openvswitch
-sleep 1s
+sleep 2s
 killall ovsdb-server
 killall ovs-vswitchd
 rm /usr/local/etc/openvswitch/conf.db
-sleep 5s
+sleep 3s
 umount -t hugetlbfs none /dev/hugepages
 sleep 1s
 grep HugePages_ /proc/meminfo
