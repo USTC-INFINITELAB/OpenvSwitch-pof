@@ -5959,7 +5959,7 @@ handle_flow_mod_pof__(struct ofproto *ofproto, const struct ofputil_pof_flow_mod
     }
     ovs_mutex_unlock(&ofproto_mutex);
 
-    return 0;
+    return error;
 }
 
 static enum ofperr

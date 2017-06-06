@@ -1029,6 +1029,52 @@ classifier_lookup_pof__(const struct classifier *cls, ovs_version_t version,
         }
     }
     VLOG_INFO("+++++++++++sqy classifier_lookup__:  after main loop");
+    if(!match){
+    PVECTOR_FOR_EACH_PRIORITY (subtable, hard_pri + 1, 2, sizeof *subtable,
+                               &cls->subtables) {
+        struct cls_conjunction_set *conj_set;
+
+        /* Skip subtables with no match, or where the match is lower-priority
+         * than some certain match we've already found. */
+        VLOG_INFO("+++++++++++sqy classifier_lookup_pof__:  before find_match_wc_pof");
+        match = find_match_wc(subtable, version, flow, trie_ctx, cls->n_tries,
+                              wc);
+        VLOG_INFO("+++++++++++sqy classifier_lookup_pof__:  after find_match_wc_pof");
+        if (!match || match->priority <= hard_pri) {
+            continue;
+        }
+
+        conj_set = ovsrcu_get(struct cls_conjunction_set *, &match->conj_set);
+        if (!conj_set) {
+            /* 'match' isn't part of a conjunctive match.  It's the best
+             * certain match we've got so far, since we know that it's
+             * higher-priority than hard_pri.
+             *
+             * (There might be a higher-priority conjunctive match.  We can't
+             * tell yet.) */
+            hard = match;
+            hard_pri = hard->priority;
+        } else if (allow_conjunctive_matches) {
+            /* 'match' is part of a conjunctive match.  Add it to the list. */
+            if (OVS_UNLIKELY(n_soft >= allocated_soft)) {
+                struct cls_conjunction_set **old_soft = soft;
+
+                allocated_soft *= 2;
+                soft = xmalloc(allocated_soft * sizeof *soft);
+                memcpy(soft, old_soft, n_soft * sizeof *soft);
+                if (old_soft != soft_stub) {
+                    free(old_soft);
+                }
+            }
+            soft[n_soft++] = conj_set;
+
+            /* Keep track of the highest-priority soft match. */
+            if (soft_pri < match->priority) {
+                soft_pri = match->priority;
+            }
+        }
+    }
+    }
 
     /* In the common case, at this point we have no soft matches and we can
      * return immediately.  (We do the same thing if we have potential soft
@@ -2166,6 +2212,7 @@ find_match_wc(const struct cls_subtable *subtable, ovs_version_t version,
               const struct flow *flow, struct trie_ctx trie_ctx[CLS_MAX_TRIES],
               unsigned int n_tries, struct flow_wildcards *wc)
 {
+    VLOG_INFO("+++++++++++sqy find_match_wc:  find openflow rule");
     if (OVS_UNLIKELY(!wc)) {
         return find_match(subtable, version, flow,
                           flow_hash_in_minimask(flow, &subtable->mask, 0));
