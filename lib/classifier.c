@@ -2201,7 +2201,7 @@ find_match_wc_pof(const struct cls_subtable *subtable, ovs_version_t version,
 
 no_match:
     /* Unwildcard the bits in stages so far, as they were used in determining
-     * there is no match. */
+     * there is no match. Notice: the first subtable in OVS is its default flowrule. ++sqy*/
     pof_flow_wildcards_fold_minimask_in_map(&pwc, &subtable->mask, stages_map);
         VLOG_INFO("+++++++++++sqy find_match_wc_pof:  after no_match");
     return NULL;

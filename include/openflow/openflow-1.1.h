@@ -283,9 +283,9 @@ struct ofp11_instruction {
     ovs_be16 type;              /* Instruction type */
     ovs_be16 len;               /* Length of this struct in bytes. */
     uint8_t pad[4];             /* Align to 64-bits */
-    uint8_t  instruction_data[POF_MAX_INSTRUCTION_LENGTH];
+    /*uint8_t  instruction_data[POF_MAX_INSTRUCTION_LENGTH];*/
 };
-OFP_ASSERT(sizeof(struct ofp11_instruction) == 304);
+OFP_ASSERT(sizeof(struct ofp11_instruction) == 8);
 
 /* Instruction structure for OFPIT_GOTO_TABLE */
 struct ofp11_instruction_goto_table {
