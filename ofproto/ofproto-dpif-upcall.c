@@ -1092,7 +1092,6 @@ upcall_xlate(struct udpif *udpif, struct upcall *upcall,
     stats.n_bytes = dp_packet_size(upcall->packet);
     stats.used = time_msec();
     stats.tcp_flags = ntohs(upcall->flow->tcp_flags);
-    VLOG_INFO("+++++++++++sqy upcall_xlate: before xlate_in_init");
 
     xlate_in_init(&xin, upcall->ofproto,
                   ofproto_dpif_get_tables_version(upcall->ofproto),
@@ -1121,10 +1120,9 @@ upcall_xlate(struct udpif *udpif, struct upcall *upcall,
 
     upcall->dump_seq = seq_read(udpif->dump_seq);
     upcall->reval_seq = seq_read(udpif->reval_seq);
-    VLOG_INFO("+++++++++++sqy upcall_xlate:  before xlate_actions");
 
     xlate_actions(&xin, &upcall->xout);
-    VLOG_INFO("+++++++++++sqy upcall_xlate:  after xlate_actions");
+
     if (wc) {
         /* Convert the input port wildcard from OFP to ODP format. There's no
          * real way to do this for arbitrary bitmasks since the numbering spaces
@@ -1211,7 +1209,6 @@ upcall_cb(const struct dp_packet *packet, const struct flow *flow, ovs_u128 *ufi
     struct upcall upcall;
     bool megaflow;
     int error;
-     VLOG_INFO("+++++++++++sqy upcall_cb: before upcall_receive");
 
     atomic_read_relaxed(&enable_megaflows, &megaflow);
 
@@ -1222,7 +1219,6 @@ upcall_cb(const struct dp_packet *packet, const struct flow *flow, ovs_u128 *ufi
     }
 
     error = process_upcall(udpif, &upcall, actions, wc);
-    VLOG_INFO("+++++++++++sqy upcall_cb: after process_upcall");
     if (error) {
         VLOG_INFO("+++++++++++sqy upcall_cb: error process_upcall");
         goto out;
@@ -1264,9 +1260,7 @@ process_upcall(struct udpif *udpif, struct upcall *upcall,
 
     switch (classify_upcall(upcall->type, userdata)) {
     case MISS_UPCALL:
-        VLOG_INFO("+++++++++++sqy process_upcall:  MISS_UPCALL:before upcall_xlate");
         upcall_xlate(udpif, upcall, odp_actions, wc);
-        VLOG_INFO("+++++++++++sqy process_upcall:  MISS_UPCALL: after upcall_xlate");
         return 0;
 
     case SFLOW_UPCALL:

@@ -3922,12 +3922,10 @@ rule_dpif_lookup_in_table_pof(struct ofproto_dpif *ofproto, ovs_version_t versio
                           uint8_t table_id, struct flow *flow, struct dp_pcaket *packet,
                           struct flow_wildcards *wc)
 {
-    VLOG_INFO("+++++++++++sqy rule_dpif_lookup_in_table:  before rule_dpif_cast");
     struct classifier *cls = &ofproto->up.tables[table_id].cls;
     return rule_dpif_cast(rule_from_cls_rule(classifier_lookup_pof(cls, version,
                                                                flow, packet, wc)));
 
-    VLOG_INFO("+++++++++++sqy rule_dpif_lookup_in_table:  after rule_dpif_cast");
 }
 
 static struct rule_dpif *
@@ -4046,9 +4044,7 @@ rule_dpif_lookup_from_table_pof(struct ofproto_dpif *ofproto,
          next_id++, next_id += (next_id == TBL_INTERNAL))
     {
         *table_id = next_id;
-        VLOG_INFO("+++++++++++sqy rule_dpif_lookup_from_table:  before rule_dpif_lookup_in_table");
         rule = rule_dpif_lookup_in_table_pof(ofproto, version, next_id, flow, packet, wc);
-        VLOG_INFO("+++++++++++sqy rule_dpif_lookup_from_table:  after rule_dpif_lookup_in_table");
         if (stats) {
             struct oftable *tbl = &ofproto->up.tables[next_id];
             unsigned long orig;
