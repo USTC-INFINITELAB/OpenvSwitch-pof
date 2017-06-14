@@ -74,6 +74,7 @@ struct pof_flow {
 
     uint8_t value[POF_MAX_MATCH_FIELD_NUM][POF_MAX_FIELD_LENGTH_IN_BYTE];
     /*uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];*/
+    uint8_t pad_to_flow[POF_MAX_MATCH_FIELD_NUM][49];
 };
 
 

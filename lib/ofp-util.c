@@ -1656,6 +1656,9 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
         ofm = ofpbuf_pull(&b, sizeof *ofm);
 
         /*error = ofputil_pull_pof_match_x(&b, &fm->match, NULL);*/
+        memset(&fm->match.flow, 0, sizeof fm->match.flow);
+        memset(&fm->match.wc.masks, 0, sizeof fm->match.flow);
+        memset(&fm->match.tun_md, 0, sizeof fm->match.tun_md);
 
         for(i=0; i<ofm->match_field_num; i++){
 
@@ -1675,24 +1678,6 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
                           i, fm->match.flow.value[i][j], fm->match.wc.masks.value[i][j]);*/
             }
         }
-
-        for( ; i<POF_MAX_MATCH_FIELD_NUM; i++){
-
-            fm->match.flow.field_id[i] = 0;
-            fm->match.flow.len[i] = 0;
-            fm->match.flow.offset[i] = 0;
-            fm->match.wc.masks.field_id[i] = 0;
-            fm->match.wc.masks.len[i] = 0;
-            fm->match.wc.masks.offset[i] = 0;
-            size_t j;
-            for (j = 0; j < ARRAY_SIZE(ofm->match[i].value); j++) {
-                fm->match.flow.value[i][j] = 0;
-                fm->match.wc.masks.value[i][j] = 0;
-                /*VLOG_INFO("++++++++sqy ofputil_decode_flow_mod_pof %d: value: %d; mask: %d",
-                          i, fm->match.flow.value[i][j], fm->match.wc.masks.value[i][j]);*/
-            }
-        }
-
 
         /* Translate the message. */
         fm->priority = ntohs(ofm->priority);
