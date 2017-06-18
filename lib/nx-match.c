@@ -556,7 +556,7 @@ nx_pull_pof_raw(const uint8_t *p, unsigned int match_len, bool strict,
         union mf_value value;
         union mf_value mask;
         enum ofperr error;
-        VLOG_INFO("+++++++++++sqy nx_pull_pof_raw: nx_pull_match_entry times+++++++++++++ ");
+        /*VLOG_INFO("+++++++++++sqy nx_pull_pof_raw: nx_pull_match_entry times+++++++++++++ ");*/
         error = nx_pull_match_entry(&b, cookie != NULL, &field, &value, &mask);
         if (error) {
             VLOG_INFO("+++++++++++sqy nx_pull_pof_raw: while error1 ");

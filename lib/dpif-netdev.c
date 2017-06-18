@@ -3886,19 +3886,19 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
                               struct dp_netdev_pmd_thread *pmd,
                               long long now)
 {
-    VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: 1111111111111");
+    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: 1111111111111");*/
     struct dp_netdev_actions *actions;
     struct dp_netdev_flow *flow = batch->flow;
 
-    VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: before dp_netdev_flow_used");
+    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: before dp_netdev_flow_used");*/
     dp_netdev_flow_used(flow, batch->array.count, batch->byte_count,
                         batch->tcp_flags, now);
-    VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_flow_used");
+    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_flow_used");*/
     actions = dp_netdev_flow_get_actions(flow);
-    VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_flow_get_actions");
+    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_flow_get_actions");*/
     dp_netdev_execute_actions(pmd, &batch->array, true, &flow->flow,
                               actions->actions, actions->size, now);
-    VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_execute_actions");
+    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_execute_actions");*/
 }
 
 static inline void

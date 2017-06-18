@@ -1193,7 +1193,7 @@ ofctl_dump_flows__(int argc, char *argv[], bool aggregate)
 
     vconn = prepare_dump_flows(argc, argv, aggregate, &request);
     dump_transaction(vconn, request);
-    VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: after dump_transaction");
+    /*VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: after dump_transaction");*/
     vconn_close(vconn);
 }
 

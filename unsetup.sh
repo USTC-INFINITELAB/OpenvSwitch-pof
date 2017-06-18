@@ -13,7 +13,7 @@ killall ovs-vswitchd
 rm /usr/local/etc/openvswitch/conf.db
 ps -ef|grep ovs
 
-sleep 1s
+sleep 2s
 cd  /home/sqy/dpdk-16.07
 umount -t hugetlbfs none /dev/hugepages
 #./tools/dpdk-devbind.py  --status

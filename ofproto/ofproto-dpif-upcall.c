@@ -1195,7 +1195,7 @@ should_install_flow(struct udpif *udpif, struct upcall *upcall)
         return false;
     }
 
-    return false;/*sqy*/
+    return true;/*sqy*/
 }
 
 static int

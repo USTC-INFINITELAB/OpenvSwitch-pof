@@ -1155,7 +1155,7 @@ pof_mf_set_value(const struct mf_field *mf,
     case MFF_FIELD_ID5:
     case MFF_FIELD_ID6:
     case MFF_FIELD_ID7:
-        VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_FIELD_ID %u", ntohs(match->flow.field_id));
+        /*VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_FIELD_ID %u", ntohs(match->flow.field_id));*/
         pof_match_set_field_id(match, mf->id - MFF_FIELD_ID0, value->be16);
         break;
 
@@ -1179,7 +1179,7 @@ pof_mf_set_value(const struct mf_field *mf,
     case MFF_LENGTH5:
     case MFF_LENGTH6:
     case MFF_LENGTH7:
-        VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_LENGTH %u", ntohs(match->flow.len));
+        /*VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_LENGTH %u", ntohs(match->flow.len));*/
         pof_match_set_length(match, mf->id - MFF_LENGTH0, value->be16);
         break;
 
@@ -1191,7 +1191,7 @@ pof_mf_set_value(const struct mf_field *mf,
     case MFF_VALUE5:
     case MFF_VALUE6:
     case MFF_VALUE7:
-        VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_VALUE7");
+        /*VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_VALUE7");*/
         pof_match_set_value(match, mf->id - MFF_VALUE0, &value->ipv6);
         break;
 
@@ -2118,7 +2118,7 @@ pof_mf_set(const struct mf_field *mf,
         *err_str = NULL;
     }
 
-    VLOG_INFO("+++++++++++sqy pof_mf_set: before switch");
+   /* VLOG_INFO("+++++++++++sqy pof_mf_set: before switch");*/
     switch (mf->id) {
     case MFF_FIELD_ID0:
         VLOG_INFO("+++++++++++sqy pof_mf_set: MFF_FIELD_ID0");

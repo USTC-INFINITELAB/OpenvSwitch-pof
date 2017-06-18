@@ -6103,12 +6103,12 @@ ofpacts_decode(const void *actions, size_t actions_len,
         enum ofp_raw_action_type raw;
         enum ofperr error;
         uint64_t arg;
-VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_pull_raw");
+/*VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_pull_raw");*/
         error = ofpact_pull_raw(&openflow, ofp_version, &raw, &arg);
         if (!error) {
-            VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_decode");
+            /*VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_decode");*/
             error = ofpact_decode(action, raw, ofp_version, arg, ofpacts);
-            VLOG_INFO("+++++++++++sqy ofpacts_decode: after ofpact_decode");
+            /*VLOG_INFO("+++++++++++sqy ofpacts_decode: after ofpact_decode");*/
         }
 
         if (error) {
@@ -6792,7 +6792,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
 
     ofpbuf_clear(ofpacts);
     if (version == OFP10_VERSION) {
-        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore ofpacts_pull_openflow_actions__  10");
+        /*VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore ofpacts_pull_openflow_actions__  10");*/
         return ofpacts_pull_openflow_actions__(openflow, instructions_len,
                                                version,
                                                (1u << N_OVS_INSTRUCTIONS) - 1,

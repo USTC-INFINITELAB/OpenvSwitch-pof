@@ -3436,9 +3436,7 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
 {
     const void *msg = oh;
 
-    VLOG_INFO("+++++++++++sqy ofp_to_string__: before ofp_header_to_string__ ");
     ofp_header_to_string__(oh, raw, string);
-    VLOG_INFO("+++++++++++sqy ofp_to_string: after ofp_header_to_string__ ");
     enum ofptype type = ofptype_from_ofpraw(raw);
     switch (type) {
     case OFPTYPE_GROUP_STATS_REQUEST:
@@ -3629,7 +3627,7 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
 
     case OFPTYPE_FLOW_STATS_REPLY:
         ofp_print_stats(string, oh);
-        VLOG_INFO("+++++++++++sqy ofp_to_string__: OFPTYPE_FLOW_STATS_REPLY ");
+        /*VLOG_INFO("+++++++++++sqy ofp_to_string__: OFPTYPE_FLOW_STATS_REPLY ");*/
         ofp_print_pof_flow_stats_reply(string, oh);
         break;
 
@@ -3752,7 +3750,7 @@ ofp_to_string(const void *oh_, size_t len, int verbosity)
 {
     struct ds string = DS_EMPTY_INITIALIZER;
     const struct ofp_header *oh = oh_;
-    VLOG_INFO("+++++++++++sqy ofp_to_string: start ");
+    /*VLOG_INFO("+++++++++++sqy ofp_to_string: start ");*/
     if (!len) {
         ds_put_cstr(&string, "OpenFlow message is empty\n");
     } else if (len < sizeof(struct ofp_header)) {
