@@ -3916,14 +3916,29 @@ ofproto_dpif_get_tables_version(struct ofproto_dpif *ofproto)
  *
  * 'flow' is non-const to allow for temporary modifications during the lookup.
  * Any changes are restored before returning. */
+
+static struct rule_dpif *
+rule_dpif_lookup_in_table_pof(struct ofproto_dpif *ofproto, ovs_version_t version,
+                          uint8_t table_id, struct flow *flow, struct dp_pcaket *packet,
+                          struct flow_wildcards *wc)
+{
+    struct classifier *cls = &ofproto->up.tables[table_id].cls;
+    return rule_dpif_cast(rule_from_cls_rule(classifier_lookup_pof(cls, version,
+                                                               flow, packet, wc)));
+
+}
+
 static struct rule_dpif *
 rule_dpif_lookup_in_table(struct ofproto_dpif *ofproto, ovs_version_t version,
                           uint8_t table_id, struct flow *flow,
                           struct flow_wildcards *wc)
 {
+    VLOG_INFO("+++++++++++sqy rule_dpif_lookup_in_table:  before rule_dpif_cast");
     struct classifier *cls = &ofproto->up.tables[table_id].cls;
     return rule_dpif_cast(rule_from_cls_rule(classifier_lookup(cls, version,
                                                                flow, wc)));
+
+    VLOG_INFO("+++++++++++sqy rule_dpif_lookup_in_table:  after rule_dpif_cast");
 }
 
 void
@@ -3966,6 +3981,126 @@ ofproto_dpif_credit_table_stats(struct ofproto_dpif *ofproto, uint8_t table_id,
  *
  * 'flow' is non-const to allow for temporary modifications during the lookup.
  * Any changes are restored before returning. */
+
+struct rule_dpif *
+rule_dpif_lookup_from_table_pof(struct ofproto_dpif *ofproto,
+                            ovs_version_t version, struct flow *flow,
+                            struct dp_packet *packet,
+                            struct flow_wildcards *wc,
+                            const struct dpif_flow_stats *stats,
+                            uint8_t *table_id, ofp_port_t in_port,
+                            bool may_packet_in, bool honor_table_miss,
+                            struct xlate_cache *xcache)
+{
+    ovs_be16 old_tp_src = flow->tp_src, old_tp_dst = flow->tp_dst;
+    ofp_port_t old_in_port = flow->in_port.ofp_port;
+    enum ofputil_table_miss miss_config;
+    struct rule_dpif *rule;
+    uint8_t next_id;
+
+    /* We always unwildcard nw_frag (for IP), so they
+     * need not be unwildcarded here. */
+    if (flow->nw_frag & FLOW_NW_FRAG_ANY
+        && ofproto->up.frag_handling != OFPUTIL_FRAG_NX_MATCH) {
+        if (ofproto->up.frag_handling == OFPUTIL_FRAG_NORMAL) {
+            /* We must pretend that transport ports are unavailable. */
+            flow->tp_src = htons(0);
+            flow->tp_dst = htons(0);
+        } else {
+            /* Must be OFPUTIL_FRAG_DROP (we don't have OFPUTIL_FRAG_REASM).
+             * Use the drop_frags_rule (which cannot disappear). */
+            rule = ofproto->drop_frags_rule;
+            if (stats) {
+                struct oftable *tbl = &ofproto->up.tables[*table_id];
+                unsigned long orig;
+
+                atomic_add_relaxed(&tbl->n_matched, stats->n_packets, &orig);
+            }
+            if (xcache) {
+                struct xc_entry *entry;
+
+                entry = xlate_cache_add_entry(xcache, XC_TABLE);
+                entry->table.ofproto = ofproto;
+                entry->table.id = *table_id;
+                entry->table.match = true;
+            }
+            return rule;
+        }
+    }
+
+    /* Look up a flow with 'in_port' as the input port.  Then restore the
+     * original input port (otherwise OFPP_NORMAL and OFPP_IN_PORT will
+     * have surprising behavior). */
+    flow->in_port.ofp_port = in_port;
+
+    /* Our current implementation depends on n_tables == N_TABLES, and
+     * TBL_INTERNAL being the last table. */
+    BUILD_ASSERT_DECL(N_TABLES == TBL_INTERNAL + 1);
+
+    miss_config = OFPUTIL_TABLE_MISS_CONTINUE;
+
+    for (next_id = *table_id;
+         next_id < ofproto->up.n_tables;
+         next_id++, next_id += (next_id == TBL_INTERNAL))
+    {
+        *table_id = next_id;
+        rule = rule_dpif_lookup_in_table_pof(ofproto, version, next_id, flow, packet, wc);
+        if (stats) {
+            struct oftable *tbl = &ofproto->up.tables[next_id];
+            unsigned long orig;
+
+            atomic_add_relaxed(rule ? &tbl->n_matched : &tbl->n_missed, //sqy notes: run
+                               stats->n_packets, &orig);
+        }
+        if (xcache) {
+            struct xc_entry *entry;
+
+            entry = xlate_cache_add_entry(xcache, XC_TABLE);
+            entry->table.ofproto = ofproto;
+            entry->table.id = next_id;
+            entry->table.match = (rule != NULL);       //sqy notes: no run
+        }
+        if (rule) {
+            goto out;   /* Match. */         //sqy notes: run
+        }
+        if (honor_table_miss) {
+            miss_config = ofproto_table_get_miss_config(&ofproto->up,
+                                                        *table_id);
+            if (miss_config == OFPUTIL_TABLE_MISS_CONTINUE) {
+                continue;
+            }
+        }
+        break;
+    }
+    /* Miss. */
+    rule = ofproto->no_packet_in_rule;
+    if (may_packet_in) {
+        if (miss_config == OFPUTIL_TABLE_MISS_CONTINUE
+            || miss_config == OFPUTIL_TABLE_MISS_CONTROLLER) {
+            struct ofport_dpif *port;
+
+            port = ofp_port_to_ofport(ofproto, old_in_port);
+            if (!port) {
+                VLOG_WARN_RL(&rl, "packet-in on unknown OpenFlow port %"PRIu16,
+                             old_in_port);
+            } else if (!(port->up.pp.config & OFPUTIL_PC_NO_PACKET_IN)) {
+                rule = ofproto->miss_rule;
+            }
+        } else if (miss_config == OFPUTIL_TABLE_MISS_DEFAULT &&
+                   connmgr_wants_packet_in_on_miss(ofproto->up.connmgr)) {
+            rule = ofproto->miss_rule;
+        }
+    }
+out:
+    /* Restore port numbers, as they may have been modified above. */
+    flow->tp_src = old_tp_src;
+    flow->tp_dst = old_tp_dst;
+    /* Restore the old in port. */
+    flow->in_port.ofp_port = old_in_port;
+
+    return rule;
+}
+
 struct rule_dpif *
 rule_dpif_lookup_from_table(struct ofproto_dpif *ofproto,
                             ovs_version_t version, struct flow *flow,
@@ -4027,12 +4162,14 @@ rule_dpif_lookup_from_table(struct ofproto_dpif *ofproto,
          next_id++, next_id += (next_id == TBL_INTERNAL))
     {
         *table_id = next_id;
+        VLOG_INFO("+++++++++++sqy rule_dpif_lookup_from_table:  before rule_dpif_lookup_in_table");
         rule = rule_dpif_lookup_in_table(ofproto, version, next_id, flow, wc);
+        VLOG_INFO("+++++++++++sqy rule_dpif_lookup_from_table:  after rule_dpif_lookup_in_table");
         if (stats) {
             struct oftable *tbl = &ofproto->up.tables[next_id];
             unsigned long orig;
 
-            atomic_add_relaxed(rule ? &tbl->n_matched : &tbl->n_missed,
+            atomic_add_relaxed(rule ? &tbl->n_matched : &tbl->n_missed, //sqy notes: run
                                stats->n_packets, &orig);
         }
         if (xcache) {
@@ -4041,10 +4178,10 @@ rule_dpif_lookup_from_table(struct ofproto_dpif *ofproto,
             entry = xlate_cache_add_entry(xcache, XC_TABLE);
             entry->table.ofproto = ofproto;
             entry->table.id = next_id;
-            entry->table.match = (rule != NULL);
+            entry->table.match = (rule != NULL);       //sqy notes: no run
         }
         if (rule) {
-            goto out;   /* Match. */
+            goto out;   /* Match. */         //sqy notes: run
         }
         if (honor_table_miss) {
             miss_config = ofproto_table_get_miss_config(&ofproto->up,

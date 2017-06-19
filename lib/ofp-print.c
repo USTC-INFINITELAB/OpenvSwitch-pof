@@ -51,7 +51,9 @@
 #include "unaligned.h"
 #include "util.h"
 #include "uuid.h"
+#include "openvswitch/vlog.h"
 
+VLOG_DEFINE_THIS_MODULE(ofpprintsqy);
 static void ofp_print_queue_name(struct ds *string, uint32_t port);
 static void ofp_print_error(struct ds *, enum ofperr);
 
@@ -1610,6 +1612,31 @@ ofp_print_flow_stats_request(struct ds *string, const struct ofp_header *oh)
     match_format(&fsr.match, string, OFP_DEFAULT_PRIORITY);
 }
 
+static void
+ofp_print_pof_flow_stats_request(struct ds *string, const struct ofp_header *oh)
+{
+    struct ofputil_pof_flow_stats_request fsr;
+    enum ofperr error;
+
+    error = ofputil_decode_pof_flow_stats_request(&fsr, oh, NULL);
+    if (error) {
+        ofp_print_error(string, error);
+        return;
+    }
+
+    if (fsr.table_id != 0xff) {
+        ds_put_format(string, " table=%"PRIu8, fsr.table_id);
+    }
+
+    if (fsr.out_port != OFPP_ANY) {
+        ds_put_cstr(string, " out_port=");
+        ofputil_format_port(fsr.out_port, string);
+    }
+
+    ds_put_char(string, ' ');
+    pof_match_format(&fsr.match, string, OFP_DEFAULT_PRIORITY);
+}
+
 void
 ofp_print_flow_stats(struct ds *string, struct ofputil_flow_stats *fs)
 {
@@ -1657,6 +1684,53 @@ ofp_print_flow_stats(struct ds *string, struct ofputil_flow_stats *fs)
     ofpacts_format(fs->ofpacts, fs->ofpacts_len, string);
 }
 
+void
+ofp_print_pof_flow_stats(struct ds *string, struct ofputil_pof_flow_stats *fs)
+{
+    ds_put_format(string, " %scookie=%s0x%"PRIx64", %sduration=%s",
+                  colors.param, colors.end, ntohll(fs->cookie),
+                  colors.param, colors.end);
+
+    ofp_print_duration(string, fs->duration_sec, fs->duration_nsec);
+    ds_put_format(string, ", %stable=%s%"PRIu8", ",
+                  colors.special, colors.end, fs->table_id);
+    ds_put_format(string, "%sn_packets=%s%"PRIu64", ",
+                  colors.param, colors.end, fs->packet_count);
+    ds_put_format(string, "%sn_bytes=%s%"PRIu64", ",
+                  colors.param, colors.end, fs->byte_count);
+    if (fs->idle_timeout != OFP_FLOW_PERMANENT) {
+        ds_put_format(string, "%sidle_timeout=%s%"PRIu16", ",
+                      colors.param, colors.end, fs->idle_timeout);
+    }
+    if (fs->hard_timeout != OFP_FLOW_PERMANENT) {
+        ds_put_format(string, "%shard_timeout=%s%"PRIu16", ",
+                      colors.param, colors.end, fs->hard_timeout);
+    }
+    if (fs->flags) {
+        ofp_print_flow_flags(string, fs->flags);
+    }
+    if (fs->importance != 0) {
+        ds_put_format(string, "%simportance=%s%"PRIu16", ",
+                      colors.param, colors.end, fs->importance);
+    }
+    if (fs->idle_age >= 0) {
+        ds_put_format(string, "%sidle_age=%s%d, ",
+                      colors.param, colors.end, fs->idle_age);
+    }
+    if (fs->hard_age >= 0 && fs->hard_age != fs->duration_sec) {
+        ds_put_format(string, "%shard_age=%s%d, ",
+                      colors.param, colors.end, fs->hard_age);
+    }
+
+    pof_match_format(&fs->match, string, fs->priority);
+    if (string->string[string->length - 1] != ' ') {
+        ds_put_char(string, ' ');
+    }
+
+    ds_put_format(string, "%sactions=%s", colors.actions, colors.end);
+    ofpacts_format(fs->ofpacts, fs->ofpacts_len, string);
+}
+
 static void
 ofp_print_flow_stats_reply(struct ds *string, const struct ofp_header *oh)
 {
@@ -1677,6 +1751,31 @@ ofp_print_flow_stats_reply(struct ds *string, const struct ofp_header *oh)
         }
         ds_put_char(string, '\n');
         ofp_print_flow_stats(string, &fs);
+     }
+    ofpbuf_uninit(&ofpacts);
+}
+
+static void
+ofp_print_pof_flow_stats_reply(struct ds *string, const struct ofp_header *oh)
+{
+    struct ofpbuf b = ofpbuf_const_initializer(oh, ntohs(oh->length));
+    struct ofpbuf ofpacts;
+
+    ofpbuf_init(&ofpacts, 64);
+    for (;;) {
+        struct ofputil_pof_flow_stats fs;
+        int retval;
+
+        retval = ofputil_decode_pof_flow_stats_reply(&fs, &b, true, &ofpacts);
+        /*VLOG_INFO("+++++++++++sqy ofp_print_pof_flow_stats_reply: retval = %d", retval);*/
+        if (retval) {
+            if (retval != EOF) {
+                ds_put_cstr(string, " ***parse error sqy***");
+            }
+            break;
+        }
+        ds_put_char(string, '\n');
+        ofp_print_pof_flow_stats(string, &fs);
      }
     ofpbuf_uninit(&ofpacts);
 }
@@ -3338,7 +3437,6 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
     const void *msg = oh;
 
     ofp_header_to_string__(oh, raw, string);
-
     enum ofptype type = ofptype_from_ofpraw(raw);
     switch (type) {
     case OFPTYPE_GROUP_STATS_REQUEST:
@@ -3402,6 +3500,9 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
         break;
 
     case OFPTYPE_GET_CONFIG_REQUEST:
+        break;
+
+    case OFPTYPE_RESOURCE_REPORT:
         break;
 
     case OFPTYPE_GET_CONFIG_REPLY:
@@ -3501,7 +3602,8 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
     case OFPTYPE_FLOW_STATS_REQUEST:
     case OFPTYPE_AGGREGATE_STATS_REQUEST:
         ofp_print_stats(string, oh);
-        ofp_print_flow_stats_request(string, oh);
+        VLOG_INFO("+++++++++++sqy ofp_to_string__: ofp_print_pof_flow_stats_request ");
+        ofp_print_pof_flow_stats_request(string, oh);
         break;
 
     case OFPTYPE_TABLE_STATS_REQUEST:
@@ -3525,7 +3627,8 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
 
     case OFPTYPE_FLOW_STATS_REPLY:
         ofp_print_stats(string, oh);
-        ofp_print_flow_stats_reply(string, oh);
+        /*VLOG_INFO("+++++++++++sqy ofp_to_string__: OFPTYPE_FLOW_STATS_REPLY ");*/
+        ofp_print_pof_flow_stats_reply(string, oh);
         break;
 
     case OFPTYPE_QUEUE_STATS_REPLY:
@@ -3647,7 +3750,7 @@ ofp_to_string(const void *oh_, size_t len, int verbosity)
 {
     struct ds string = DS_EMPTY_INITIALIZER;
     const struct ofp_header *oh = oh_;
-
+    /*VLOG_INFO("+++++++++++sqy ofp_to_string: start ");*/
     if (!len) {
         ds_put_cstr(&string, "OpenFlow message is empty\n");
     } else if (len < sizeof(struct ofp_header)) {
@@ -3663,10 +3766,12 @@ ofp_to_string(const void *oh_, size_t len, int verbosity)
             ds_put_char(&string, '\n');
         }
 
+        VLOG_INFO("+++++++++++sqy ofp_to_string: before ds_put_format1 ");
         ds_put_format(&string,
                       "(***truncated to %"PRIuSIZE" bytes from %"PRIu16"***)\n",
                       len, ntohs(oh->length));
     } else if (ntohs(oh->length) < len) {
+        VLOG_INFO("+++++++++++sqy ofp_to_string: before ds_put_format2 ");
         ds_put_format(&string,
                       "(***only uses %"PRIu16" bytes out of %"PRIuSIZE"***)\n",
                       ntohs(oh->length), len);
@@ -3686,12 +3791,15 @@ ofp_to_string(const void *oh_, size_t len, int verbosity)
             if (ds_last(&string) != '\n') {
                 ds_put_char(&string, '\n');
             }
+            /*VLOG_INFO("+++++++++++sqy ofp_to_string: before ds_steal_cstr ");*/
             return ds_steal_cstr(&string);
         }
 
         ofp_print_error(&string, error);
     }
+    VLOG_INFO("+++++++++++sqy ofp_to_string: before ds_put_hex_dump ");
     ds_put_hex_dump(&string, oh, len, 0, true);
+    VLOG_INFO("+++++++++++sqy ofp_to_string: before ds_steal_cstr ");
     return ds_steal_cstr(&string);
 }
 

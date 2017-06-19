@@ -35,7 +35,10 @@ BUILD_ASSERT_DECL(FLOW_N_REGS % 4 == 0); /* Handle xxregs. */
  * Each of these overlays a pair of Open vSwitch 32-bit registers, so there
  * are half as many of them.*/
 #define FLOW_N_XREGS (FLOW_N_REGS / 2)
-
+#define POF_N_FIELD_IDS 8
+#define POF_N_OFFSETS 8
+#define POF_N_LENGTHS 8
+#define POF_N_VALUES 8
 /* Number of 128-bit registers.
  *
  * Each of these overlays four Open vSwitch 32-bit registers, so there
@@ -60,6 +63,20 @@ const char *flow_tun_flag_to_string(uint32_t flags);
 
 /* Maximum number of supported MPLS labels. */
 #define FLOW_MAX_MPLS_LABELS 3
+
+struct pof_flow {
+    ovs_be16 field_id[POF_MAX_MATCH_FIELD_NUM];  /*0xffff means metadata,
+                          0x8XXX means from table parameter,
+                          otherwise means from packet data. */
+    ovs_be16 offset[POF_MAX_MATCH_FIELD_NUM];  /*bit unit*/
+    ovs_be16 len[POF_MAX_MATCH_FIELD_NUM];    /*length in bit unit*/
+    uint8_t pad[2][POF_MAX_MATCH_FIELD_NUM];   /*8 bytes aligned*/
+
+    uint8_t value[POF_MAX_MATCH_FIELD_NUM][POF_MAX_FIELD_LENGTH_IN_BYTE];
+    /*uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];*/
+    uint8_t pad_to_flow[POF_MAX_MATCH_FIELD_NUM][49];
+};
+
 
 /*
  * A flow in the network.
@@ -131,7 +148,8 @@ struct flow {
 BUILD_ASSERT_DECL(sizeof(struct flow) % sizeof(uint64_t) == 0);
 BUILD_ASSERT_DECL(sizeof(struct flow_tnl) % sizeof(uint64_t) == 0);
 
-#define FLOW_U64S (sizeof(struct flow) / sizeof(uint64_t))
+#define FLOW_U64S (sizeof(struct pof_flow) / sizeof(uint64_t))
+#define POF_FLOW_U64S (sizeof(struct pof_flow) / sizeof(uint64_t))
 
 /* Remember to update FLOW_WC_SEQ when changing 'struct flow'. */
 BUILD_ASSERT_DECL(offsetof(struct flow, igmp_group_ip4) + sizeof(uint32_t)
@@ -165,7 +183,9 @@ BUILD_ASSERT_DECL(FLOW_SEGMENT_3_ENDS_AT < sizeof(struct flow));
 struct flow_wildcards {
     struct flow masks;
 };
-
+struct pof_flow_wildcards {
+    struct pof_flow masks;
+};
 #define WC_MASK_FIELD(WC, FIELD) \
     memset(&(WC)->masks.FIELD, 0xff, sizeof (WC)->masks.FIELD)
 #define WC_MASK_FIELD_MASK(WC, FIELD, MASK)     \
@@ -174,6 +194,7 @@ struct flow_wildcards {
     memset(&(WC)->masks.FIELD, 0, sizeof (WC)->masks.FIELD)
 
 void flow_wildcards_init_catchall(struct flow_wildcards *);
+void pof_flow_wildcards_init_catchall(struct pof_flow_wildcards *);
 
 void flow_wildcards_init_for_packet(struct flow_wildcards *,
                                     const struct flow *);

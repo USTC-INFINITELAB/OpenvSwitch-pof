@@ -174,36 +174,39 @@ enum ofpraw {
     /* OFPT 1.4+ (12): struct ofp_port_status, struct ofp14_port, uint8_t[8][]. */
     OFPRAW_OFPT14_PORT_STATUS,
 
-    /* OFPT 1.0 (13): struct ofp10_packet_out, uint8_t[]. */
+    /* OFPT 1.0+ (13): struct ofp_flow_table_stats. */
+    OFPRAW_OFPT_RESOURCE_REPORT,
+
+    /* OFPT 1.0 (14): struct ofp10_packet_out, uint8_t[]. */
     OFPRAW_OFPT10_PACKET_OUT,
-    /* OFPT 1.1+ (13): struct ofp11_packet_out, uint8_t[]. */
+    /* OFPT 1.1+ (14): struct ofp11_packet_out, uint8_t[]. */
     OFPRAW_OFPT11_PACKET_OUT,
 
-    /* OFPT 1.0 (14): struct ofp10_flow_mod, uint8_t[8][]. */
+    /* OFPT 1.0 (15): struct ofp10_flow_mod, uint8_t[8][]. */
     OFPRAW_OFPT10_FLOW_MOD,
-    /* OFPT 1.1+ (14): struct ofp11_flow_mod, struct ofp11_instruction[]. */
+    /* OFPT 1.1+ (15): struct ofp11_flow_mod, struct ofp11_instruction[]. */
     OFPRAW_OFPT11_FLOW_MOD,
     /* NXT 1.0+ (13): struct nx_flow_mod, uint8_t[8][]. */
     OFPRAW_NXT_FLOW_MOD,
 
-    /* OFPT 1.1-1.4 (15): struct ofp11_group_mod, uint8_t[8][]. */
+    /* OFPT 1.1-1.4 (16): struct ofp11_group_mod, uint8_t[8][]. */
     OFPRAW_OFPT11_GROUP_MOD,
-    /* OFPT 1.5+ (15): struct ofp15_group_mod, uint8_t[8][]. */
+    /* OFPT 1.5+ (16): struct ofp15_group_mod, uint8_t[8][]. */
     OFPRAW_OFPT15_GROUP_MOD,
 
-    /* OFPT 1.0 (15): struct ofp10_port_mod. */
+    /* OFPT 1.0 (16): struct ofp10_port_mod. */
     OFPRAW_OFPT10_PORT_MOD,
-    /* OFPT 1.1-1.3 (16): struct ofp11_port_mod. */
+    /* OFPT 1.1-1.3 (17): struct ofp11_port_mod. */
     OFPRAW_OFPT11_PORT_MOD,
-    /* OFPT 1.4+ (16): struct ofp14_port_mod, uint8_t[8][]. */
+    /* OFPT 1.4+ (17): struct ofp14_port_mod, uint8_t[8][]. */
     OFPRAW_OFPT14_PORT_MOD,
 
-    /* OFPT 1.1-1.3 (17): struct ofp11_table_mod. */
+    /* OFPT 1.1-1.3 (18): struct ofp11_table_mod. */
     OFPRAW_OFPT11_TABLE_MOD,
-    /* OFPT 1.4+ (17): struct ofp14_table_mod, uint8_t[8][]. */
+    /* OFPT 1.4+ (18): struct ofp14_table_mod, uint8_t[8][]. */
     OFPRAW_OFPT14_TABLE_MOD,
 
-    /* OFPT 1.0 (18): void. */
+    /* OFPT 1.0 (40): void. */
     OFPRAW_OFPT10_BARRIER_REQUEST,
     /* OFPT 1.1+ (20): void. */
     OFPRAW_OFPT11_BARRIER_REQUEST,
@@ -554,6 +557,7 @@ enum ofptype {
     OFPTYPE_PORT_STATUS,         /* OFPRAW_OFPT10_PORT_STATUS.
                                   * OFPRAW_OFPT11_PORT_STATUS.
                                   * OFPRAW_OFPT14_PORT_STATUS. */
+    OFPTYPE_RESOURCE_REPORT,     /* OFPRAW_OFPT_RESOURCE_REPORT. */
 
     /* Controller command messages. */
     OFPTYPE_PACKET_OUT,          /* OFPRAW_OFPT10_PACKET_OUT.

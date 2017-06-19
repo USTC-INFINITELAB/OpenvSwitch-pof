@@ -105,6 +105,18 @@ EXTRA_DIST = \
 	.travis/osx-prepare.sh \
 	appveyor.yml \
 	boot.sh \
+	setup.sh \
+        unsetup.sh \
+        dpdk_setup.sh \
+        dpdk_unsetup.sh \
+	.cproject \
+	.project \
+	OVS206.config \
+	OVS206.creator \
+        OVS206.creator.user \
+	OVS206.files \
+	OVS206.includes \
+        lib/ofp-msgs.inc \
 	build-aux/cccl \
 	build-aux/cksum-schema-check \
 	build-aux/calculate-schema-cksum \

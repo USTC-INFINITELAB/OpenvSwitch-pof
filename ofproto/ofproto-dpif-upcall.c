@@ -1122,6 +1122,7 @@ upcall_xlate(struct udpif *udpif, struct upcall *upcall,
     upcall->reval_seq = seq_read(udpif->reval_seq);
 
     xlate_actions(&xin, &upcall->xout);
+
     if (wc) {
         /* Convert the input port wildcard from OFP to ODP format. There's no
          * real way to do this for arbitrary bitmasks since the numbering spaces
@@ -1132,7 +1133,7 @@ upcall_xlate(struct udpif *udpif, struct upcall *upcall,
 
     upcall->xout_initialized = true;
 
-    if (!upcall->xout.slow) {
+    if (!upcall->xout.slow) {   //sqy notes: 0, it's not slow flow, run here
         ofpbuf_use_const(&upcall->put_actions,
                          odp_actions->data, odp_actions->size);
     } else {
@@ -1145,7 +1146,7 @@ upcall_xlate(struct udpif *udpif, struct upcall *upcall,
     /* This function is also called for slow-pathed flows.  As we are only
      * going to create new datapath flows for actual datapath misses, there is
      * no point in creating a ukey otherwise. */
-    if (upcall->type == DPIF_UC_MISS) {
+    if (upcall->type == DPIF_UC_MISS) {   //sqy notes: run here
         upcall->ukey = ukey_create_from_upcall(upcall, wc);
     }
 }
@@ -1194,7 +1195,7 @@ should_install_flow(struct udpif *udpif, struct upcall *upcall)
         return false;
     }
 
-    return true;
+    return true;/*sqy*/
 }
 
 static int
@@ -1219,29 +1220,30 @@ upcall_cb(const struct dp_packet *packet, const struct flow *flow, ovs_u128 *ufi
 
     error = process_upcall(udpif, &upcall, actions, wc);
     if (error) {
+        VLOG_INFO("+++++++++++sqy upcall_cb: error process_upcall");
         goto out;
     }
 
-    if (upcall.xout.slow && put_actions) {
+    if (upcall.xout.slow && put_actions) {    //sqy notes: no run
         ofpbuf_put(put_actions, upcall.put_actions.data,
                    upcall.put_actions.size);
     }
 
-    if (OVS_UNLIKELY(!megaflow)) {
+    if (OVS_UNLIKELY(!megaflow)) {    //sqy notes: no run
         flow_wildcards_init_for_packet(wc, flow);
     }
 
-    if (!should_install_flow(udpif, &upcall)) {
+    if (!should_install_flow(udpif, &upcall)) {    //sqy notes: no run
         error = ENOSPC;
         goto out;
     }
 
-    if (upcall.ukey && !ukey_install(udpif, upcall.ukey)) {
+    if (upcall.ukey && !ukey_install(udpif, upcall.ukey)) {   //sqy notes: no run
         VLOG_WARN_RL(&rl, "upcall_cb failure: ukey installation fails");
         error = ENOSPC;
     }
 out:
-    if (!error) {
+    if (!error) {   //sqy notes: run here
         upcall.ukey_persists = true;
     }
     upcall_uninit(&upcall);
@@ -1263,6 +1265,7 @@ process_upcall(struct udpif *udpif, struct upcall *upcall,
 
     case SFLOW_UPCALL:
         if (upcall->sflow) {
+            VLOG_INFO("+++++++++++sqy process_upcall:  SFLOW_UPCALL");
             union user_action_cookie cookie;
             const struct nlattr *actions;
             size_t actions_len = 0;
@@ -1296,6 +1299,7 @@ process_upcall(struct udpif *udpif, struct upcall *upcall,
         break;
 
     case IPFIX_UPCALL:
+        VLOG_INFO("+++++++++++sqy process_upcall:  IPFIX_UPCALL");
         if (upcall->ipfix) {
             union user_action_cookie cookie;
             struct flow_tnl output_tunnel_key;
@@ -1315,6 +1319,7 @@ process_upcall(struct udpif *udpif, struct upcall *upcall,
         break;
 
     case FLOW_SAMPLE_UPCALL:
+        VLOG_INFO("+++++++++++sqy process_upcall:  FLOW_SAMPLE_UPCALL");
         if (upcall->ipfix) {
             union user_action_cookie cookie;
             struct flow_tnl output_tunnel_key;
@@ -1336,6 +1341,7 @@ process_upcall(struct udpif *udpif, struct upcall *upcall,
         break;
 
     case BAD_UPCALL:
+        VLOG_INFO("+++++++++++sqy process_upcall:  BAD_UPCALL");
         break;
     }
 

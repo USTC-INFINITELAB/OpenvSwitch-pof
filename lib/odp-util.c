@@ -5433,7 +5433,7 @@ commit_set_ether_addr_action(const struct flow *flow, struct flow *base_flow,
     get_ethernet_key(&wc->masks, &mask);
 
     if (commit(OVS_KEY_ATTR_ETHERNET, use_masked,
-               &key, &base, &mask, sizeof key, odp_actions)) {
+               &key, &base, &mask, sizeof key, odp_actions)) {     //sqy notes: commit return false, no run
         put_ethernet_key(&base, base_flow);
         put_ethernet_key(&mask, &wc->masks);
     }
@@ -5476,8 +5476,8 @@ static void
 commit_mpls_action(const struct flow *flow, struct flow *base,
                    struct ofpbuf *odp_actions)
 {
-    int base_n = flow_count_mpls_labels(base, NULL);
-    int flow_n = flow_count_mpls_labels(flow, NULL);
+    int base_n = flow_count_mpls_labels(base, NULL);       //sqy notes: return 0
+    int flow_n = flow_count_mpls_labels(flow, NULL);       //sqy notes: return 0
     int common_n = flow_count_common_mpls_labels(flow, flow_n, base, base_n,
                                                  NULL);
 
@@ -5492,7 +5492,7 @@ commit_mpls_action(const struct flow *flow, struct flow *base,
             mpls_key.mpls_lse = flow->mpls_lse[flow_n - base_n];
             commit_set_action(odp_actions, OVS_KEY_ATTR_MPLS,
                               &mpls_key, sizeof mpls_key);
-            flow_set_mpls_lse(base, 0, mpls_key.mpls_lse);
+            flow_set_mpls_lse(base, 0, mpls_key.mpls_lse);       //sqy notes: run here
             common_n++;
         } else {
             /* Otherwise, if there more LSEs in base than are common between
@@ -5524,7 +5524,7 @@ commit_mpls_action(const struct flow *flow, struct flow *base,
 
     /* If, after the above popping and setting, there are more LSEs in flow
      * than base then some LSEs need to be pushed. */
-    while (base_n < flow_n) {
+    while (base_n < flow_n) {                      //sqy notes: base_n = flow_n =0
         struct ovs_action_push_mpls *mpls;
 
         mpls = nl_msg_put_unspec_zero(odp_actions,
@@ -5897,12 +5897,12 @@ commit_odp_actions(const struct flow *flow, struct flow *base,
     enum slow_path_reason slow1, slow2;
 
     commit_set_ether_addr_action(flow, base, odp_actions, wc, use_masked);
-    slow1 = commit_set_nw_action(flow, base, odp_actions, wc, use_masked);
+    slow1 = commit_set_nw_action(flow, base, odp_actions, wc, use_masked);  // sqy notes: return 0
     commit_set_port_action(flow, base, odp_actions, wc, use_masked);
-    slow2 = commit_set_icmp_action(flow, base, odp_actions, wc);
+    slow2 = commit_set_icmp_action(flow, base, odp_actions, wc);            // sqy notes: return 0
     commit_mpls_action(flow, base, odp_actions);
     commit_vlan_action(flow->vlan_tci, base, odp_actions, wc);
-    commit_set_priority_action(flow, base, odp_actions, wc, use_masked);
+    commit_set_priority_action(flow, base, odp_actions, wc, use_masked);    // sqy notes: return false
     commit_set_pkt_mark_action(flow, base, odp_actions, wc, use_masked);
 
     return slow1 ? slow1 : slow2;

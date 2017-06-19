@@ -1,6 +1,21 @@
 #set -e
 
+cd /home/sqy/OpenvSwitch-pof
+
+#ovs-vsctl del-br br0
+ovs-appctl -t ovs-vswitchd exit
+ovs-appctl -t ovsdb-server exit
+
+#rmmod openvswitch
+sleep 2s
+killall ovsdb-server
+killall ovs-vswitchd
+rm /usr/local/etc/openvswitch/conf.db
+ps -ef|grep ovs
+
+sleep 2s
 cd  /home/sqy/dpdk-16.07
+umount -t hugetlbfs none /dev/hugepages
 #./tools/dpdk-devbind.py  --status
 #echo "Input the number of unbind DPDK ports (even): (Enter)"
 #read n
@@ -11,21 +26,10 @@ cd  /home/sqy/dpdk-16.07
 #for((i=0;i<n;i++));do
 #     ./tools/dpdk-devbind.py --bind=igb ${port[$i]}
 #done
-./tools/dpdk-devbind.py --bind=igb 0000:05:00.1
-./tools/dpdk-devbind.py --bind=igb 0000:05:00.0
+sleep 1s
+./tools/dpdk-devbind.py --bind=i40e 0000:05:00.1
+./tools/dpdk-devbind.py --bind=i40e 0000:05:00.0
 ./tools/dpdk-devbind.py  --status
-cd /home/sqy/OpenvSwitch-pof
 
-#ovs-vsctl del-br br0
-#ovs-appctl -t ovsdb-server exit
-#ovs-appctl -t ovs-vswitchd exit
-
-#rmmod openvswitch
-killall ovsdb-server
-killall ovs-vswitchd
-rm /usr/local/etc/openvswitch/conf.db
-sleep 1s
-umount -t hugetlbfs none /dev/hugepages
-sleep 1s
 grep HugePages_ /proc/meminfo
 ps -ef|grep ovs

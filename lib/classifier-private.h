@@ -213,6 +213,28 @@ struct trie_node {
  * The hash values returned by this function are the same as those returned by
  * miniflow_hash_in_minimask(), only the form of the arguments differ. */
 static inline uint32_t
+flow_hash_in_minimask_pof(const struct pof_flow *flow, const struct minimask *mask,
+                      uint32_t basis)
+{
+    const uint64_t *mask_values = miniflow_get_values(&mask->masks);
+    const uint64_t *flow_u64 = (const uint64_t *)flow;
+    const uint64_t *p = mask_values;
+    uint32_t hash = basis;
+    map_t map;
+
+    FLOWMAP_FOR_EACH_MAP (map, mask->masks.map) {
+        size_t idx;
+
+        MAP_FOR_EACH_INDEX (idx, map) {
+            hash = hash_add64(hash, flow_u64[idx] & *p++);
+        }
+        flow_u64 += MAP_T_BITS;
+    }
+
+    return hash_finish(hash, (p - mask_values) * 8);
+}
+
+static inline uint32_t
 flow_hash_in_minimask(const struct flow *flow, const struct minimask *mask,
                       uint32_t basis)
 {
@@ -269,6 +291,33 @@ miniflow_hash_in_minimask(const struct miniflow *flow,
  * The hash values returned by this function are the same as those returned by
  * minimatch_hash_range(), only the form of the arguments differ. */
 static inline uint32_t
+flow_hash_in_minimask_range_pof(const struct pof_flow *flow,
+                            const struct minimask *mask,
+                            const struct flowmap range,
+                            unsigned int *offset,
+                            uint32_t *basis)
+{
+    const uint64_t *mask_values = miniflow_get_values(&mask->masks);
+    const uint64_t *flow_u64 = (const uint64_t *)flow;
+    const uint64_t *p = mask_values + *offset;
+    uint32_t hash = *basis;
+    map_t map;
+
+    FLOWMAP_FOR_EACH_MAP (map, range) {
+        size_t idx;
+
+        MAP_FOR_EACH_INDEX (idx, map) {
+            hash = hash_add64(hash, flow_u64[idx] & *p++);
+        }
+        flow_u64 += MAP_T_BITS;
+    }
+
+    *basis = hash; /* Allow continuation from the unfinished value. */
+    *offset = p - mask_values;
+    return hash_finish(hash, *offset * 8);
+}
+
+static inline uint32_t
 flow_hash_in_minimask_range(const struct flow *flow,
                             const struct minimask *mask,
                             const struct flowmap range,
@@ -297,6 +346,12 @@ flow_hash_in_minimask_range(const struct flow *flow,
 
 /* Fold minimask 'mask''s wildcard mask into 'wc's wildcard mask. */
 static inline void
+pof_flow_wildcards_fold_minimask(struct pof_flow_wildcards *wc,
+                             const struct minimask *mask)
+{
+    pof_flow_union_with_miniflow(&wc->masks, &mask->masks);
+}
+static inline void
 flow_wildcards_fold_minimask(struct flow_wildcards *wc,
                              const struct minimask *mask)
 {
@@ -305,6 +360,13 @@ flow_wildcards_fold_minimask(struct flow_wildcards *wc,
 
 /* Fold minimask 'mask''s wildcard mask into 'wc's wildcard mask for bits in
  * 'fmap'.  1-bits in 'fmap' are a subset of 1-bits in 'mask''s map. */
+static inline void
+pof_flow_wildcards_fold_minimask_in_map(struct pof_flow_wildcards *wc,
+                                    const struct minimask *mask,
+                                    const struct flowmap fmap)
+{
+    pof_flow_union_with_miniflow_subset(&wc->masks, &mask->masks, fmap);
+}
 static inline void
 flow_wildcards_fold_minimask_in_map(struct flow_wildcards *wc,
                                     const struct minimask *mask,

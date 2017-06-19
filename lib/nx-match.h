@@ -28,6 +28,7 @@
 
 struct ds;
 struct match;
+struct match_x;
 struct ofpact_reg_move;
 struct ofpact_reg_load;
 struct ofpact_stack;
@@ -52,6 +53,10 @@ enum ofperr nx_pull_match(struct ofpbuf *, unsigned int match_len,
                           struct match *,
                           ovs_be64 *cookie, ovs_be64 *cookie_mask,
                           const struct tun_table *);
+enum ofperr nx_pull_pof_match(struct ofpbuf *, unsigned int match_len,
+                          struct match_x *,
+                          ovs_be64 *cookie, ovs_be64 *cookie_mask,
+                          const struct tun_table *);
 enum ofperr nx_pull_match_loose(struct ofpbuf *, unsigned int match_len,
                                 struct match *, ovs_be64 *cookie,
                                 ovs_be64 *cookie_mask,
@@ -67,6 +72,8 @@ enum ofperr oxm_pull_field_array(const void *, size_t fields_len,
 
 /* Encoding matches. */
 int nx_put_match(struct ofpbuf *, const struct match *,
+                 ovs_be64 cookie, ovs_be64 cookie_mask);
+int nx_put_pof_match(struct ofpbuf *, const struct match_x *,
                  ovs_be64 cookie, ovs_be64 cookie_mask);
 int oxm_put_match(struct ofpbuf *, const struct match *, enum ofp_version);
 void oxm_put_raw(struct ofpbuf *, const struct match *, enum ofp_version);

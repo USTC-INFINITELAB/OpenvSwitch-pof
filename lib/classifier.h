@@ -313,6 +313,7 @@ extern "C" {
 /* Classifier internal data structures. */
 struct cls_subtable;
 struct cls_match;
+struct dp_packet;
 
 struct trie_node;
 typedef OVSRCU_TYPE(struct trie_node *) rcu_trie_ptr;
@@ -365,7 +366,7 @@ void classifier_destroy(struct classifier *);
 bool classifier_set_prefix_fields(struct classifier *,
                                   const enum mf_field_id *trie_fields,
                                   unsigned int n_trie_fields);
-
+void pof_cls_rule_init(struct cls_rule *, const struct match_x *, int priority);
 void cls_rule_init(struct cls_rule *, const struct match *, int priority);
 void cls_rule_init_from_minimatch(struct cls_rule *, const struct minimatch *,
                                   int priority);
@@ -397,6 +398,11 @@ static inline void classifier_publish(struct classifier *);
 const struct cls_rule *classifier_lookup(const struct classifier *,
                                          ovs_version_t, struct flow *,
                                          struct flow_wildcards *);
+const struct cls_rule *classifier_lookup_pof(const struct classifier *,
+                                         ovs_version_t, struct flow *,
+                                         struct dp_packet *,
+                                         struct flow_wildcards *);
+
 bool classifier_rule_overlaps(const struct classifier *,
                               const struct cls_rule *, ovs_version_t);
 const struct cls_rule *classifier_find_rule_exactly(const struct classifier *,

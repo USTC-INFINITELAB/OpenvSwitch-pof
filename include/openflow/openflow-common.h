@@ -117,11 +117,26 @@ enum ofp_version {
 #define OFP_PORT  6653
 
 #define OFP_DEFAULT_MISS_SEND_LEN   128
-
+#define POF_NAME_MAX_LENGTH   64
+#define POF_MAX_MATCH_FIELD_NUM 8
+#define POF_MAX_FIELD_LENGTH_IN_BYTE 16
+/*Define the max instruction length in unit of byte.(8 + POF_MAX_ACTION_NUMBER_PER_INSTRUCTION * (POF_MAX_ACTION_LENGTH + 4))*/
+#define POF_MAX_INSTRUCTION_LENGTH  296
+/*Define the max action number in one instruction.*/
+#define POF_MAX_ACTION_NUMBER_PER_INSTRUCTION 6
+/*Define the max action length in unit of byte.*/
+#define POF_MAX_ACTION_LENGTH 44
 /* Values below this cutoff are 802.3 packets and the two bytes
  * following MAC addresses are used as a frame length.  Otherwise, the
  * two bytes are used as the Ethernet type.
  */
+/* Left shift. */
+#define POF_MOVE_BIT_LEFT(x,n)              ((x) << (n))
+
+/* Right shift. */
+#define POF_MOVE_BIT_RIGHT(x,n)             ((x) >> (n))
+
+
 #define OFP_DL_TYPE_ETH2_CUTOFF   0x0600
 
 /* Value of dl_type to indicate that the frame does not include an
@@ -174,12 +189,12 @@ enum ofp_config_flags {
 
 /* Switch configuration. */
 struct ofp_switch_config {
+    ovs_be32 dev_id;
     ovs_be16 flags;             /* OFPC_* flags. */
     ovs_be16 miss_send_len;     /* Max bytes of new flow that datapath should
                                    send to the controller. */
 };
-OFP_ASSERT(sizeof(struct ofp_switch_config) == 4);
-
+OFP_ASSERT(sizeof(struct ofp_switch_config) == 8);
 
 /* Common flags to indicate behavior of the physical port.  These flags are
  * used in ofp_port to describe the current configuration.  They are used in
@@ -247,26 +262,37 @@ OFP_ASSERT(sizeof(struct ofp_prop_experimenter) == 12);
 
 /* Switch features. */
 struct ofp_switch_features {
-    ovs_be64 datapath_id;   /* Datapath unique ID.  The lower 48-bits are for
+
+    ovs_be32 datapath_id;/*dev_id*/
+    ovs_be16 slotID;
+    ovs_be16 port_num;/*how to init sqy*/
+    ovs_be16 n_tables;/*table_num*/
+    uint8_t pad[2];       /*   Align to 64-bits. */
+    ovs_be32 capabilities;
+
+
+    /*ovs_be64 datapath_id;*/   /* Datapath unique ID.  The lower 48-bits are for
                                a MAC address, while the upper 16-bits are
                                implementer-defined. */
+    /*ovs_be32 n_buffers;      Max packets buffered at once. */
 
-    ovs_be32 n_buffers;     /* Max packets buffered at once. */
-
-    uint8_t n_tables;       /* Number of tables supported by datapath. */
-    uint8_t auxiliary_id;   /* OF 1.3: Identify auxiliary connections */
-    uint8_t pad[2];         /* Align to 64-bits. */
+    /*uint8_t n_tables;        Number of tables supported by datapath. */
+    /*uint8_t auxiliary_id;    OF 1.3: Identify auxiliary connections */
+    /*uint8_t pad[4];          Align to 64-bits. */
 
     /* Features. */
-    ovs_be32 capabilities;  /* OFPC_*, OFPC10_*, OFPC11_*, OFPC12_*. */
-    ovs_be32 actions;       /* Bitmap of supported "ofp_action_type"s.
+   /* ovs_be32 capabilities;   OFPC_*, OFPC10_*, OFPC11_*, OFPC12_*. */
+   /* ovs_be32 actions;        Bitmap of supported "ofp_action_type"s.
                              * DEPRECATED in OpenFlow 1.1 */
-
+    char     vendor_id[POF_NAME_MAX_LENGTH];
+    char     dev_fw_id[POF_NAME_MAX_LENGTH]; /*device forward engine ID*/
+    char     dev_lkup_id[POF_NAME_MAX_LENGTH]; /*device lookup engine ID*/
+    /*uint8_t poftest[192];how to init sqy*/
     /* Followed by an array of struct ofp10_phy_port or struct ofp11_port
      * structures.  The number is inferred from header.length.
      * REMOVED in OpenFlow 1.3 */
 };
-OFP_ASSERT(sizeof(struct ofp_switch_features) == 24);
+OFP_ASSERT(sizeof(struct ofp_switch_features) == 208);
 
 /* Common capabilities supported by the datapath (struct ofp_switch_features,
  * member capabilities). */
@@ -274,10 +300,12 @@ enum ofp_capabilities {
     OFPC_FLOW_STATS     = 1 << 0,  /* Flow statistics. */
     OFPC_TABLE_STATS    = 1 << 1,  /* Table statistics. */
     OFPC_PORT_STATS     = 1 << 2,  /* Port statistics. */
+    OFPC_GROUP_STATS = 1 << 3,
     OFPC_IP_REASM       = 1 << 5,  /* Can reassemble IP fragments. */
     OFPC_QUEUE_STATS    = 1 << 6,  /* Queue statistics. */
-    OFPC_ARP_MATCH_IP   = 1 << 7   /* Match IP addresses in ARP
+    OFPC_ARP_MATCH_IP   = 1 << 7,   /* Match IP addresses in ARP
                                       pkts. */
+    OFPC_PORT_BLOCKED = 1 << 8
 };
 
 /* Why is this packet being sent to the controller? */
@@ -378,6 +406,31 @@ struct ofp_desc_stats {
                                           the datapath. */
 };
 OFP_ASSERT(sizeof(struct ofp_desc_stats) == 1056);
+
+struct pof_table_resource_desc {
+    ovs_be32 device_id;
+    uint8_t  type; /*table type: MM or EM or LPM */
+    uint8_t  tbl_num; /*table number*/
+    ovs_be16 key_len;   /*key length*/
+
+    ovs_be32 total_size; /*the  total number of EM entry*/
+    uint8_t pad[4];   /*8 bytes aligned*/
+};
+OFP_ASSERT(sizeof(struct pof_table_resource_desc) == 16);
+
+/* +++sqy  Body of reply to OFPST_DESC request.. */
+struct ofp_flow_table_stats {
+    uint8_t resourceType;
+    uint8_t pad;    /* 8 bytes aligned. */
+    ovs_be16 slotID;
+    ovs_be32 counter_num; /*Counter number*/
+    ovs_be32 meter_num; /*Meter number*/
+    ovs_be32 group_num; /*Group number*/
+
+    struct pof_table_resource_desc tbl_rsc_desc[4];/*All table resource information*/
+};
+OFP_ASSERT(sizeof(struct ofp_flow_table_stats) == 80);
+
 
 /* Reply to OFPST_AGGREGATE request. */
 struct ofp_aggregate_stats_reply {

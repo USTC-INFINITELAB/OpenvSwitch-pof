@@ -44,13 +44,13 @@ struct match;
  * pipeline.  IPv6 headers are bigger than IPv4 and MPLS, and IPv6 ND packets
  * are bigger than TCP,UDP and IGMP packets. */
 #define FLOW_MAX_PACKET_U64S (FLOW_U64S                                   \
-    /* Unused in datapath */  - FLOW_U64_SIZE(regs)                       \
+     /*Unused in datapath*/   - FLOW_U64_SIZE(regs)                       \
                               - FLOW_U64_SIZE(metadata)                   \
     /* L2.5/3 */              - FLOW_U64_SIZE(nw_src)  /* incl. nw_dst */ \
                               - FLOW_U64_SIZE(mpls_lse)                   \
-    /* L4 */                  - FLOW_U64_SIZE(tp_src)                     \
+    /* L4  */                 - FLOW_U64_SIZE(tp_src)                     \
                              )
-
+/*#define FLOW_MAX_PACKET_U64S (FLOW_U64S)*/
 extern const uint8_t flow_segment_u64s[];
 
 #define FLOW_U64_OFFSET(FIELD)                          \
@@ -512,16 +512,27 @@ struct pkt_metadata;
  * 'dst->map' is ignored on input and set on output to indicate which fields
  * were extracted. */
 void miniflow_extract(struct dp_packet *packet, struct miniflow *dst);
+
+void pof_miniflow_map_init(struct miniflow *, const struct pof_flow *src);
 void miniflow_map_init(struct miniflow *, const struct flow *);
+
 void flow_wc_map(const struct flow *, struct flowmap *);
 size_t miniflow_alloc(struct miniflow *dsts[], size_t n,
                       const struct miniflow *src);
+void pof_miniflow_init(struct miniflow *, const struct pof_flow *src);
 void miniflow_init(struct miniflow *, const struct flow *);
+
 void miniflow_clone(struct miniflow *, const struct miniflow *,
                     size_t n_values);
 struct miniflow * miniflow_create(const struct flow *);
 
 void miniflow_expand(const struct miniflow *, struct flow *);
+void pof_miniflow_expand(const struct miniflow *, struct pof_flow *);
+
+static inline uint64_t pof_flow_u64_value(const struct pof_flow *flow, size_t index)
+{
+    return ((uint64_t *)flow)[index];
+}
 
 static inline uint64_t flow_u64_value(const struct flow *flow, size_t index)
 {
@@ -697,6 +708,7 @@ struct minimask {
     struct miniflow masks;
 };
 
+void pof_minimask_init(struct minimask *, const struct pof_flow_wildcards *wc);
 void minimask_init(struct minimask *, const struct flow_wildcards *);
 struct minimask * minimask_create(const struct flow_wildcards *);
 void minimask_combine(struct minimask *dst,
@@ -704,6 +716,7 @@ void minimask_combine(struct minimask *dst,
                       uint64_t storage[FLOW_U64S]);
 
 void minimask_expand(const struct minimask *, struct flow_wildcards *);
+void pof_minimask_expand(const struct minimask *, struct pof_flow_wildcards *);
 
 static inline uint32_t minimask_get_u32(const struct minimask *,
                                         unsigned int u32_ofs);
@@ -831,12 +844,36 @@ flow_union_with_miniflow_subset(struct flow *dst, const struct miniflow *src,
     }
 }
 
+static inline void
+pof_flow_union_with_miniflow_subset(struct pof_flow *dst, const struct miniflow *src,
+                                struct flowmap subset)
+{
+    uint64_t *dst_u64 = (uint64_t *) dst;
+    const uint64_t *p = miniflow_get_values(src);
+    map_t map;
+
+    FLOWMAP_FOR_EACH_MAP (map, subset) {
+        size_t idx;
+
+        MAP_FOR_EACH_INDEX(idx, map) {
+            dst_u64[idx] |= *p++;
+        }
+        dst_u64 += MAP_T_BITS;
+    }
+}
+
 /* Perform a bitwise OR of miniflow 'src' flow data with the equivalent
  * fields in 'dst', storing the result in 'dst'. */
 static inline void
 flow_union_with_miniflow(struct flow *dst, const struct miniflow *src)
 {
     flow_union_with_miniflow_subset(dst, src, src->map);
+}
+
+static inline void
+pof_flow_union_with_miniflow(struct pof_flow *dst, const struct miniflow *src)
+{
+    pof_flow_union_with_miniflow_subset(dst, src, src->map);
 }
 
 static inline void

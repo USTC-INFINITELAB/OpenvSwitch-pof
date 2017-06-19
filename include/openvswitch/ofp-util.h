@@ -223,11 +223,16 @@ void ofputil_match_to_ofp10_match(const struct match *, struct ofp10_match *);
 enum ofperr ofputil_pull_ofp11_match(struct ofpbuf *, const struct tun_table *,
                                      struct match *,
                                      uint16_t *padded_match_len);
+enum ofperr ofputil_pull_pof_match_x(struct ofpbuf *,
+                                     struct match_x *,
+                                     uint16_t *padded_match_len);
 enum ofperr ofputil_pull_ofp11_mask(struct ofpbuf *, struct match *,
                                     struct mf_bitmap *bm);
 enum ofperr ofputil_match_from_ofp11_match(const struct ofp11_match *,
                                            struct match *);
 int ofputil_put_ofp11_match(struct ofpbuf *, const struct match *,
+                            enum ofputil_protocol);
+int ofputil_put_pof_match(struct ofpbuf *, const struct match_x *,
                             enum ofputil_protocol);
 void ofputil_match_to_ofp11_match(const struct match *, struct ofp11_match *);
 int ofputil_match_typical_len(enum ofputil_protocol);
@@ -283,6 +288,54 @@ enum ofputil_flow_mod_flags {
  *
  * The handling of cookies across multiple versions of OpenFlow is a bit
  * confusing.  See DESIGN for the details. */
+struct ofputil_pof_flow_mod {
+    struct ovs_list list_node; /* For queuing flow_mods. */
+
+    struct match_x match;
+    int priority;
+
+    /* Cookie matching.  The flow_mod affects only flows that have cookies that
+     * bitwise match 'cookie' bits in positions where 'cookie_mask has 1-bits.
+     *
+     * 'cookie_mask' should be zero for OFPFC_ADD flow_mods. */
+    ovs_be64 cookie;         /* Cookie bits to match. */
+    ovs_be64 cookie_mask;    /* 1-bit in each 'cookie' bit to match. */
+
+    /* Cookie changes.
+     *
+     * OFPFC_ADD uses 'new_cookie' as the new flow's cookie.  'new_cookie'
+     * should not be UINT64_MAX.
+     *
+     * OFPFC_MODIFY and OFPFC_MODIFY_STRICT have two cases:
+     *
+     *   - If one or more matching flows exist and 'modify_cookie' is true,
+     *     then the flow_mod changes the existing flows' cookies to
+     *     'new_cookie'.  'new_cookie' should not be UINT64_MAX.
+     *
+     *   - If no matching flow exists, 'new_cookie' is not UINT64_MAX, and
+     *     'cookie_mask' is 0, then the flow_mod adds a new flow with
+     *     'new_cookie' as its cookie.
+     */
+    ovs_be64 new_cookie;     /* New cookie to install or UINT64_MAX. */
+    bool modify_cookie;      /* Set cookie of existing flow to 'new_cookie'? */
+
+    uint8_t table_id;
+    uint16_t command;
+    uint16_t idle_timeout;
+    uint16_t hard_timeout;
+    uint32_t buffer_id;
+    ofp_port_t out_port;
+    uint32_t out_group;
+    enum ofputil_flow_mod_flags flags;
+    uint16_t importance;     /* Eviction precedence. */
+    struct ofpact *ofpacts;  /* Series of "struct ofpact"s. */
+    size_t ofpacts_len;      /* Length of ofpacts, in bytes. */
+};
+
+/* Protocol-independent flow_mod.
+ *
+ * The handling of cookies across multiple versions of OpenFlow is a bit
+ * confusing.  See DESIGN for the details. */
 struct ofputil_flow_mod {
     struct ovs_list list_node; /* For queuing flow_mods. */
 
@@ -326,7 +379,13 @@ struct ofputil_flow_mod {
     struct ofpact *ofpacts;  /* Series of "struct ofpact"s. */
     size_t ofpacts_len;      /* Length of ofpacts, in bytes. */
 };
-
+enum ofperr ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *,
+                                    const struct ofp_header *,
+                                    enum ofputil_protocol,
+                                    const struct tun_table *,
+                                    struct ofpbuf *ofpacts,
+                                    ofp_port_t max_port,
+                                    uint8_t max_table);
 enum ofperr ofputil_decode_flow_mod(struct ofputil_flow_mod *,
                                     const struct ofp_header *,
                                     enum ofputil_protocol,
@@ -348,11 +407,27 @@ struct ofputil_flow_stats_request {
     uint8_t table_id;
 };
 
+/* Flow stats or aggregate stats request, independent of protocol. */
+struct ofputil_pof_flow_stats_request {
+    bool aggregate;             /* Aggregate results? */
+    struct match_x match;
+    ovs_be64 cookie;
+    ovs_be64 cookie_mask;
+    ofp_port_t out_port;
+    uint32_t out_group;
+    uint8_t table_id;
+};
+
 enum ofperr ofputil_decode_flow_stats_request(
     struct ofputil_flow_stats_request *, const struct ofp_header *,
     const struct tun_table *);
+enum ofperr ofputil_decode_pof_flow_stats_request(
+    struct ofputil_pof_flow_stats_request *, const struct ofp_header *,
+    const struct tun_table *);
 struct ofpbuf *ofputil_encode_flow_stats_request(
     const struct ofputil_flow_stats_request *, enum ofputil_protocol);
+struct ofpbuf *ofputil_encode_pof_flow_stats_request(
+    const struct ofputil_pof_flow_stats_request *, enum ofputil_protocol);
 
 /* Flow stats reply, independent of protocol. */
 struct ofputil_flow_stats {
@@ -374,11 +449,39 @@ struct ofputil_flow_stats {
     uint16_t importance;        /* Eviction precedence. */
 };
 
+/* Flow stats reply, independent of protocol. */
+struct ofputil_pof_flow_stats {
+    struct match_x match;
+    ovs_be64 cookie;
+    uint8_t table_id;
+    uint16_t priority;
+    uint16_t idle_timeout;
+    uint16_t hard_timeout;
+    uint32_t duration_sec;
+    uint32_t duration_nsec;
+    int idle_age;               /* Seconds since last packet, -1 if unknown. */
+    int hard_age;               /* Seconds since last change, -1 if unknown. */
+    uint64_t packet_count;      /* Packet count, UINT64_MAX if unknown. */
+    uint64_t byte_count;        /* Byte count, UINT64_MAX if unknown. */
+    const struct ofpact *ofpacts;
+    size_t ofpacts_len;
+    enum ofputil_flow_mod_flags flags;
+    uint16_t importance;        /* Eviction precedence. */
+};
+
 int ofputil_decode_flow_stats_reply(struct ofputil_flow_stats *,
                                     struct ofpbuf *msg,
                                     bool flow_age_extension,
                                     struct ofpbuf *ofpacts);
+int ofputil_decode_pof_flow_stats_reply(struct ofputil_pof_flow_stats *,
+                                    struct ofpbuf *msg,
+                                    bool flow_age_extension,
+                                    struct ofpbuf *ofpacts);
+
 void ofputil_append_flow_stats_reply(const struct ofputil_flow_stats *,
+                                     struct ovs_list *replies,
+                                     const struct tun_table *);
+void ofputil_append_pof_flow_stats_reply(const struct ofputil_pof_flow_stats *,
                                      struct ovs_list *replies,
                                      const struct tun_table *);
 
@@ -546,7 +649,7 @@ bool ofputil_frag_handling_from_string(const char *,
 struct ofputil_switch_config {
     /* Fragment handling. */
     enum ofputil_frag_handling frag;
-
+    uint32_t dev_id;
     /* 0: Do not send packet to controller when decrementing invalid IP TTL.
      * 1: Do send packet to controller when decrementing invalid IP TTL.
      * -1: Unspecified (only OpenFlow 1.1 and 1.2 support this setting. */
@@ -624,10 +727,10 @@ enum ofputil_capabilities {
     OFPUTIL_C_ARP_MATCH_IP   = 1 << 7,  /* Match IP addresses in ARP pkts. */
 
     /* OpenFlow 1.0 only. */
-    OFPUTIL_C_STP            = 1 << 3,  /* 802.1d spanning tree. */
+    OFPUTIL_C_STP            = 1 << 4,  /* 802.1d spanning tree. */
 
     /* OpenFlow 1.1, 1.2, and 1.3 share this capability. */
-    OFPUTIL_C_GROUP_STATS    = 1 << 4,  /* Group statistics. */
+    OFPUTIL_C_GROUP_STATS    = 1 << 3,  /* Group statistics. */
 
     /* OpenFlow 1.2 and 1.3 share this capability */
     OFPUTIL_C_PORT_BLOCKED   = 1 << 8,  /* Switch will block looping ports */
@@ -641,6 +744,7 @@ struct ofputil_switch_features {
     uint8_t auxiliary_id;       /* Identify auxiliary connections */
     enum ofputil_capabilities capabilities;
     uint64_t ofpacts;           /* Bitmap of OFPACT_* bits. */
+    uint16_t port_num;         /*  port_num added by sqy */
 };
 
 enum ofperr ofputil_pull_switch_features(struct ofpbuf *,
@@ -649,6 +753,8 @@ enum ofperr ofputil_pull_switch_features(struct ofpbuf *,
 struct ofpbuf *ofputil_encode_switch_features(
     const struct ofputil_switch_features *, enum ofputil_protocol,
     ovs_be32 xid);
+struct ofpbuf * ofputil_encode_flow_table_resource(enum ofputil_protocol protocol,
+                                                   ovs_be32 xid);
 void ofputil_put_switch_features_port(const struct ofputil_phy_port *,
                                       struct ofpbuf *);
 bool ofputil_switch_features_has_ports(struct ofpbuf *b);
@@ -667,6 +773,8 @@ enum ofperr ofputil_decode_port_status(const struct ofp_header *,
                                        struct ofputil_port_status *);
 struct ofpbuf *ofputil_encode_port_status(const struct ofputil_port_status *,
                                           enum ofputil_protocol);
+struct ofpbuf *ofputil_encode_port_status_pof(const struct ofputil_port_status *,
+                                          enum ofputil_protocol, ovs_be32 xid);
 
 /* Abstract ofp_port_mod. */
 struct ofputil_port_mod {

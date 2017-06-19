@@ -901,7 +901,7 @@ tun_metadata_match_format(struct ds *s, const struct match *match)
                                            match, i, &match->wc.masks.tunnel,
                                            &is_masked);
 
-        ds_put_format(s, "tun_metadata%u", i);
+        ds_put_format(s, "tun_metadatasqy%u", i);
         memcpy_from_metadata(mask_opts.tun_metadata,
                              &match->wc.masks.tunnel.metadata, loc);
 

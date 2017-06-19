@@ -609,15 +609,13 @@ dump_transaction(struct vconn *vconn, struct ofpbuf *request)
         while (!done) {
             ovs_be32 recv_xid;
             struct ofpbuf *reply;
-
+            
             run(vconn_recv_block(vconn, &reply),
                 "OpenFlow packet receive failed");
             recv_xid = ((struct ofp_header *) reply->data)->xid;
             if (send_xid == recv_xid) {
-                enum ofpraw raw;
-
-                ofp_print(stdout, reply->data, reply->size, verbosity + 1);
-
+                enum ofpraw raw;               
+                ofp_print(stdout, reply->data, reply->size, verbosity + 1);                
                 ofpraw_decode(&raw, reply->data);
                 if (ofptype_from_ofpraw(raw) == OFPTYPE_ERROR) {
                     done = true;
@@ -633,10 +631,11 @@ dump_transaction(struct vconn *vconn, struct ofpbuf *request)
                          "!= expected %08"PRIx32, recv_xid, send_xid);
             }
             ofpbuf_delete(reply);
+
         }
     } else {
         struct ofpbuf *reply;
-
+        VLOG_INFO("+++++++++++sqy dump_transaction: ofpmsg_is not _stat_request ");
         run(vconn_transact(vconn, request, &reply), "talking to %s",
             vconn_get_name(vconn));
         ofp_print(stdout, reply->data, reply->size, verbosity + 1);
@@ -1167,20 +1166,22 @@ prepare_dump_flows(int argc, char *argv[], bool aggregate,
                    struct ofpbuf **requestp)
 {
     enum ofputil_protocol usable_protocols, protocol;
-    struct ofputil_flow_stats_request fsr;
+    struct ofputil_pof_flow_stats_request fsr;
     struct vconn *vconn;
     char *error;
 
-    error = parse_ofp_flow_stats_request_str(&fsr, aggregate,
+    error = parse_pof_flow_stats_request_str(&fsr, aggregate,
                                              argc > 2 ? argv[2] : "",
                                              &usable_protocols);
+    /*VLOG_INFO("+++++++++++sqy prepare_dump_flows: "
+              "before parse_pof_flow_stats_request_str error = %s", error);*/
     if (error) {
         ovs_fatal(0, "%s", error);
     }
-
     protocol = open_vconn(argv[1], &vconn);
     protocol = set_protocol_for_flow_dump(vconn, protocol, usable_protocols);
-    *requestp = ofputil_encode_flow_stats_request(&fsr, protocol);
+    *requestp = ofputil_encode_pof_flow_stats_request(&fsr, protocol);
+    /*VLOG_INFO("+++++++++++sqy prepare_dump_flows: after ofputil_encode_pof_flow_stats_request");*/
     return vconn;
 }
 
@@ -1192,6 +1193,7 @@ ofctl_dump_flows__(int argc, char *argv[], bool aggregate)
 
     vconn = prepare_dump_flows(argc, argv, aggregate, &request);
     dump_transaction(vconn, request);
+    /*VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: after dump_transaction");*/
     vconn_close(vconn);
 }
 

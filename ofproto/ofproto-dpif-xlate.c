@@ -2529,7 +2529,7 @@ compose_ipfix_action(struct xlate_ctx *ctx, odp_port_t output_odp_port)
     odp_port_t tunnel_out_port = ODPP_NONE;
 
     if (!ipfix || ctx->xin->flow.in_port.ofp_port == OFPP_NONE) {
-        return;
+        return;  //sqy notes: run here
     }
 
     /* For input case, output_odp_port is ODPP_NONE, which is an invalid port
@@ -2874,10 +2874,10 @@ compose_output_action__(struct xlate_ctx *ctx, ofp_port_t ofp_port,
     } else if (ctx->mirror_snaplen != 0 && xport->odp_port == ODPP_NONE) {
         xlate_report(ctx, "Mirror truncate to ODPP_NONE, skipping output");
         return;
-    } else if (check_stp) {
+    } else if (check_stp) {      //****************sqy notes: check_stp = true, run here
         if (is_stp(&ctx->base_flow)) {
             if (!xport_stp_should_forward_bpdu(xport) &&
-                !xport_rstp_should_manage_bpdu(xport)) {
+                !xport_rstp_should_manage_bpdu(xport)) { //*********sqy notes: no run
                 if (ctx->xbridge->stp != NULL) {
                     xlate_report(ctx, "STP not in listening state, "
                             "skipping bpdu output");
@@ -2888,7 +2888,7 @@ compose_output_action__(struct xlate_ctx *ctx, ofp_port_t ofp_port,
                 return;
             }
         } else if (!xport_stp_forward_state(xport) ||
-                   !xport_rstp_forward_state(xport)) {
+                   !xport_rstp_forward_state(xport)) {   //*********sqy notes: no run
             if (ctx->xbridge->stp != NULL) {
                 xlate_report(ctx, "STP not in forwarding state, "
                         "skipping output");
@@ -2900,7 +2900,7 @@ compose_output_action__(struct xlate_ctx *ctx, ofp_port_t ofp_port,
         }
     }
 
-    if (xport->peer) {
+    if (xport->peer) {   //*********sqy notes: xport->peer = 0x0; no run
         const struct xport *peer = xport->peer;
         struct flow old_flow = ctx->xin->flow;
         struct flow_tnl old_flow_tnl_wc = ctx->wc->masks.tunnel;
@@ -3035,7 +3035,7 @@ compose_output_action__(struct xlate_ctx *ctx, ofp_port_t ofp_port,
     flow_pkt_mark = flow->pkt_mark;
     flow_nw_tos = flow->nw_tos;
 
-    if (count_skb_priorities(xport)) {
+    if (count_skb_priorities(xport)) {     //*********sqy notes:  no run
         memset(&wc->masks.skb_priority, 0xff, sizeof wc->masks.skb_priority);
         if (dscp_from_skb_priority(xport, flow->skb_priority, &dscp)) {
             wc->masks.nw_tos |= IP_DSCP_MASK;
@@ -3044,7 +3044,7 @@ compose_output_action__(struct xlate_ctx *ctx, ofp_port_t ofp_port,
         }
     }
 
-    if (xport->is_tunnel) {
+    if (xport->is_tunnel) {          //*********sqy notes: xport->is_tunnel = false, no run
         struct in6_addr dst;
          /* Save tunnel metadata so that changes made due to
           * the Logical (tunnel) Port are not visible for any further
@@ -3079,15 +3079,15 @@ compose_output_action__(struct xlate_ctx *ctx, ofp_port_t ofp_port,
             commit_odp_tunnel_action(flow, &ctx->base_flow, ctx->odp_actions);
             flow->tunnel = flow_tnl; /* Restore tunnel metadata */
         }
-    } else {
+    } else {           //*********sqy notes: run here
         odp_port = xport->odp_port;
         out_port = odp_port;
     }
 
-    if (out_port != ODPP_NONE) {
+    if (out_port != ODPP_NONE) {              //*********sqy notes: run here
         xlate_commit_actions(ctx);
 
-        if (xr) {
+        if (xr) {                    //*********sqy notes: xr=0;
             struct ovs_action_hash *act_hash;
 
             /* Hash action. */
@@ -3123,11 +3123,11 @@ compose_output_action__(struct xlate_ctx *ctx, ofp_port_t ofp_port,
                 } else {
                     /* Tunnel push-pop action is not compatible with
                      * IPFIX action. */
-                    compose_ipfix_action(ctx, out_port);
+                    compose_ipfix_action(ctx, out_port);            //*********sqy notes: run here
 
                     /* Handle truncation of the mirrored packet. */
                     if (ctx->mirror_snaplen > 0 &&
-                        ctx->mirror_snaplen < UINT16_MAX) {
+                        ctx->mirror_snaplen < UINT16_MAX) {         //*********sqy notes: no run
                         struct ovs_action_trunc *trunc;
 
                         trunc = nl_msg_put_unspec_uninit(ctx->odp_actions,
@@ -3141,7 +3141,7 @@ compose_output_action__(struct xlate_ctx *ctx, ofp_port_t ofp_port,
 
                     nl_msg_put_odp_port(ctx->odp_actions,
                                         OVS_ACTION_ATTR_OUTPUT,
-                                        out_port);
+                                        out_port);                    //*********sqy notes: run here
                 }
             }
         }
@@ -3233,6 +3233,7 @@ xlate_table_action(struct xlate_ctx *ctx, ofp_port_t in_port, uint8_t table_id,
         struct rule_dpif *rule;
 
         ctx->table_id = table_id;
+        VLOG_INFO("+++++++++++sqy xlate_table_action:  before rule_dpif_lookup_from_table");
 
         rule = rule_dpif_lookup_from_table(ctx->xbridge->ofproto,
                                            ctx->xin->tables_version,
@@ -3241,6 +3242,7 @@ xlate_table_action(struct xlate_ctx *ctx, ofp_port_t in_port, uint8_t table_id,
                                            &ctx->table_id, in_port,
                                            may_packet_in, honor_table_miss,
                                            ctx->xin->xcache);
+        VLOG_INFO("+++++++++++sqy xlate_table_action:  after rule_dpif_lookup_from_table");
         if (OVS_UNLIKELY(ctx->xin->resubmit_hook)) {
             ctx->xin->resubmit_hook(ctx->xin, rule, ctx->indentation + 1);
         }
@@ -3908,7 +3910,7 @@ xlate_output_action(struct xlate_ctx *ctx,
 
     ctx->nf_output_iface = NF_OUT_DROP;
 
-    switch (port) {
+    switch (port) {         //sqy notes: port = 3 go to default
     case OFPP_IN_PORT:
         compose_output_action(ctx, ctx->xin->flow.in_port.ofp_port, NULL);
         break;
@@ -3936,7 +3938,7 @@ xlate_output_action(struct xlate_ctx *ctx,
         break;
     case OFPP_LOCAL:
     default:
-        if (port != ctx->xin->flow.in_port.ofp_port) {
+        if (port != ctx->xin->flow.in_port.ofp_port) {  //sqy notes: port = 3  ctx->xin->flow.in_port.ofp_port = 1
             compose_output_action(ctx, port, NULL);
         } else {
             xlate_report(ctx, "skipping output to input port");
@@ -4695,7 +4697,7 @@ do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
     struct flow *flow = &ctx->xin->flow;
     const struct ofpact *a;
 
-    if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) {
+    if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
         tnl_neigh_snoop(flow, wc, ctx->xbridge->name);
     }
     /* dl_type already in the mask, not set below. */
@@ -4706,13 +4708,13 @@ do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         const struct ofpact_set_field *set_field;
         const struct mf_field *mf;
 
-        if (ctx->error) {
+        if (ctx->error) {//sqy notes: false
             break;
         }
 
         recirc_for_mpls(a, ctx);
 
-        if (ctx->exit) {
+        if (ctx->exit) {//sqy notes: false
             /* Check if need to store the remaining actions for later
              * execution. */
             if (ctx->freezing) {
@@ -4722,7 +4724,7 @@ do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             break;
         }
 
-        switch (a->type) {
+        switch (a->type) {    //sqy notes: a->type = OFPACT_OUTPUT
         case OFPACT_OUTPUT:
             xlate_output_action(ctx, ofpact_get_OUTPUT(a)->port,
                                 ofpact_get_OUTPUT(a)->max_len, true);
@@ -5485,23 +5487,24 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
     ctx.wc->masks.tunnel.metadata.tab = flow->tunnel.metadata.tab;
 
     if (!xin->ofpacts && !ctx.rule) {
-        ctx.rule = rule_dpif_lookup_from_table(
-            ctx.xbridge->ofproto, ctx.xin->tables_version, flow, ctx.wc,
+        ctx.rule = rule_dpif_lookup_from_table_pof(
+            ctx.xbridge->ofproto, ctx.xin->tables_version, flow, xin->packet, ctx.wc,
             ctx.xin->resubmit_stats, &ctx.table_id,
             flow->in_port.ofp_port, true, true, ctx.xin->xcache);
+
         if (ctx.xin->resubmit_stats) {
-            rule_dpif_credit_stats(ctx.rule, ctx.xin->resubmit_stats);
+            rule_dpif_credit_stats(ctx.rule, ctx.xin->resubmit_stats);     //sqy notes: run here
         }
         if (ctx.xin->xcache) {
             struct xc_entry *entry;
 
-            entry = xlate_cache_add_entry(ctx.xin->xcache, XC_RULE);
+            entry = xlate_cache_add_entry(ctx.xin->xcache, XC_RULE);  //sqy notes: no run
             entry->rule = ctx.rule;
             rule_dpif_ref(ctx.rule);
         }
 
         if (OVS_UNLIKELY(ctx.xin->resubmit_hook)) {
-            ctx.xin->resubmit_hook(ctx.xin, ctx.rule, 0);
+            ctx.xin->resubmit_hook(ctx.xin, ctx.rule, 0); //sqy notes: no run
         }
     }
 
@@ -5511,7 +5514,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
                                          ctx.base_flow.in_port.ofp_port);
 
     /* Tunnel stats only for not-thawed packets. */
-    if (!xin->frozen_state && in_port && in_port->is_tunnel) {
+    if (!xin->frozen_state && in_port && in_port->is_tunnel) { //sqy notes: no run
         if (ctx.xin->resubmit_stats) {
             netdev_vport_inc_rx(in_port->netdev, ctx.xin->resubmit_stats);
             if (in_port->bfd) {
@@ -5527,7 +5530,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
         }
     }
 
-    if (!xin->frozen_state && process_special(&ctx, in_port)) {
+    if (!xin->frozen_state && process_special(&ctx, in_port)) {  //sqy notes: no run,xin->frozen_state=0
         /* process_special() did all the processing for this packet.
          *
          * We do not perform special processing on thawed packets, since that
@@ -5540,24 +5543,24 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
                          "%s, which is reserved exclusively for mirroring",
                          ctx.xbridge->name, in_port->xbundle->name);
         }
-    } else {
+    } else {                                                       //sqy notes: run here, xin->frozen_state=0
         /* Sampling is done on initial reception; don't redo after thawing. */
         unsigned int user_cookie_offset = 0;
         if (!xin->frozen_state) {
-            user_cookie_offset = compose_sflow_action(&ctx);
+            user_cookie_offset = compose_sflow_action(&ctx);  //sqy notes: compose_sflow_action return 0
             compose_ipfix_action(&ctx, ODPP_NONE);
         }
         size_t sample_actions_len = ctx.odp_actions->size;
 
         if (tnl_process_ecn(flow)
-            && (!in_port || may_receive(in_port, &ctx))) {
+            && (!in_port || may_receive(in_port, &ctx))) {//sqy notes: tnl_process_ecn(flow)=true,  run here
             const struct ofpact *ofpacts;
             size_t ofpacts_len;
 
-            if (xin->ofpacts) {
+            if (xin->ofpacts) {  //sqy notes: xin->ofpacts=0x0, no run
                 ofpacts = xin->ofpacts;
                 ofpacts_len = xin->ofpacts_len;
-            } else if (ctx.rule) {
+            } else if (ctx.rule) {  //sqy notes: ctx.rule not null, run here
                 const struct rule_actions *actions
                     = rule_dpif_get_actions(ctx.rule);
                 ofpacts = actions->ofpacts;
@@ -5567,7 +5570,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
                 OVS_NOT_REACHED();
             }
 
-            mirror_ingress_packet(&ctx);
+            mirror_ingress_packet(&ctx); //sqy notes: no mirror
             do_xlate_actions(ofpacts, ofpacts_len, &ctx);
             if (ctx.error) {
                 goto exit;
@@ -5577,14 +5580,14 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
              * packet, so cancel all actions and freezing if forwarding is
              * disabled. */
             if (in_port && (!xport_stp_forward_state(in_port) ||
-                            !xport_rstp_forward_state(in_port))) {
+                            !xport_rstp_forward_state(in_port))) {  //*****sqy notes: no run
                 ctx.odp_actions->size = sample_actions_len;
                 ctx_cancel_freeze(&ctx);
                 ofpbuf_clear(&ctx.action_set);
             }
 
             if (!ctx.freezing) {
-                xlate_action_set(&ctx);
+                xlate_action_set(&ctx);        //*****sqy notes: ctx.freezing=false, run here
             }
             if (ctx.freezing) {
                 finish_freezing(&ctx);
@@ -5593,25 +5596,25 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
 
         /* Output only fully processed packets. */
         if (!ctx.freezing
-            && xbridge->has_in_band
+            && xbridge->has_in_band         //*****sqy notes: xbridge->has_in_band =false, no run
             && in_band_must_output_to_local_port(flow)
             && !actions_output_to_local_port(&ctx)) {
             compose_output_action(&ctx, OFPP_LOCAL, NULL);
         }
 
-        if (user_cookie_offset) {
+        if (user_cookie_offset) {            //*****sqy notes: user_cookie_offset =0, no run
             fix_sflow_action(&ctx, user_cookie_offset);
         }
     }
 
-    if (nl_attr_oversized(ctx.odp_actions->size)) {
+    if (nl_attr_oversized(ctx.odp_actions->size)) {  //*****sqy notes: no run
         /* These datapath actions are too big for a Netlink attribute, so we
          * can't hand them to the kernel directly.  dpif_execute() can execute
          * them one by one with help, so just mark the result as SLOW_ACTION to
          * prevent the flow from being installed. */
         COVERAGE_INC(xlate_actions_oversize);
         ctx.xout->slow |= SLOW_ACTION;
-    } else if (too_many_output_actions(ctx.odp_actions)) {
+    } else if (too_many_output_actions(ctx.odp_actions)) {  //*****sqy notes: no run
         COVERAGE_INC(xlate_actions_too_many_output);
         ctx.xout->slow |= SLOW_ACTION;
     }
@@ -5620,7 +5623,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
      * the controller.  We consider packets sent to the controller to be part
      * of the control plane rather than the data plane. */
     if (!xin->frozen_state
-        && xbridge->netflow
+        && xbridge->netflow         //*****sqy notes: xbridge->netflow =0x0, no run
         && !(xout->slow & SLOW_CONTROLLER)) {
         if (ctx.xin->resubmit_stats) {
             netflow_flow_update(xbridge->netflow, flow,
@@ -5638,7 +5641,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
     }
 
     /* Translate tunnel metadata masks to udpif format if necessary. */
-    if (xin->upcall_flow->tunnel.flags & FLOW_TNL_F_UDPIF) {
+    if (xin->upcall_flow->tunnel.flags & FLOW_TNL_F_UDPIF) {    //*****sqy notes: xin->upcall_flow->tunnel.flags=0, no run
         if (ctx.wc->masks.tunnel.metadata.present.map) {
             const struct flow_tnl *upcall_tnl = &xin->upcall_flow->tunnel;
             struct geneve_opt opts[TLV_TOT_OPT_SIZE /
@@ -5657,14 +5660,14 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
         ctx.wc->masks.tunnel.metadata.present.len = 0xff;
         ctx.wc->masks.tunnel.metadata.tab = NULL;
         ctx.wc->masks.tunnel.flags |= FLOW_TNL_F_UDPIF;
-    } else if (!xin->upcall_flow->tunnel.metadata.tab) {
+    } else if (!xin->upcall_flow->tunnel.metadata.tab) {    //*****sqy notes: xin->upcall_flow->tunnel.metadata.tab=0, run here
         /* If we didn't have options in UDPIF format and didn't have an existing
          * metadata table, then it means that there were no options at all when
          * we started processing and any wildcards we picked up were from
          * action generation. Without options on the incoming packet, wildcards
          * aren't meaningful. To avoid them possibly getting misinterpreted,
          * just clear everything. */
-        if (ctx.wc->masks.tunnel.metadata.present.map) {
+        if (ctx.wc->masks.tunnel.metadata.present.map) { //*****sqy notes: ctx.wc->masks.tunnel.metadata.present.map=0, no run
             memset(&ctx.wc->masks.tunnel.metadata, 0,
                    sizeof ctx.wc->masks.tunnel.metadata);
         } else {

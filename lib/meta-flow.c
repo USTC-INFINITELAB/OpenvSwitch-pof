@@ -335,6 +335,76 @@ mf_is_all_wild(const struct mf_field *mf, const struct flow_wildcards *wc)
     }
 }
 
+bool
+pof_mf_is_all_wild(const struct mf_field *mf, const struct pof_flow_wildcards *wc)
+{
+    switch (mf->id) {
+    case MFF_FIELD_ID0:
+        return !wc->masks.field_id[mf->id - MFF_FIELD_ID0];
+    case MFF_FIELD_ID1:
+        return !wc->masks.field_id[mf->id - MFF_FIELD_ID0];
+    case MFF_FIELD_ID2:
+        return !wc->masks.field_id[mf->id - MFF_FIELD_ID0];
+    case MFF_FIELD_ID3:
+        return !wc->masks.field_id[mf->id - MFF_FIELD_ID0];
+    case MFF_FIELD_ID4:
+        return !wc->masks.field_id[mf->id - MFF_FIELD_ID0];
+    case MFF_FIELD_ID5:
+        return !wc->masks.field_id[mf->id - MFF_FIELD_ID0];
+    case MFF_FIELD_ID6:
+        return !wc->masks.field_id[mf->id - MFF_FIELD_ID0];
+    case MFF_FIELD_ID7:
+        return !wc->masks.field_id[mf->id - MFF_FIELD_ID0];
+
+    case MFF_OFFSET0:
+        return !wc->masks.offset[mf->id - MFF_OFFSET0];
+    case MFF_OFFSET1:
+        return !wc->masks.offset[mf->id - MFF_OFFSET0];
+    case MFF_OFFSET2:
+        return !wc->masks.offset[mf->id - MFF_OFFSET0];
+    case MFF_OFFSET3:
+        return !wc->masks.offset[mf->id - MFF_OFFSET0];
+    case MFF_OFFSET4:
+        return !wc->masks.offset[mf->id - MFF_OFFSET0];
+    case MFF_OFFSET5:
+        return !wc->masks.offset[mf->id - MFF_OFFSET0];
+    case MFF_OFFSET6:
+        return !wc->masks.offset[mf->id - MFF_OFFSET0];
+    case MFF_OFFSET7:
+        return !wc->masks.offset[mf->id - MFF_OFFSET0];
+
+    case MFF_LENGTH0:
+        return !wc->masks.len[mf->id - MFF_LENGTH0];
+    case MFF_LENGTH1:
+        return !wc->masks.len[mf->id - MFF_LENGTH0];
+    case MFF_LENGTH2:
+        return !wc->masks.len[mf->id - MFF_LENGTH0];
+    case MFF_LENGTH3:
+        return !wc->masks.len[mf->id - MFF_LENGTH0];
+    case MFF_LENGTH4:
+        return !wc->masks.len[mf->id - MFF_LENGTH0];
+    case MFF_LENGTH5:
+        return !wc->masks.len[mf->id - MFF_LENGTH0];
+    case MFF_LENGTH6:
+        return !wc->masks.len[mf->id - MFF_LENGTH0];
+    case MFF_LENGTH7:
+        return !wc->masks.len[mf->id - MFF_LENGTH0];
+
+    case MFF_VALUE0:
+    case MFF_VALUE1:
+    case MFF_VALUE2:
+    case MFF_VALUE3:
+    case MFF_VALUE4:
+    case MFF_VALUE5:
+    case MFF_VALUE6:
+    case MFF_VALUE7:
+        return 1;
+
+    default:
+        OVS_NOT_REACHED();
+    }
+}
+
 /* Initializes 'mask' with the wildcard bit pattern for field 'mf' within 'wc'.
  * Each bit in 'mask' will be set to 1 if the bit is significant for matching
  * purposes, or to 0 if it is wildcarded.
@@ -445,6 +515,38 @@ mf_is_value_valid(const struct mf_field *mf, const union mf_value *value)
     CASE_MFF_REGS:
     CASE_MFF_XREGS:
     CASE_MFF_XXREGS:
+    case MFF_FIELD_ID0:
+    case MFF_FIELD_ID1:
+    case MFF_FIELD_ID2:
+    case MFF_FIELD_ID3:
+    case MFF_FIELD_ID4:
+    case MFF_FIELD_ID5:
+    case MFF_FIELD_ID6:
+    case MFF_FIELD_ID7:
+    case MFF_OFFSET0:
+    case MFF_OFFSET1:
+    case MFF_OFFSET2:
+    case MFF_OFFSET3:
+    case MFF_OFFSET4:
+    case MFF_OFFSET5:
+    case MFF_OFFSET6:
+    case MFF_OFFSET7:
+    case MFF_LENGTH0:
+    case MFF_LENGTH1:
+    case MFF_LENGTH2:
+    case MFF_LENGTH3:
+    case MFF_LENGTH4:
+    case MFF_LENGTH5:
+    case MFF_LENGTH6:
+    case MFF_LENGTH7:
+    case MFF_VALUE0:
+    case MFF_VALUE1:
+    case MFF_VALUE2:
+    case MFF_VALUE3:
+    case MFF_VALUE4:
+    case MFF_VALUE5:
+    case MFF_VALUE6:
+    case MFF_VALUE7:
     case MFF_ETH_SRC:
     case MFF_ETH_DST:
     case MFF_ETH_TYPE:
@@ -1031,6 +1133,68 @@ mf_set_value(const struct mf_field *mf,
         break;
 
     case MFF_N_IDS:
+    default:
+        OVS_NOT_REACHED();
+    }
+}
+
+void
+pof_mf_set_value(const struct mf_field *mf,
+             const union mf_value *value, struct match_x *match, char **err_str)
+{
+    if (err_str) {
+        *err_str = NULL;
+    }
+
+    switch (mf->id) {
+    case MFF_FIELD_ID0:
+    case MFF_FIELD_ID1:
+    case MFF_FIELD_ID2:
+    case MFF_FIELD_ID3:
+    case MFF_FIELD_ID4:
+    case MFF_FIELD_ID5:
+    case MFF_FIELD_ID6:
+    case MFF_FIELD_ID7:
+        /*VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_FIELD_ID %u", ntohs(match->flow.field_id));*/
+        pof_match_set_field_id(match, mf->id - MFF_FIELD_ID0, value->be16);
+        break;
+
+    case MFF_OFFSET0:
+    case MFF_OFFSET1:
+    case MFF_OFFSET2:
+    case MFF_OFFSET3:
+    case MFF_OFFSET4:
+    case MFF_OFFSET5:
+    case MFF_OFFSET6:
+    case MFF_OFFSET7:
+        VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_OFFSET %u", ntohs(match->flow.offset));
+        pof_match_set_offset(match, mf->id - MFF_OFFSET0, value->be16);
+        break;
+
+    case MFF_LENGTH0:
+    case MFF_LENGTH1:
+    case MFF_LENGTH2:
+    case MFF_LENGTH3:
+    case MFF_LENGTH4:
+    case MFF_LENGTH5:
+    case MFF_LENGTH6:
+    case MFF_LENGTH7:
+        /*VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_LENGTH %u", ntohs(match->flow.len));*/
+        pof_match_set_length(match, mf->id - MFF_LENGTH0, value->be16);
+        break;
+
+    case MFF_VALUE0:
+    case MFF_VALUE1:
+    case MFF_VALUE2:
+    case MFF_VALUE3:
+    case MFF_VALUE4:
+    case MFF_VALUE5:
+    case MFF_VALUE6:
+    case MFF_VALUE7:
+        /*VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_VALUE7");*/
+        pof_match_set_value(match, mf->id - MFF_VALUE0, &value->ipv6);
+        break;
+
     default:
         OVS_NOT_REACHED();
     }
@@ -1932,6 +2096,90 @@ mf_set(const struct mf_field *mf,
              || ip_is_cidr(mask->be32))
             ? mf->usable_protocols_cidr
             : mf->usable_protocols_bitwise);
+}
+
+uint32_t
+pof_mf_set(const struct mf_field *mf,
+       const union mf_value *value, const union mf_value *mask,
+       struct match_x *match, char **err_str)
+{
+    if (!mask || is_all_ones(mask, mf->n_bytes)) {
+        pof_mf_set_value(mf, value, match, err_str);
+        return mf->usable_protocols_exact;
+    } else if (is_all_zeros(mask, mf->n_bytes) && !mf_is_tun_metadata(mf)) {
+        VLOG_INFO("+++++++++++sqy pof_mf_set: all zeros ");
+        /* Tunnel metadata matches on the existence of the field itself, so
+         * it still needs to be encoded even if the value is wildcarded.
+        mf_set_wild(mf, match, err_str);
+        return OFPUTIL_P_ANY;*/
+    }
+
+    if (err_str) {
+        *err_str = NULL;
+    }
+
+   /* VLOG_INFO("+++++++++++sqy pof_mf_set: before switch");*/
+    switch (mf->id) {
+    case MFF_FIELD_ID0:
+        VLOG_INFO("+++++++++++sqy pof_mf_set: MFF_FIELD_ID0");
+        pof_match_set_field_id(match, mf->id - MFF_FIELD_ID0, value->be16);
+        break;
+    case MFF_FIELD_ID1:
+    case MFF_FIELD_ID2:
+    case MFF_FIELD_ID3:
+    case MFF_FIELD_ID4:
+    case MFF_FIELD_ID5:
+    case MFF_FIELD_ID6:
+    case MFF_FIELD_ID7:
+        VLOG_INFO("+++++++++++sqy pof_mf_set: MFF_FIELD_ID7");
+        pof_match_set_field_id(match, mf->id - MFF_FIELD_ID0, value->be16);
+        break;
+
+    case MFF_OFFSET0:
+    case MFF_OFFSET1:
+    case MFF_OFFSET2:
+    case MFF_OFFSET3:
+    case MFF_OFFSET4:
+    case MFF_OFFSET5:
+    case MFF_OFFSET6:
+    case MFF_OFFSET7:
+        VLOG_INFO("+++++++++++sqy pof_mf_set: MFF_OFFSET7");
+        pof_match_set_offset(match, mf->id - MFF_OFFSET0, value->be16);
+        break;
+
+    case MFF_LENGTH0:
+    case MFF_LENGTH1:
+    case MFF_LENGTH2:
+    case MFF_LENGTH3:
+    case MFF_LENGTH4:
+    case MFF_LENGTH5:
+    case MFF_LENGTH6:
+    case MFF_LENGTH7:
+        VLOG_INFO("+++++++++++sqy pof_mf_set: MFF_LENGTH7");
+        pof_match_set_length(match, mf->id - MFF_LENGTH0, value->be16);
+        break;
+
+    case MFF_VALUE0:
+    case MFF_VALUE1:
+    case MFF_VALUE2:
+    case MFF_VALUE3:
+    case MFF_VALUE4:
+    case MFF_VALUE5:
+    case MFF_VALUE6:
+    case MFF_VALUE7:
+        VLOG_INFO("+++++++++++sqy pof_mf_set: MFF_VALUE7");
+        pof_match_set_value_masked(match, mf->id - MFF_VALUE0, &value->ipv6, &mask->ipv6);
+        break;
+
+    default:
+        OVS_NOT_REACHED();
+    }
+
+    return ((mf->usable_protocols_bitwise == mf->usable_protocols_cidr
+             || ip_is_cidr(mask->be32))
+            ? mf->usable_protocols_cidr
+            : mf->usable_protocols_bitwise);
+
 }
 
 static enum ofperr

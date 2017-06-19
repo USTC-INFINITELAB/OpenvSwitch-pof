@@ -40,7 +40,9 @@
 #include "simap.h"
 #include "socket-util.h"
 #include "util.h"
+#include "openvswitch/vlog.h"
 
+VLOG_DEFINE_THIS_MODULE(ofpparse);
 /* Parses 'str' as an 8-bit unsigned integer into '*valuep'.
  *
  * 'name' describes the value parsed in an error message, if any.
@@ -520,6 +522,115 @@ parse_ofp_str__(struct ofputil_flow_mod *fm, int command, char *string,
     return NULL;
 }
 
+static char * OVS_WARN_UNUSED_RESULT
+parse_pof_str__(struct ofputil_pof_flow_mod *fm, int command, char *string,
+                enum ofputil_protocol *usable_protocols)
+{
+    enum {
+        F_OUT_PORT = 1 << 0,
+        F_ACTIONS = 1 << 1,
+        F_IMPORTANCE = 1 << 2,
+        F_TIMEOUT = 1 << 3,
+        F_PRIORITY = 1 << 4,
+        F_FLAGS = 1 << 5,
+    } fields;
+    char *act_str = NULL;
+    char *name, *value;
+
+    *usable_protocols = OFPUTIL_P_ANY;
+    /*VLOG_INFO("%s: +++sqy  parse_pof_str__:string ",  string);*/
+    if (command == -2) {
+        size_t len;
+
+        string += strspn(string, " \t\r\n");   /* Skip white space. */
+        len = strcspn(string, ", \t\r\n"); /* Get length of the first token. */
+
+        if (!strncmp(string, "add", len)) {
+            command = OFPFC_ADD;
+        } else if (!strncmp(string, "delete", len)) {
+            command = OFPFC_DELETE;
+        } else if (!strncmp(string, "delete_strict", len)) {
+            command = OFPFC_DELETE_STRICT;
+        } else if (!strncmp(string, "modify", len)) {
+            command = OFPFC_MODIFY;
+        } else if (!strncmp(string, "modify_strict", len)) {
+            command = OFPFC_MODIFY_STRICT;
+        } else {
+            len = 0;
+            command = OFPFC_ADD;
+        }
+        string += len;
+    }
+    switch (command) {
+    case -1:
+        fields = F_OUT_PORT;
+        break;
+
+    case OFPFC_ADD:
+        fields = F_ACTIONS | F_TIMEOUT | F_PRIORITY | F_FLAGS | F_IMPORTANCE;
+        break;
+
+    case OFPFC_DELETE:
+        fields = F_OUT_PORT;
+        break;
+
+    case OFPFC_DELETE_STRICT:
+        fields = F_OUT_PORT | F_PRIORITY;
+        break;
+
+    case OFPFC_MODIFY:
+        fields = F_ACTIONS | F_TIMEOUT | F_PRIORITY | F_FLAGS;
+        break;
+
+    case OFPFC_MODIFY_STRICT:
+        fields = F_ACTIONS | F_TIMEOUT | F_PRIORITY | F_FLAGS;
+        break;
+
+    default:
+        OVS_NOT_REACHED();
+    }
+    *fm = (struct ofputil_pof_flow_mod) {
+        .match = MATCH_X_CATCHALL_INITIALIZER,
+        .priority = OFP_DEFAULT_PRIORITY,
+        .table_id = 0xff,
+        .command = command,
+        .buffer_id = UINT32_MAX,
+        .out_port = OFPP_ANY,
+        .out_group = OFPG_ANY,
+    };
+    /* For modify, by default, don't update the cookie. */
+    if (command == OFPFC_MODIFY || command == OFPFC_MODIFY_STRICT) {
+        fm->new_cookie = OVS_BE64_MAX;
+    }
+
+    if (fields & F_ACTIONS) {
+        act_str = extract_actions(string);
+        if (!act_str) {
+            return xstrdup("must specify an action");
+        }
+    }
+
+    /*while (ofputil_parse_key_value(&string, &name, &value)) {    }
+     * here is needed by ovs-ofctl add-flow to parse the commad,
+     * while ovs-ofctl dump-flows does not need, so i omit here.*/
+
+    /* Check for usable protocol interdependencies between match fields. omit by sqy*/
+
+    if (!fm->cookie_mask && fm->new_cookie == OVS_BE64_MAX
+        && (command == OFPFC_MODIFY || command == OFPFC_MODIFY_STRICT)) {
+        /* On modifies without a mask, we are supposed to add a flow if
+         * one does not exist.  If a cookie wasn't been specified, use a
+         * default of zero. */
+        fm->new_cookie = htonll(0);
+    }
+    /*if (fields & F_ACTIONS) { } else {  }
+     * here is needed by ovs-ofctl add-flow to parse the actions,
+     * while ovs-ofctl dump-flows does not need, so i omit here.*/
+    fm->ofpacts_len = 0;
+    fm->ofpacts = NULL;
+    return NULL;
+}
+
 /* Convert 'str_' (as described in the Flow Syntax section of the ovs-ofctl man
  * page) into 'fm' for sending the specified flow_mod 'command' to a switch.
  * Returns the set of usable protocols in '*usable_protocols'.
@@ -547,6 +658,22 @@ parse_ofp_str(struct ofputil_flow_mod *fm, int command, const char *str_,
         fm->ofpacts_len = 0;
     }
 
+    free(string);
+    return error;
+}
+
+char * OVS_WARN_UNUSED_RESULT
+parse_pof_str(struct ofputil_pof_flow_mod *fm, int command, const char *str_,
+              enum ofputil_protocol *usable_protocols)
+{
+    char *string = xstrdup(str_);
+    char *error;
+    error = parse_pof_str__(fm, command, string, usable_protocols);
+    if (error) {
+        fm->ofpacts = NULL;
+        fm->ofpacts_len = 0;
+    }
+    /*VLOG_INFO("+++++++++++sqy parse_pof_str: after parse_pof_str__ error = %s", error);*/
     free(string);
     return error;
 }
@@ -1192,6 +1319,37 @@ parse_ofp_flow_stats_request_str(struct ofputil_flow_stats_request *fsr,
     char *error;
 
     error = parse_ofp_str(&fm, -1, string, usable_protocols);
+    if (error) {
+        return error;
+    }
+
+    /* Special table ID support not required for stats requests. */
+    if (*usable_protocols & OFPUTIL_P_OF10_STD_TID) {
+        *usable_protocols |= OFPUTIL_P_OF10_STD;
+    }
+    if (*usable_protocols & OFPUTIL_P_OF10_NXM_TID) {
+        *usable_protocols |= OFPUTIL_P_OF10_NXM;
+    }
+
+    fsr->aggregate = aggregate;
+    fsr->cookie = fm.cookie;
+    fsr->cookie_mask = fm.cookie_mask;
+    fsr->match = fm.match;
+    fsr->out_port = fm.out_port;
+    fsr->out_group = fm.out_group;
+    fsr->table_id = fm.table_id;
+    return NULL;
+}
+
+char * OVS_WARN_UNUSED_RESULT
+parse_pof_flow_stats_request_str(struct ofputil_pof_flow_stats_request *fsr,
+                                 bool aggregate, const char *string,
+                                 enum ofputil_protocol *usable_protocols)
+{
+    struct ofputil_pof_flow_mod fm;
+    char *error;
+    error = parse_pof_str(&fm, -1, string, usable_protocols);
+    /*VLOG_INFO("+++++++++++sqy parse_pof_flow_stats_request_str: error = %s", error);*/
     if (error) {
         return error;
     }
