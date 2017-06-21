@@ -14,8 +14,8 @@ cd /home/sqy
 export OVS_DIR=/home/sqy/OpenvSwitch-pof
 cd $OVS_DIR
 #./boot.sh
-#./configure  --with-dpdk=$DPDK_BUILD
-./configure CFLAGS="-g -O0" --with-dpdk=$DPDK_BUILD
+./configure  --with-dpdk=$DPDK_BUILD
+#./configure CFLAGS="-g -O0" --with-dpdk=$DPDK_BUILD
 make -j24
 make install
 
