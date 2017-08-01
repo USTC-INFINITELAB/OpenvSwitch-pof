@@ -1,13 +1,13 @@
 set -e
 
 #安装ovs-dpdk
-export DPDK_DIR=/home/sqy/dpdk-16.07
+export DPDK_DIR=/home/xyh/dpdk-16.07
 cd $DPDK_DIR
 #dpdk configure
 export DPDK_TARGET=x86_64-native-linuxapp-gcc
 export DPDK_BUILD=$DPDK_DIR/$DPDK_TARGET
 #rm -r x86_64-native-linuxapp-gcc
-if [ ! -d /home/sqy/dpdk-16.07/x86_64-native-linuxapp-gcc ]
+if [ ! -d /home/xyh/dpdk-16.07/x86_64-native-linuxapp-gcc ]
 then
 make install T=$DPDK_TARGET DESTDIR=install
 fi
@@ -15,10 +15,10 @@ fi
 #make install T=$DPDK_TARGET DESTDIR=install
 # For IVSHMEM, Set `export DPDK_TARGET=x86_64-ivshmem-linuxapp-gcc`
 
-cd /home/sqy
-export OVS_DIR=/home/sqy/OpenvSwitch-pof
+cd /home/xyh
+export OVS_DIR=/home/xyh/OpenvSwitch-pof
 cd $OVS_DIR
-# ./boot.sh
+#./boot.sh
 #./configure --with-dpdk=$DPDK_BUILD
 ./configure CFLAGS="-g -O0" --with-dpdk=$DPDK_BUILD
 make -j24
@@ -52,8 +52,8 @@ modprobe uio_pci_generic
 #  sudo ifconfig ${port[$i]} down
 #  sudo ./tools/dpdk-devbind.py --bind=uio_pci_generic ${port[$i]}
 #done
-./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:05:00.1
-./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:05:00.0
+#./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:05:00.3
+#./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:05:00.0
 ./tools/dpdk-devbind.py --status
 echo "DPDK Environment Success"
 cd $OVS_DIR

@@ -5999,18 +5999,17 @@ static void
 encode_GOTO_TABLE(const struct ofpact_goto_table *goto_table,
                   enum ofp_version ofp_version, struct ofpbuf *out)
 {
-    if (ofp_version == OFP10_VERSION) {
+    if (ofp_version == OFP10_VERSION) {//run
         struct nx_action_resubmit *nar;
 
         nar = put_NXAST_RESUBMIT_TABLE(out);
         nar->table = goto_table->table_id;
         nar->in_port = htons(ofp_to_u16(OFPP_IN_PORT));
-    } else {
+    } else {//no run
         struct ofp11_instruction_goto_table *oigt;
 
         oigt = instruction_put_OFPIT11_GOTO_TABLE(out);
         oigt->table_id = goto_table->table_id;
-        memset(oigt->pad, 0, sizeof oigt->pad);
     }
 }
 
@@ -6635,7 +6634,7 @@ static inline bool
 pof_instruction_is_valid(const struct ofp11_instruction *inst,
                      size_t n_instructions)
 {
-    uint16_t len = ntohs(inst->len);
+    uint16_t len = 304;
     return (!(len % OFP11_INSTRUCTION_ALIGN)
             && len >= OFP11_INSTRUCTION_ALIGN
             && len / OFP11_INSTRUCTION_ALIGN <= n_instructions);
@@ -6655,15 +6654,14 @@ instruction_is_valid(const struct ofp11_instruction *inst,
 #define INSTRUCTION_FOR_EACH(ITER, LEFT, INSTRUCTIONS, N_INSTRUCTIONS)  \
     for ((ITER) = (INSTRUCTIONS), (LEFT) = (N_INSTRUCTIONS);            \
          (LEFT) > 0 && pof_instruction_is_valid(ITER, LEFT);                \
-         ((LEFT) -= (ntohs((ITER)->len)                                 \
-                     / OFP11_INSTRUCTION_ALIGN),               \
+         ((LEFT) --,               \
           (ITER) = instruction_next(ITER)))
 
 static enum ofperr
 decode_openflow11_instruction(const struct ofp11_instruction *inst,
                               enum ovs_instruction_type *type)
 {
-    uint16_t len = ntohs(inst->len);
+    uint16_t len = 304;
 VLOG_INFO("+++++++++++sqy decode_openflow11_instruction:start");
     switch (inst->type) {
     case CONSTANT_HTONS(OFPIT11_EXPERIMENTER):
@@ -6770,6 +6768,13 @@ get_actions_from_piaa(const struct pof_instruction_apply_actions *piaa,
     /**actions_len = ntohs(*actions->len);*/
 }
 
+static void
+get_oigt_from_instruction(const struct ofp11_instruction *inst,
+                             const struct ofp11_instruction_goto_table **oigt)
+{
+    *oigt = ALIGNED_CAST(const struct ofp11_instruction_goto_table *, inst + 1);
+    /**action_num = *piaa->action_num;*/
+}
 
 static void
 get_actions_from_instruction(const struct ofp11_instruction *inst,
@@ -6909,11 +6914,20 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_GOTO_TABLE");
         const struct ofp11_instruction_goto_table *oigt;
         struct ofpact_goto_table *ogt;
-
-        oigt = instruction_get_OFPIT11_GOTO_TABLE(
-            insts[OVSINST_OFPIT11_GOTO_TABLE]);
-        ogt = ofpact_put_GOTO_TABLE(ofpacts);
+        get_oigt_from_instruction(insts[OVSINST_OFPIT11_GOTO_TABLE],&oigt);
+        /*oigt = instruction_get_OFPIT11_GOTO_TABLE(
+            insts[OVSINST_OFPIT11_GOTO_TABLE]);*/
+        VLOG_INFO("gototable oigt:table_id=%d,match_num=%d,offset=%d,type=%d,len=%d",oigt->table_id,oigt->match_field_num,oigt->packet_offset,oigt->type,oigt->len);
+        /*ogt = ofpact_put_GOTO_TABLE(ofpacts);*/
+        ofpacts->header = ofpbuf_put_uninit(ofpacts, 8);
+        ogt = ofpacts->header;
+        ofpact_init(ogt, OFPACT_GOTO_TABLE, 8);
         ogt->table_id = oigt->table_id;
+        /*ogt->ofpact.type=ntohs(instructions->type);
+        ogt->ofpact.len=ntohs(instructions->len);*/
+        ogt->packet_offset=oigt->packet_offset;
+        ogt->match_field_num=oigt->match_field_num;
+        VLOG_INFO("gototable ogt:table_id=%d,type=%d,len=%d",ogt->table_id,ogt->ofpact.type,ogt->ofpact.len);
     }
 
     error = ofpacts_verify(ofpacts->data, ofpacts->size,
@@ -8147,10 +8161,10 @@ struct ofp_action_header {
     ovs_be16 len;
 
     /* For type == OFPAT_VENDOR only, this is a vendor ID, e.g. NX_VENDOR_ID or
-     * ONF_VENDOR_ID.  Other 'type's use this space for some other purpose.
-    ovs_be32 vendor;*/
+     * ONF_VENDOR_ID.  Other 'type's use this space for some other purpose.*/
+    ovs_be32 vendor;
 };
-OFP_ASSERT(sizeof(struct ofp_action_header) == 4);
+OFP_ASSERT(sizeof(struct ofp_action_header) == 8);
 
 /* Header for Nicira-defined actions and for ONF vendor extensions.
  *
@@ -8242,10 +8256,10 @@ ofpact_decode_raw(enum ofp_version ofp_version,
     /* Get base action type. */
     if (oah->type == htons(OFPAT_VENDOR)) {
          VLOG_INFO("+++++++++++sqy ofpact_decode_raw: oah->type = htons(OFPAT_VENDOR)");
-        /* Get vendor.
+        /* Get vendor.*/
         hdrs.vendor = ntohl(oah->vendor);
-        if (hdrs.vendor == NX_VENDOR_ID || hdrs.vendor == ONF_VENDOR_ID) {*/
-            /* Get extension subtype.
+        if (hdrs.vendor == NX_VENDOR_ID || hdrs.vendor == ONF_VENDOR_ID) {
+            /* Get extension subtype.*/
             const struct ext_action_header *nah;
 
             nah = ALIGNED_CAST(const struct ext_action_header *, oah);
@@ -8257,7 +8271,7 @@ ofpact_decode_raw(enum ofp_version ofp_version,
             VLOG_WARN_RL(&rl, "OpenFlow action has unknown vendor %#"PRIx32,
                          hdrs.vendor);
             return OFPERR_OFPBAC_BAD_VENDOR;
-        } */
+        }
     } else {
         hdrs.vendor = 0;
         hdrs.type = ntohs(oah->type);
@@ -8361,7 +8375,7 @@ ofpact_put_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
     oah = ofpbuf_put_zeros(buf, inst->min_length);
     oah->type = htons(hdrs->vendor ? OFPAT_VENDOR : hdrs->type);
     oah->len = htons(inst->min_length);
-    /*oah->vendor = htonl(hdrs->vendor);*/
+    oah->vendor = htonl(hdrs->vendor);
 
     switch (hdrs->vendor) {
     case 0:

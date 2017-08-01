@@ -3235,13 +3235,18 @@ xlate_table_action(struct xlate_ctx *ctx, ofp_port_t in_port, uint8_t table_id,
         ctx->table_id = table_id;
         VLOG_INFO("+++++++++++sqy xlate_table_action:  before rule_dpif_lookup_from_table");
 
-        rule = rule_dpif_lookup_from_table(ctx->xbridge->ofproto,
-                                           ctx->xin->tables_version,
-                                           &ctx->xin->flow, ctx->wc,
-                                           ctx->xin->resubmit_stats,
-                                           &ctx->table_id, in_port,
-                                           may_packet_in, honor_table_miss,
-                                           ctx->xin->xcache);
+        /* rule = rule_dpif_lookup_from_table(ctx->xbridge->ofproto,
+                                            ctx->xin->tables_version,
+                                            &ctx->xin->flow, ctx->wc,
+                                            ctx->xin->resubmit_stats,
+                                            &ctx->table_id, in_port,
+                                            may_packet_in, honor_table_miss,
+                                            ctx->xin->xcache);*/
+
+         rule=rule_dpif_lookup_from_table_pof(
+                     ctx->xbridge->ofproto, ctx->xin->tables_version, &ctx->xin->flow, ctx->xin->packet, ctx->wc,
+                     ctx->xin->resubmit_stats, &ctx->table_id,
+                     &ctx->xin->flow.in_port.ofp_port, true, true, ctx->xin->xcache);
         VLOG_INFO("+++++++++++sqy xlate_table_action:  after rule_dpif_lookup_from_table");
         if (OVS_UNLIKELY(ctx->xin->resubmit_hook)) {
             ctx->xin->resubmit_hook(ctx->xin, rule, ctx->indentation + 1);
