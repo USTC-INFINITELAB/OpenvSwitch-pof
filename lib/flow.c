@@ -2464,6 +2464,7 @@ flow_compose(struct dp_packet *p, const struct flow *flow)
 void
 pof_miniflow_init(struct miniflow *dst, const struct pof_flow *src)
 {
+
     uint64_t *dst_u64 = miniflow_values(dst);
     size_t idx;
     FLOWMAP_FOR_EACH_INDEX(idx, dst->map) {

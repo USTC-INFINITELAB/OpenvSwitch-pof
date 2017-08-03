@@ -667,8 +667,11 @@ transact_multiple_noreply(struct vconn *vconn, struct ovs_list *requests)
 
     run(vconn_transact_multiple_noreply(vconn, requests, &reply),
         "talking to %s", vconn_get_name(vconn));
+    VLOG_INFO("+++++++++++xyh transact_multiple_noreply");
     if (reply) {
+    	VLOG_INFO("+++++++++++xyh transact_multiple_noreply:before ofp_print");
         ofp_print(stderr, reply->data, reply->size, verbosity + 2);
+        VLOG_INFO("+++++++++++xyh transact_multiple_noreply:after ofp_print");
         exit(1);
     }
     ofpbuf_delete(reply);
@@ -741,8 +744,11 @@ transact_noreply(struct vconn *vconn, struct ofpbuf *request)
     struct ovs_list requests;
 
     ovs_list_init(&requests);
+    VLOG_INFO("+++++++++++xyh transact_noreply: after ovs_list_init");
     ovs_list_push_back(&requests, &request->list_node);
+    VLOG_INFO("+++++++++++xyh transact_noreply: after ovs_list_push_back");
     transact_multiple_noreply(vconn, &requests);
+    VLOG_INFO("+++++++++++xyh transact_noreply: after transact_multiple_noreply");
 }
 
 static void
@@ -1464,6 +1470,34 @@ bundle_flow_mod__(const char *remote, struct ofputil_flow_mod *fms,
 }
 
 static void
+bundle_pof_flow_mod__(const char *remote, struct ofputil_pof_flow_mod *fms,
+                  size_t n_fms, enum ofputil_protocol usable_protocols)
+{
+    enum ofputil_protocol protocol;
+    struct vconn *vconn;
+    struct ovs_list requests;
+    size_t i;
+
+    ovs_list_init(&requests);
+
+    /* Bundles need OpenFlow 1.3+. */
+    usable_protocols &= OFPUTIL_P_OF13_UP;
+    protocol = open_vconn_for_flow_mod(remote, &vconn, usable_protocols);
+
+    for (i = 0; i < n_fms; i++) {
+        struct ofputil_pof_flow_mod *fm = &fms[i];
+        struct ofpbuf *request = ofputil_encode_pof_flow_mod(fm, protocol);
+
+        ovs_list_push_back(&requests, &request->list_node);
+        free(CONST_CAST(struct ofpact *, fm->ofpacts));
+    }
+
+    bundle_transact(vconn, &requests, OFPBF_ORDERED | OFPBF_ATOMIC);
+    ofpbuf_list_delete(&requests);
+    vconn_close(vconn);
+}
+
+static void
 ofctl_flow_mod__(const char *remote, struct ofputil_flow_mod *fms,
                  size_t n_fms, enum ofputil_protocol usable_protocols)
 {
@@ -1482,6 +1516,37 @@ ofctl_flow_mod__(const char *remote, struct ofputil_flow_mod *fms,
         struct ofputil_flow_mod *fm = &fms[i];
 
         transact_noreply(vconn, ofputil_encode_flow_mod(fm, protocol));
+        free(CONST_CAST(struct ofpact *, fm->ofpacts));
+    }
+    vconn_close(vconn);
+}
+
+
+
+static void
+ofctl_pof_flow_mod__(const char *remote, struct ofputil_pof_flow_mod *fms,
+                 size_t n_fms, enum ofputil_protocol usable_protocols)
+{
+    enum ofputil_protocol protocol;
+    struct vconn *vconn;
+    size_t i;
+
+    if (bundle) {
+    	VLOG_INFO("+++++++++++xyh ofctl_pof_flow_mod__: before bundle_pof_flow_mod__");
+        bundle_pof_flow_mod__(remote, fms, n_fms, usable_protocols);
+        VLOG_INFO("+++++++++++xyh ofctl_pof_flow_mod__: after bundle_pof_flow_mod__");
+        return;
+    }
+
+    protocol = open_vconn_for_flow_mod(remote, &vconn, usable_protocols);
+
+    char *allowed_stest = ofputil_protocol_to_string(protocol);
+    VLOG_INFO("+++++++++++xyh ofctl_pof_flow_mod__: after open_vconn_for_flow_mod,protocol=%s",allowed_stest);
+    for (i = 0; i < n_fms; i++) {
+        struct ofputil_pof_flow_mod *fm = &fms[i];
+        VLOG_INFO("+++++++++++xyh ofctl_pof_flow_mod__: before ofputil_encode_pof_flow_mod %d",i);
+        transact_noreply(vconn, ofputil_encode_pof_flow_mod(fm, protocol));
+        VLOG_INFO("+++++++++++xyh ofctl_pof_flow_mod__: after ofputil_encode_pof_flow_mod");
         free(CONST_CAST(struct ofpact *, fm->ofpacts));
     }
     vconn_close(vconn);
@@ -1516,16 +1581,20 @@ ofctl_flow_mod(int argc, char *argv[], uint16_t command)
     if (argc > 2 && !strcmp(argv[2], "-")) {
         ofctl_flow_mod_file(argc, argv, command);
     } else {
-        struct ofputil_flow_mod fm;
+        struct ofputil_pof_flow_mod fm;
         char *error;
         enum ofputil_protocol usable_protocols;
 
-        error = parse_ofp_flow_mod_str(&fm, argc > 2 ? argv[2] : "", command,
+        VLOG_INFO("+++++++++++xyh ofctl_flow_mod: before parse_ofp_pof_flow_mod_str");
+        error = parse_pof_flow_mod_str(&fm, argc > 2 ? argv[2] : "", command,
                                        &usable_protocols);
+        VLOG_INFO("+++++++++++xyh ofctl_flow_mod: after parse_ofp_pof_flow_mod_str");
         if (error) {
             ovs_fatal(0, "%s", error);
         }
-        ofctl_flow_mod__(argv[1], &fm, 1, usable_protocols);
+        VLOG_INFO("+++++++++++xyh ofctl_flow_mod: before ofctl_pof_flow_mod__");
+        ofctl_pof_flow_mod__(argv[1], &fm, 1, usable_protocols);
+        VLOG_INFO("+++++++++++xyh ofctl_flow_mod: after ofctl_pof_flow_mod__");
     }
 }
 

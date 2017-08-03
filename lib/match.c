@@ -152,7 +152,7 @@ pof_match_set_value(struct match_x *match, unsigned int value_idx, const struct 
     int i=0;
     ovs_assert(value_idx < POF_N_VALUES);
     for(i=0; i<POF_MAX_FIELD_LENGTH_IN_BYTE;i++){
-        match->wc.masks.value[value_idx][i] =1;
+        match->wc.masks.value[value_idx][i] =*((uint8_t*)(&in6addr_exact)+i);
         match->flow.value[value_idx][i] = *((uint8_t*)value+i);
     }
 }

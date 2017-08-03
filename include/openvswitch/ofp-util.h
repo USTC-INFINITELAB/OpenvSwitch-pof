@@ -396,6 +396,9 @@ enum ofperr ofputil_decode_flow_mod(struct ofputil_flow_mod *,
 struct ofpbuf *ofputil_encode_flow_mod(const struct ofputil_flow_mod *,
                                        enum ofputil_protocol);
 
+struct ofpbuf *ofputil_encode_pof_flow_mod(const struct ofputil_pof_flow_mod *,
+                                       enum ofputil_protocol);
+
 /* Flow stats or aggregate stats request, independent of protocol. */
 struct ofputil_flow_stats_request {
     bool aggregate;             /* Aggregate results? */

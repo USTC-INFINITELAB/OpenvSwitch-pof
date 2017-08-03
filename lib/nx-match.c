@@ -265,9 +265,10 @@ is_mask_consistent(uint64_t header, const uint8_t *value, const uint8_t *mask)
 {
     unsigned int width = nxm_field_bytes(header);
     unsigned int i;
-
+    VLOG_INFO("+++++++++++xyh is_mask_consistent: value = %d,mask = %d,width = %d",value,mask,width);
     for (i = 0; i < width; i++) {
-        if (value[i] & ~mask[i]) {
+        if ((value[i] & ~mask[i]) &(mask[i] & ~value[i])){
+        	VLOG_INFO("+++++++++++xyh is_mask_consistent: value[%d] = %d,mask[%d] = %d",i,value[i],i,mask[i]);
             if (!VLOG_DROP_WARN(&rl)) {
                 VLOG_WARN_RL(&rl, "Rejecting NXM/OXM entry "NXM_HEADER_FMT " "
                              "with 1-bits in value for bits wildcarded by the "
@@ -1232,7 +1233,6 @@ nx_put_pof_raw(struct ofpbuf *b, enum ofp_version oxm, const struct match_x *mat
         }
     }
     match_len = b->size - start_len;
-    /*VLOG_INFO("++++++++++sqy nx_put_pof_raw: match_len = %d ",match_len);*/
     return match_len;
 }
 
@@ -1288,6 +1288,27 @@ oxm_put_match(struct ofpbuf *b, const struct match *match,
 
     ofpbuf_put_uninit(b, sizeof *omh);
     match_len = (nx_put_raw(b, version, match, cookie, cookie_mask)
+                 + sizeof *omh);
+    ofpbuf_put_zeros(b, PAD_SIZE(match_len, 8));
+
+    omh = ofpbuf_at(b, start_len, sizeof *omh);
+    omh->type = htons(OFPMT_OXM);
+    omh->length = htons(match_len);
+
+    return match_len;
+}
+
+int
+oxm_put_pof_match(struct ofpbuf *b, const struct match_x *match,
+              enum ofp_version version)
+{
+    int match_len;
+    struct ofp11_match_header *omh;
+    size_t start_len = b->size;
+    ovs_be64 cookie = htonll(0), cookie_mask = htonll(0);
+
+    ofpbuf_put_uninit(b, sizeof *omh);
+    match_len = (nx_put_pof_raw(b, version, match, cookie, cookie_mask)
                  + sizeof *omh);
     ofpbuf_put_zeros(b, PAD_SIZE(match_len, 8));
 

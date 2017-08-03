@@ -291,7 +291,7 @@ enum ofp10_flow_mod_flags {
 
 /* Flow setup and teardown (controller -> datapath). */
 struct ofp10_flow_mod {
-    struct ofp10_match match;    /* Fields to match */
+	struct ofp10_match match; /* Description of fields. */
     ovs_be64 cookie;             /* Opaque controller-issued identifier. */
 
     /* Flow actions. */
