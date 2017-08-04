@@ -1191,7 +1191,20 @@ pof_mf_set_value(const struct mf_field *mf,
     case MFF_VALUE5:
     case MFF_VALUE6:
     case MFF_VALUE7:
-        /*VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_VALUE7");*/
+        VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_VALUE7");
+        /*if (match->flow.len>0 && match->flow.len<=8){
+        	pof_match_set_value8(match, mf->id - MFF_VALUE0, value->u8);
+        }else if (match->flow.len>8 && match->flow.len<=16){
+        	pof_match_set_value16(match, mf->id - MFF_VALUE0, value->be16);
+        }else if (match->flow.len>16 && match->flow.len<=32){
+        	pof_match_set_value32(match, mf->id - MFF_VALUE0, value->be32);
+        }else if (match->flow.len>32 && match->flow.len<=48){
+        	pof_match_set_value48(match, mf->id - MFF_VALUE0, value->mac);
+        }else if (match->flow.len>48 && match->flow.len<=64){
+        	pof_match_set_value64(match, mf->id - MFF_VALUE0, value->be64);
+        }else if (match->flow.len>64){
+        	pof_match_set_value(match, mf->id - MFF_VALUE0, &value->ipv6);
+        }*/
         pof_match_set_value(match, mf->id - MFF_VALUE0, &value->ipv6);
         break;
 

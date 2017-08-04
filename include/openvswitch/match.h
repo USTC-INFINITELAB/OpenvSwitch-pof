@@ -76,6 +76,12 @@ void pof_match_set_length(struct match_x *, unsigned int length_idx, ovs_be16 va
 void pof_match_set_length_masked(struct match_x *, unsigned int length_idx,
                                  ovs_be16 value, ovs_be16 mask);
 void pof_match_set_value(struct match_x *, unsigned int value_idx, const struct in6_addr *src);
+void pof_match_set_value8(struct match_x *, unsigned int value_idx, uint8_t src);
+void pof_match_set_value16(struct match_x *, unsigned int value_idx, ovs_be16 src);
+void pof_match_set_value32(struct match_x *, unsigned int value_idx, ovs_be32 src);
+void pof_match_set_value64(struct match_x *, unsigned int value_idx, ovs_be64 src);
+void pof_match_set_value48(struct match_x *, unsigned int value_idx, const struct eth_addr src);
+
 void pof_match_set_value_masked(struct match_x *, unsigned int value_idx,
                                  const struct in6_addr *value, const struct in6_addr *mask);
 

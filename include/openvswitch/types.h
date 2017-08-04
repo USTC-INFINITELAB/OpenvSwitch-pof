@@ -34,7 +34,7 @@
 typedef uint16_t OVS_BITWISE ovs_be16;
 typedef uint32_t OVS_BITWISE ovs_be32;
 typedef uint64_t OVS_BITWISE ovs_be64;
-
+#define OVS_BE8_MAX ((OVS_FORCE uint8_t) 0xff)
 #define OVS_BE16_MAX ((OVS_FORCE ovs_be16) 0xffff)
 #define OVS_BE32_MAX ((OVS_FORCE ovs_be32) 0xffffffff)
 #define OVS_BE64_MAX ((OVS_FORCE ovs_be64) 0xffffffffffffffffULL)
