@@ -85,7 +85,32 @@ struct pof_flow {
 
     uint8_t value[POF_MAX_MATCH_FIELD_NUM][POF_MAX_FIELD_LENGTH_IN_BYTE];
     /*uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];*/
+    /*Original pof_flow is 192 bytes, we add the following fields to pad pof_flow to flow,
+      which is 584 bytes. */
     uint8_t pad_to_flow[POF_MAX_MATCH_FIELD_NUM][49];
+};
+struct pof_fp_flow {
+    /* Metadata */
+    struct flow_tnl tunnel;     /* Encapsulating tunnel parameters. */
+    ovs_be64 metadata;          /* OpenFlow Metadata. */
+    uint32_t regs[FLOW_N_REGS]; /* Registers. */
+    uint32_t skb_priority;      /* Packet priority for QoS. */
+    uint32_t pkt_mark;          /* Packet mark. */
+    uint32_t dp_hash;           /* Datapath computed hash value. The exact
+                                 * computation is opaque to the user space. */
+    union flow_in_port in_port; /* Input port.*/
+    uint32_t recirc_id;         /* Must be exact match. */
+    uint16_t ct_state;          /* Connection tracking state. */
+    uint16_t ct_zone;           /* Connection tracking zone. */
+    uint32_t ct_mark;           /* Connection mark.*/
+    uint8_t pad1[4];            /* Pad to 64 bits. */
+    ovs_u128 ct_label;          /* Connection label. */
+    uint32_t conj_id;           /* Conjunction ID. */
+    ofp_port_t actset_output;   /* Output port in action set. */
+
+    /* L2, Order the same as in the Ethernet header! (64-bit aligned) */
+    ovs_be64 pof_normal[14]; /* Registers. */
+    /*ovs_be32 ipv6_label;         IPv6 flow label. */
 };
 
 

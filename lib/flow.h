@@ -512,6 +512,7 @@ struct pkt_metadata;
  * 'dst->map' is ignored on input and set on output to indicate which fields
  * were extracted. */
 void miniflow_extract(struct dp_packet *packet, struct miniflow *dst);
+void pof_miniflow_extract(struct dp_packet *packet, struct miniflow *dst);
 
 void pof_miniflow_map_init(struct miniflow *, const struct pof_flow *src);
 void miniflow_map_init(struct miniflow *, const struct flow *);

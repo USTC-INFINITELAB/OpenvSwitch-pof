@@ -3958,7 +3958,7 @@ emc_processing(struct dp_netdev_pmd_thread *pmd, struct dp_packet_batch *packets
         if (!md_is_valid) {
             pkt_metadata_init(&packet->md, port_no);
         }
-        miniflow_extract(packet, &key->mf);
+        pof_miniflow_extract(packet, &key->mf);
         key->len = 0; /* Not computed yet. */
         key->hash = dpif_netdev_packet_get_rss_hash(packet, &key->mf);
 
