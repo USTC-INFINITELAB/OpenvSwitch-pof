@@ -503,6 +503,30 @@ ofputil_match_from_ofp11_match(const struct ofp11_match *ofmatch,
     return 0;
 }
 
+/* Convert 'match' into the pof_match structure 'ofmatch'. */
+void
+ofputil_match_x_to_pof_match(const struct match_x *match,
+                             struct pof_match_x *om)
+{
+	size_t i,j;
+	//VLOG_INFO("+++++++++++xyh ofputil_match_x_to_pof_match");
+	for(i=0; i<ARRAY_SIZE(match->flow.field_id); i++){
+				om->field_id=match->flow.field_id[i];
+				om->len=match->flow.len[i];
+				om->offset=match->flow.offset[i];
+//				om->field_id = match->wc.masks.field_id[i];
+//				om->len = match->wc.masks.len[i];
+//				om->offset = match->wc.masks.offset[i];
+				VLOG_INFO("+++++++++++xyh ofputil_match_x_to_pof_match:om->field_id=%d,om->len=%d,om->offset=%d",om->field_id,om->len,om->offset);
+				for (j = 0; j < ARRAY_SIZE(match->flow.value[i]); j++) {
+					om->value[j]=match->flow.value[i][j] & match->wc.masks.value[i][j];
+					om->mask[j]=match->wc.masks.value[i][j];
+					VLOG_INFO("+++++++++++xyh ofputil_match_x_to_pof_match:%d value[%d]=%d,mask=%d",i,j,om->value[j],om->mask[j]);
+				}
+
+			}
+}
+
 /* Convert 'match' into the OpenFlow 1.1 match structure 'ofmatch'. */
 void
 ofputil_match_to_ofp11_match(const struct match *match,
@@ -675,30 +699,46 @@ int
 ofputil_put_pof_match(struct ofpbuf *b, const struct match_x *match,
                         enum ofputil_protocol protocol)
 {
+
     switch (protocol) {
     case OFPUTIL_P_OF10_STD:
     case OFPUTIL_P_OF10_STD_TID:
     case OFPUTIL_P_OF10_NXM:
     case OFPUTIL_P_OF10_NXM_TID:
-        OVS_NOT_REACHED();
-
-    case OFPUTIL_P_OF11_STD: {
-        struct pof_match_x *om;
-
-        /* Make sure that no padding is needed. */
-        BUILD_ASSERT_DECL(sizeof *om % 8 == 0);
-
-        om = ofpbuf_put_uninit(b, sizeof *om);
-        /*ofputil_match_x_to_pof_match_x(match, om);*/
-        return sizeof *om;
-    }
-
+    case OFPUTIL_P_OF11_STD:
     case OFPUTIL_P_OF12_OXM:
     case OFPUTIL_P_OF13_OXM:
     case OFPUTIL_P_OF14_OXM:
     case OFPUTIL_P_OF15_OXM:
-    case OFPUTIL_P_OF16_OXM:
-        VLOG_INFO("+++++++++++sqy ofputil_put_pof_match: before return oxm_put_match");
+    case OFPUTIL_P_OF16_OXM:{
+        struct pof_match_x *om;
+        VLOG_INFO("+++++++++++xyh ofputil_put_pof_match: structure om from match 1 ");
+        /* Make sure that no padding is needed. */
+        BUILD_ASSERT_DECL(sizeof *om % 8 == 0);
+
+        om = ofpbuf_put_uninit(b, sizeof *om);
+        VLOG_INFO("+++++++++++xyh ofputil_put_pof_match: structure om from match 2 ");
+        ofputil_match_x_to_pof_match(match, om);
+        /*+++++++++xyh structure om from match*/
+        VLOG_INFO("+++++++++++xyh ofputil_put_pof_match: structure om from match");
+//		for(i=0; i<POF_MAX_MATCH_FIELD_NUM; i++){
+//			om->field_id=match->flow.field_id[i];
+//			om->len=match->flow.len[i];
+//			om->offset=match->flow.offset[i];
+//			om->field_id = match->wc.masks.field_id[i];
+//			om->len = match->wc.masks.len[i];
+//			om->offset = match->wc.masks.offset[i];
+//			size_t j;
+//			for (j = 0; j < ARRAY_SIZE(match->flow.value[i]); j++) {
+//				om->value[j]=match->flow.value[i][j] & match->wc.masks.value[i][j];
+//				om->mask[j]=match->wc.masks.value[i][j];
+//			}
+//		}
+        return sizeof *om;
+    }
+
+
+        //VLOG_INFO("+++++++++++sqy ofputil_put_pof_match: before return oxm_put_match");
         /*return oxm_put_match(b, match,
                              ofputil_protocol_to_ofp_version(protocol));*/
     }
@@ -1644,9 +1684,13 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
 {
     ovs_be16 raw_flags;
     enum ofperr error;
-    struct ofpbuf b = ofpbuf_const_initializer(oh, ntohs(oh->length));
+    struct ofpbuf bb = ofpbuf_const_initializer(oh, ntohs(oh->length));
+    enum ofpraw raw = ofpraw_pull_assert(&bb);
 
-        /* Standard OpenFlow 1.1+ flow_mod. */
+
+    if (raw != OFPRAW_NXT_FLOW_MOD){
+    struct ofpbuf b = ofpbuf_const_initializer(oh, ntohs(oh->length));
+    /* Standard OpenFlow 1.1+ flow_mod. */
         const struct ofp11_flow_mod *ofm;
         uint8_t i=0;
         ofm = ofpbuf_pull(&b, sizeof *oh);
@@ -1656,6 +1700,9 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
         ofm = ofpbuf_pull(&b, sizeof *ofm);
 
         /*error = ofputil_pull_pof_match_x(&b, &fm->match, NULL);*/
+        memset(&fm->match.flow, 0, sizeof fm->match.flow);
+        memset(&fm->match.wc.masks, 0, sizeof fm->match.flow);
+        memset(&fm->match.tun_md, 0, sizeof fm->match.tun_md);
 
         for(i=0; i<ofm->match_field_num; i++){
 
@@ -1675,24 +1722,6 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
                           i, fm->match.flow.value[i][j], fm->match.wc.masks.value[i][j]);*/
             }
         }
-
-        for( ; i<POF_MAX_MATCH_FIELD_NUM; i++){
-
-            fm->match.flow.field_id[i] = 0;
-            fm->match.flow.len[i] = 0;
-            fm->match.flow.offset[i] = 0;
-            fm->match.wc.masks.field_id[i] = 0;
-            fm->match.wc.masks.len[i] = 0;
-            fm->match.wc.masks.offset[i] = 0;
-            size_t j;
-            for (j = 0; j < ARRAY_SIZE(ofm->match[i].value); j++) {
-                fm->match.flow.value[i][j] = 0;
-                fm->match.wc.masks.value[i][j] = 0;
-                /*VLOG_INFO("++++++++sqy ofputil_decode_flow_mod_pof %d: value: %d; mask: %d",
-                          i, fm->match.flow.value[i][j], fm->match.wc.masks.value[i][j]);*/
-            }
-        }
-
 
         /* Translate the message. */
         fm->priority = ntohs(ofm->priority);
@@ -1745,7 +1774,7 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
         return OFPERR_OFPFMFC_BAD_COMMAND;
     }
 
-    VLOG_INFO("+++++++++++sqy ofputil_decode_flow_mod_pof: befoore ofpacts_pull_openflow_instructions");
+    VLOG_INFO("+++++++++++sqy ofputil_decode_flow_mod_pof: befoore ofpacts_pull_openflow_instructions oh->version=%d",oh->version);
     error = ofpacts_pull_openflow_instructions(&b, ofm->instruction_num * OFP11_INSTRUCTION_ALIGN,
                                                oh->version, ofpacts);
     if (error) {
@@ -1753,6 +1782,67 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
     }
     fm->ofpacts = ofpacts->data;
     fm->ofpacts_len = ofpacts->size;
+
+    }
+    else if (raw == OFPRAW_NXT_FLOW_MOD){
+        /* Nicira extended flow_mod. */
+
+        	VLOG_INFO("+++++++++++xyh ofputil_decode_flow_mod_pof: OFPRAW_NXT_FLOW_MOD");
+            const struct nx_flow_mod *nfm;
+            uint16_t command;
+            /* Dissect the message. */
+            nfm = ofpbuf_pull(&bb, sizeof *nfm);
+            error = nx_pull_pof_match(&bb, ntohs(nfm->match_len),
+                                  &fm->match, &fm->cookie, &fm->cookie_mask,
+                                  tun_table);
+            VLOG_INFO("+++++++++++xyh ofputil_decode_flow_mod_pof: nx_pull_pof_match");
+            if (error) {
+                return error;
+            }
+
+            /* Translate the message. */
+            command = ntohs(nfm->command);
+            if ((command & 0xff) == OFPFC_ADD && fm->cookie_mask) {
+                /* Flow additions may only set a new cookie, not match an
+                 * existing cookie. */
+                return OFPERR_NXBRC_NXM_INVALID;
+            }
+            fm->priority = ntohs(nfm->priority);
+            fm->new_cookie = nfm->cookie;
+            fm->idle_timeout = ntohs(nfm->idle_timeout);
+            fm->hard_timeout = ntohs(nfm->hard_timeout);
+            fm->importance = 0;
+            fm->buffer_id = ntohl(nfm->buffer_id);
+            fm->out_port = u16_to_ofp(ntohs(nfm->out_port));
+            fm->out_group = OFPG_ANY;
+            raw_flags = nfm->flags;
+            fm->modify_cookie = fm->new_cookie != OVS_BE64_MAX;
+            if (protocol & OFPUTIL_P_TID) {
+                fm->command = command & 0xff;
+                fm->table_id = command >> 8;
+            } else {
+                if (command > 0xff) {
+                    VLOG_WARN_RL(&bad_ofmsg_rl, "flow_mod has explicit table_id "
+                                 "but flow_mod_table_id extension is not enabled");
+                }
+                fm->command = command;
+                fm->table_id = 0xff;
+            }
+
+            if (fm->command > OFPFC_DELETE_STRICT) {
+                return OFPERR_OFPFMFC_BAD_COMMAND;
+            }
+
+            error = ofpacts_pull_openflow_instructions(&bb, bb.size,
+                                                       oh->version, ofpacts);
+            if (error) {
+                return error;
+            }
+            fm->ofpacts = ofpacts->data;
+            fm->ofpacts_len = ofpacts->size;
+
+
+    }
 
     error = ofputil_decode_flow_mod_flags(raw_flags, fm->command,
                                           oh->version, &fm->flags);
@@ -2451,6 +2541,119 @@ ofputil_encode_flow_mod(const struct ofputil_flow_mod *fm,
         nfm->command = ofputil_tid_command(fm, protocol);
         nfm->cookie = fm->new_cookie;
         match_len = nx_put_match(msg, &fm->match, fm->cookie, fm->cookie_mask);
+        nfm = msg->msg;
+        nfm->idle_timeout = htons(fm->idle_timeout);
+        nfm->hard_timeout = htons(fm->hard_timeout);
+        nfm->priority = htons(fm->priority);
+        nfm->buffer_id = htonl(fm->buffer_id);
+        nfm->out_port = htons(ofp_to_u16(fm->out_port));
+        nfm->flags = raw_flags;
+        nfm->match_len = htons(match_len);
+        ofpacts_put_openflow_actions(fm->ofpacts, fm->ofpacts_len, msg,
+                                     version);
+        break;
+    }
+
+    default:
+        OVS_NOT_REACHED();
+    }
+
+    ofpmsg_update_length(msg);
+    return msg;
+}
+
+
+struct ofpbuf *
+ofputil_encode_pof_flow_mod(const struct ofputil_pof_flow_mod *fm,
+                        enum ofputil_protocol protocol)
+{
+	//protocol = 1 << 4;
+    enum ofp_version version = ofputil_protocol_to_ofp_version(protocol);
+    ovs_be16 raw_flags = ofputil_encode_flow_mod_flags(fm->flags, version);
+    struct ofpbuf *msg;
+//
+    switch (protocol) {
+    case OFPUTIL_P_OF11_STD:
+    case OFPUTIL_P_OF12_OXM:
+    case OFPUTIL_P_OF13_OXM:
+    case OFPUTIL_P_OF14_OXM:
+    case OFPUTIL_P_OF15_OXM:
+    case OFPUTIL_P_OF16_OXM:
+    case OFPUTIL_P_OF10_STD:
+    case OFPUTIL_P_OF10_STD_TID: {
+    	VLOG_INFO("+++++++++++xyh ofputil_encode_pof_flow_mod: STD/OXM");
+        struct ofp11_flow_mod *ofm;
+        int tailroom;
+
+        tailroom = ofputil_match_typical_len(protocol) + fm->ofpacts_len;
+        //tailroom = sizeof(struct ofputil_pof_flow_mod);
+        msg = ofpraw_alloc(OFPRAW_OFPT10_FLOW_MOD, version, tailroom);
+        ofm = ofpbuf_put_zeros(msg, sizeof *ofm);
+        if ((protocol == OFPUTIL_P_OF11_STD
+             && (fm->command == OFPFC_MODIFY ||
+                 fm->command == OFPFC_MODIFY_STRICT)
+             && fm->cookie_mask == htonll(0))
+            || fm->command == OFPFC_ADD) {
+            ofm->cookie = fm->new_cookie;
+        } else {
+            ofm->cookie = fm->cookie & fm->cookie_mask;
+        }
+        ofm->cookie_mask = fm->cookie_mask;
+        if (fm->table_id != OFPTT_ALL
+            || (protocol != OFPUTIL_P_OF11_STD
+                && (fm->command == OFPFC_DELETE ||
+                    fm->command == OFPFC_DELETE_STRICT))) {
+            ofm->table_id = fm->table_id;
+        } else {
+            ofm->table_id = 0;
+        }
+        ofm->command = fm->command;
+        ofm->idle_timeout = htons(fm->idle_timeout);
+        ofm->hard_timeout = htons(fm->hard_timeout);
+        ofm->priority = htons(fm->priority);
+
+        VLOG_INFO("+++++++++++xyh ofputil_encode_pof_flow_mod: before OFPUTIL_P_OF11_STD:ofputil_put_pof_match");
+		ofputil_put_pof_match(msg, &fm->match, protocol);
+		VLOG_INFO("+++++++++++xyh ofputil_encode_pof_flow_mod: after OFPUTIL_P_OF11_STD:ofputil_put_pof_match");
+        ofpacts_put_openflow_instructions(fm->ofpacts, fm->ofpacts_len, msg,
+                                          version);
+        break;
+    }
+//
+//    case OFPUTIL_P_OF10_STD:
+//    case OFPUTIL_P_OF10_STD_TID: {
+//        struct ofp10_flow_mod *ofm;
+//        int tailroom;
+//
+//        msg = ofpraw_alloc(OFPRAW_OFPT10_FLOW_MOD, OFP10_VERSION,
+//                           fm->ofpacts_len);
+//        ofm = ofpbuf_put_zeros(msg, sizeof *ofm);
+//        ofputil_match_x_to_pof_match(&fm->match, &ofm->match);
+//        ofm->cookie = fm->new_cookie;
+//        ofm->command = ofputil_tid_command(fm, protocol);
+//        ofm->idle_timeout = htons(fm->idle_timeout);
+//        ofm->hard_timeout = htons(fm->hard_timeout);
+//        ofm->priority = htons(fm->priority);
+//        ofm->buffer_id = htonl(fm->buffer_id);
+//        ofm->out_port = htons(ofp_to_u16(fm->out_port));
+//        ofm->flags = raw_flags;
+//        ofpacts_put_openflow_actions(fm->ofpacts, fm->ofpacts_len, msg,
+//                                     version);
+//        break;
+//    }
+//
+    case OFPUTIL_P_OF10_NXM:
+    case OFPUTIL_P_OF10_NXM_TID: {
+    	VLOG_INFO("+++++++++++xyh ofputil_encode_pof_flow_mod: NXM");
+        struct nx_flow_mod *nfm;
+        int match_len;
+
+        msg = ofpraw_alloc(OFPRAW_NXT_FLOW_MOD, OFP10_VERSION,
+                           NXM_TYPICAL_LEN + fm->ofpacts_len);
+        nfm = ofpbuf_put_zeros(msg, sizeof *nfm);
+        nfm->command = ofputil_tid_command(fm, protocol);
+        nfm->cookie = fm->new_cookie;
+        match_len = nx_put_pof_match(msg, &fm->match, fm->cookie, fm->cookie_mask);
         nfm = msg->msg;
         nfm->idle_timeout = htons(fm->idle_timeout);
         nfm->hard_timeout = htons(fm->hard_timeout);

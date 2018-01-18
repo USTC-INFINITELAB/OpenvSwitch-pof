@@ -481,6 +481,8 @@ static struct xlate_cfg *new_xcfg = NULL;
 static bool may_receive(const struct xport *, struct xlate_ctx *);
 static void do_xlate_actions(const struct ofpact *, size_t ofpacts_len,
                              struct xlate_ctx *);
+static void pof_do_xlate_actions(const struct ofpact *, size_t ofpacts_len,
+                             struct xlate_ctx *);
 static void xlate_normal(struct xlate_ctx *);
 static inline void xlate_report(struct xlate_ctx *, const char *, ...)
     OVS_PRINTF_FORMAT(2, 3);
@@ -3235,13 +3237,18 @@ xlate_table_action(struct xlate_ctx *ctx, ofp_port_t in_port, uint8_t table_id,
         ctx->table_id = table_id;
         VLOG_INFO("+++++++++++sqy xlate_table_action:  before rule_dpif_lookup_from_table");
 
-        rule = rule_dpif_lookup_from_table(ctx->xbridge->ofproto,
-                                           ctx->xin->tables_version,
-                                           &ctx->xin->flow, ctx->wc,
-                                           ctx->xin->resubmit_stats,
-                                           &ctx->table_id, in_port,
-                                           may_packet_in, honor_table_miss,
-                                           ctx->xin->xcache);
+        /* rule = rule_dpif_lookup_from_table(ctx->xbridge->ofproto,
+                                            ctx->xin->tables_version,
+                                            &ctx->xin->flow, ctx->wc,
+                                            ctx->xin->resubmit_stats,
+                                            &ctx->table_id, in_port,
+                                            may_packet_in, honor_table_miss,
+                                            ctx->xin->xcache);*/
+
+         rule=rule_dpif_lookup_from_table_pof(
+                     ctx->xbridge->ofproto, ctx->xin->tables_version, &ctx->xin->flow, ctx->xin->packet, ctx->wc,
+                     ctx->xin->resubmit_stats, &ctx->table_id,
+                     &ctx->xin->flow.in_port.ofp_port, true, true, ctx->xin->xcache);
         VLOG_INFO("+++++++++++sqy xlate_table_action:  after rule_dpif_lookup_from_table");
         if (OVS_UNLIKELY(ctx->xin->resubmit_hook)) {
             ctx->xin->resubmit_hook(ctx->xin, rule, ctx->indentation + 1);
@@ -4333,7 +4340,7 @@ xlate_action_set(struct xlate_ctx *ctx)
     ofpacts_execute_action_set(&action_list, &ctx->action_set);
     /* Clear the action set, as it is not needed any more. */
     ofpbuf_clear(&ctx->action_set);
-    do_xlate_actions(action_list.data, action_list.size, ctx);
+    pof_do_xlate_actions(action_list.data, action_list.size, ctx);
     ctx->in_action_set = false;
     ofpbuf_uninit(&action_list);
 }
@@ -4687,6 +4694,82 @@ recirc_for_mpls(const struct ofpact *a, struct xlate_ctx *ctx)
 
     /* Recirculate */
     ctx_trigger_freeze(ctx);
+}
+
+static void
+pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
+                 struct xlate_ctx *ctx)
+{
+    struct pof_fp_flow_wildcards *wc = ctx->wc;
+    struct pof_fp_flow *flow = &ctx->xin->flow;
+    const struct ofpact *a;
+
+    if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
+        tnl_neigh_snoop(flow, wc, ctx->xbridge->name);
+    }
+    /* dl_type already in the mask, not set below. */
+
+    OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
+        struct ofpact_controller *controller;
+        const struct ofpact_metadata *metadata;
+        const struct ofpact_set_field *set_field;
+        const struct mf_field *mf;
+
+        if (ctx->error) {//sqy notes: false
+            break;
+        }
+
+        if (ctx->exit) {//sqy notes: false
+            /* Check if need to store the remaining actions for later
+             * execution. */
+            if (ctx->freezing) {
+                freeze_unroll_actions(a, ofpact_end(ofpacts, ofpacts_len),
+                                      ctx);
+            }
+            break;
+        }
+
+        switch (a->type) {
+        case OFPACT_OUTPUT:
+            xlate_output_action(ctx, ofpact_get_OUTPUT(a)->port,
+                                ofpact_get_OUTPUT(a)->max_len, true);
+            break;
+
+        case OFPACT_SET_FIELD:
+            set_field = ofpact_get_SET_FIELD(a);
+            mf = set_field->field;
+
+            pof_mf_mask_field_masked(mf, ofpact_set_field_mask(set_field), wc);
+            pof_mf_set_flow_value_masked(mf, set_field->value,
+                                     ofpact_set_field_mask(set_field),
+                                     flow);
+            break;
+
+        case OFPACT_EXIT:
+            ctx->exit = true;
+            break;
+
+        case OFPACT_METER:
+            /* Not implemented yet. */
+            break;
+
+        case OFPACT_GOTO_TABLE: {
+            struct ofpact_goto_table *ogt = ofpact_get_GOTO_TABLE(a);
+
+            ovs_assert(ctx->table_id < ogt->table_id);
+
+            xlate_table_action(ctx, ctx->xin->flow.in_port.ofp_port,
+                               ogt->table_id, true, true);
+            break;
+        }
+        }
+        /* Check if need to store this and the remaining actions for later
+         * execution. */
+        if (!ctx->error && ctx->exit && ctx_first_frozen_action(ctx)) {
+            freeze_unroll_actions(a, ofpact_end(ofpacts, ofpacts_len), ctx);
+            break;
+        }
+    }
 }
 
 static void
@@ -5487,12 +5570,11 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
     ctx.wc->masks.tunnel.metadata.tab = flow->tunnel.metadata.tab;
 
     if (!xin->ofpacts && !ctx.rule) {
-        VLOG_INFO("+++++++++++sqy xlate_actions:  before rule_dpif_lookup_from_table");
         ctx.rule = rule_dpif_lookup_from_table_pof(
             ctx.xbridge->ofproto, ctx.xin->tables_version, flow, xin->packet, ctx.wc,
             ctx.xin->resubmit_stats, &ctx.table_id,
             flow->in_port.ofp_port, true, true, ctx.xin->xcache);
-        VLOG_INFO("+++++++++++sqy xlate_actions:  after rule_dpif_lookup_from_table");
+
         if (ctx.xin->resubmit_stats) {
             rule_dpif_credit_stats(ctx.rule, ctx.xin->resubmit_stats);     //sqy notes: run here
         }
@@ -5572,7 +5654,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
             }
 
             mirror_ingress_packet(&ctx); //sqy notes: no mirror
-            do_xlate_actions(ofpacts, ofpacts_len, &ctx);
+            pof_do_xlate_actions(ofpacts, ofpacts_len, &ctx);
             if (ctx.error) {
                 goto exit;
             }

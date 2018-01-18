@@ -308,6 +308,9 @@ BUILD_MESSAGE("FLOW_WC_SEQ changed: miniflow_extract() will have runtime "
 #define miniflow_push_words(MF, FIELD, VALUEP, N_WORDS)                 \
     miniflow_push_words_(MF, offsetof(struct flow, FIELD), VALUEP, N_WORDS)
 
+#define miniflow_push_pof_words(MF, FIELD, VALUEP, N_WORDS)                 \
+    miniflow_push_words_(MF, offsetof(struct pof_fp_flow, FIELD), VALUEP, N_WORDS)
+
 #define miniflow_push_words_32(MF, FIELD, VALUEP, N_WORDS)              \
     miniflow_push_words_32_(MF, offsetof(struct flow, FIELD), VALUEP, N_WORDS)
 
@@ -547,6 +550,78 @@ flow_extract(struct dp_packet *packet, struct flow *flow)
 
     miniflow_extract(packet, &m.mf);
     miniflow_expand(&m.mf, flow);
+}
+
+void
+pof_miniflow_extract(struct dp_packet *packet, struct miniflow *dst)
+{
+    const struct pkt_metadata *md = &packet->md;
+    const void *data = dp_packet_data(packet);
+    size_t size = dp_packet_size(packet);
+    uint64_t *values = miniflow_values(dst);
+    struct mf_ctx mf = { FLOWMAP_EMPTY_INITIALIZER, values,
+                         values + FLOW_U64S };
+    /*const char *l2;*/
+
+    /* Metadata. */
+    if (flow_tnl_dst_is_set(&md->tunnel)) {
+        miniflow_push_pof_words(mf, tunnel, &md->tunnel,
+                            offsetof(struct flow_tnl, metadata) /
+                            sizeof(uint64_t));
+
+        if (!(md->tunnel.flags & FLOW_TNL_F_UDPIF)) {
+            if (md->tunnel.metadata.present.map) {
+                miniflow_push_words(mf, tunnel.metadata, &md->tunnel.metadata,
+                                    sizeof md->tunnel.metadata /
+                                    sizeof(uint64_t));
+            }
+        } else {
+            if (md->tunnel.metadata.present.len) {
+                miniflow_push_words(mf, tunnel.metadata.present,
+                                    &md->tunnel.metadata.present, 1);
+                miniflow_push_words(mf, tunnel.metadata.opts.gnv,
+                                    md->tunnel.metadata.opts.gnv,
+                                    DIV_ROUND_UP(md->tunnel.metadata.present.len,
+                                                 sizeof(uint64_t)));
+            }
+        }
+    }
+    if (md->skb_priority || md->pkt_mark) {
+        miniflow_push_uint32(mf, skb_priority, md->skb_priority);
+        miniflow_push_uint32(mf, pkt_mark, md->pkt_mark);
+    }
+    miniflow_push_uint32(mf, dp_hash, md->dp_hash);
+    miniflow_push_uint32(mf, in_port, odp_to_u32(md->in_port.odp_port));
+    if (md->recirc_id || md->ct_state) {
+        miniflow_push_uint32(mf, recirc_id, md->recirc_id);
+        miniflow_push_uint16(mf, ct_state, md->ct_state);
+        miniflow_push_uint16(mf, ct_zone, md->ct_zone);
+    }
+
+    if (md->ct_state) {
+        miniflow_push_uint32(mf, ct_mark, md->ct_mark);
+        miniflow_pad_to_64(mf, ct_mark);
+
+        if (!ovs_u128_is_zero(md->ct_label)) {
+            miniflow_push_pof_words(mf, ct_label, &md->ct_label,
+                                sizeof md->ct_label / sizeof(uint64_t));
+        }
+    }
+
+    /* Initialize packet's layer pointer and offsets.
+    l2 = data;*/
+    dp_packet_reset_offsets(packet);
+
+    /* Must have full Ethernet header to proceed. */
+    if (OVS_UNLIKELY(size < sizeof(struct eth_header))) {
+        goto out;
+    } else {
+
+        /* data_pull(datap, sizep, ETH_ADDR_LEN * 2) is used to move the pointer data. */
+        miniflow_push_pof_words(mf, pof_normal, data, 8);
+    }
+ out:
+    dst->map = mf.map;
 }
 
 /* Caller is responsible for initializing 'dst' with enough storage for
@@ -2464,6 +2539,7 @@ flow_compose(struct dp_packet *p, const struct flow *flow)
 void
 pof_miniflow_init(struct miniflow *dst, const struct pof_flow *src)
 {
+
     uint64_t *dst_u64 = miniflow_values(dst);
     size_t idx;
     FLOWMAP_FOR_EACH_INDEX(idx, dst->map) {

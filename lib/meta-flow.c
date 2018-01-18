@@ -633,6 +633,17 @@ mf_is_value_valid(const struct mf_field *mf, const union mf_value *value)
 /* Copies the value of field 'mf' from 'flow' into 'value'.  The caller is
  * responsible for ensuring that 'flow' meets 'mf''s prerequisites. */
 void
+pof_mf_get_value(const struct mf_field *mf, const struct pof_fp_flow *flow,
+             union mf_value *value)
+{
+    int i = floor((mf->flow_be32ofs*4)/8);
+    /*to do: considering the appropriate length of a field in struct pof_fp_flow. */
+    value->be64 = flow->pof_normal[i];
+}
+
+/* Copies the value of field 'mf' from 'flow' into 'value'.  The caller is
+ * responsible for ensuring that 'flow' meets 'mf''s prerequisites. */
+void
 mf_get_value(const struct mf_field *mf, const struct flow *flow,
              union mf_value *value)
 {
@@ -1155,7 +1166,7 @@ pof_mf_set_value(const struct mf_field *mf,
     case MFF_FIELD_ID5:
     case MFF_FIELD_ID6:
     case MFF_FIELD_ID7:
-        VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_FIELD_ID %u", ntohs(match->flow.field_id));
+        /*VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_FIELD_ID %u", ntohs(match->flow.field_id));*/
         pof_match_set_field_id(match, mf->id - MFF_FIELD_ID0, value->be16);
         break;
 
@@ -1179,7 +1190,7 @@ pof_mf_set_value(const struct mf_field *mf,
     case MFF_LENGTH5:
     case MFF_LENGTH6:
     case MFF_LENGTH7:
-        VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_LENGTH %u", ntohs(match->flow.len));
+        /*VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_LENGTH %u", ntohs(match->flow.len));*/
         pof_match_set_length(match, mf->id - MFF_LENGTH0, value->be16);
         break;
 
@@ -1192,6 +1203,19 @@ pof_mf_set_value(const struct mf_field *mf,
     case MFF_VALUE6:
     case MFF_VALUE7:
         VLOG_INFO("+++++++++++sqy pof_mf_set_value: MFF_VALUE7");
+        /*if (match->flow.len>0 && match->flow.len<=8){
+        	pof_match_set_value8(match, mf->id - MFF_VALUE0, value->u8);
+        }else if (match->flow.len>8 && match->flow.len<=16){
+        	pof_match_set_value16(match, mf->id - MFF_VALUE0, value->be16);
+        }else if (match->flow.len>16 && match->flow.len<=32){
+        	pof_match_set_value32(match, mf->id - MFF_VALUE0, value->be32);
+        }else if (match->flow.len>32 && match->flow.len<=48){
+        	pof_match_set_value48(match, mf->id - MFF_VALUE0, value->mac);
+        }else if (match->flow.len>48 && match->flow.len<=64){
+        	pof_match_set_value64(match, mf->id - MFF_VALUE0, value->be64);
+        }else if (match->flow.len>64){
+        	pof_match_set_value(match, mf->id - MFF_VALUE0, &value->ipv6);
+        }*/
         pof_match_set_value(match, mf->id - MFF_VALUE0, &value->ipv6);
         break;
 
@@ -1223,6 +1247,33 @@ mf_mask_field_masked(const struct mf_field *mf, const union mf_value *mask,
         mask_value.b[i] |= mask->b[i];
     }
     mf_set_flow_value(mf, &mask_value, &wc->masks);
+}
+
+/* Unwildcard the bits in 'mask' of the 'wc' member field described by 'mf'.
+ * The caller is responsible for ensuring that 'wc' meets 'mf''s
+ * prerequisites. */
+void
+pof_mf_mask_field_masked(const struct mf_field *mf, const union mf_value *mask,
+                     struct pof_fp_flow_wildcards *wc)
+{
+    union mf_value mask_value;
+    int j = floor((mf->flow_be32ofs*4)/8);
+    size_t i = j;
+
+    pof_mf_get_value(mf, &wc->masks, &mask_value);
+    int len = j + mf->n_bytes;
+    for ( ; i < len && i < 8; i++) {
+        mask_value.b[i] |= mask->b[i-j];
+    }
+    /* to do: the field which will be 'set_field' corrosponds to more than
+     * one field in struct pof_fp_flow.
+     * while( len - 8 >0){
+        len = len -8;
+        for (size_t z = 0 ; z < len && z < 8 && i<128; z++, i++) {
+            mask_value.b[i] |= mask->b[i-j];
+        }
+    }*/
+    pof_mf_set_flow_value(mf, &mask_value, &wc->masks);
 }
 
 /* Unwildcard 'wc' member field described by 'mf'.  The caller is
@@ -1282,6 +1333,17 @@ mf_field_len(const struct mf_field *mf, const union mf_value *value,
     }
 
     return len;
+}
+
+/* Sets 'flow' member field described by 'mf' to 'value'.  The caller is
+ * responsible for ensuring that 'flow' meets 'mf''s prerequisites.*/
+void
+pof_mf_set_flow_value(const struct mf_field *mf,
+                  const union mf_value *value, struct pof_fp_flow *flow)
+{
+    int i = floor((mf->flow_be32ofs*4)/8);
+    /*to do: considering the appropriate length of a field in struct pof_fp_flow. */
+    flow->pof_normal[i] = value->be64;
 }
 
 /* Sets 'flow' member field described by 'mf' to 'value'.  The caller is
@@ -1562,6 +1624,24 @@ mf_set_flow_value_masked(const struct mf_field *field,
     apply_mask((const uint8_t *) value, (const uint8_t *) mask,
                (uint8_t *) &tmp, field->n_bytes);
     mf_set_flow_value(field, &tmp, flow);
+}
+
+/* Sets 'flow' member field described by 'field' to 'value', except that bits
+ * for which 'mask' has a 0-bit keep their existing values.  The caller is
+ * responsible for ensuring that 'flow' meets 'field''s prerequisites.*/
+void
+pof_mf_set_flow_value_masked(const struct mf_field *field,
+                         const union mf_value *value,
+                         const union mf_value *mask,
+                         struct pof_fp_flow *flow)
+{
+    union mf_value tmp;
+    int inner_off = field->flow_be32ofs*4 - floor((field->flow_be32ofs*4)/8)*8;
+
+    pof_mf_get_value(field, flow, &tmp);
+    apply_mask((const uint8_t *) value, (const uint8_t *) mask + inner_off,
+               (uint8_t *) &tmp + inner_off, field->n_bytes);
+    pof_mf_set_flow_value(field, &tmp, flow);
 }
 
 bool
@@ -2118,7 +2198,7 @@ pof_mf_set(const struct mf_field *mf,
         *err_str = NULL;
     }
 
-    VLOG_INFO("+++++++++++sqy pof_mf_set: before switch");
+   /* VLOG_INFO("+++++++++++sqy pof_mf_set: before switch");*/
     switch (mf->id) {
     case MFF_FIELD_ID0:
         VLOG_INFO("+++++++++++sqy pof_mf_set: MFF_FIELD_ID0");

@@ -897,6 +897,8 @@ struct ofpact_mpls_ttl {
 struct ofpact_goto_table {
     struct ofpact ofpact;
     uint8_t table_id;
+    uint8_t match_field_num;
+    ovs_be16 packet_offset;
 };
 
 /* OFPACT_GROUP.
@@ -1105,7 +1107,7 @@ struct ofpact_set_field *ofpact_put_reg_load2(struct ofpbuf *ofpacts,
                 "write_metadata")                           \
                                                             \
     DEFINE_INST(OFPIT11_GOTO_TABLE,                         \
-                ofp11_instruction_goto_table,     false,    \
+                ofp11_instruction_goto_table,     true,    \
                 "goto_table")
 
 enum ovs_instruction_type {

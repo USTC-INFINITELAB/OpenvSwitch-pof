@@ -3048,6 +3048,7 @@ ofproto_rule_has_out_port(const struct rule *rule, ofp_port_t port)
         return true;
     } else {
         const struct rule_actions *actions = rule_get_actions(rule);
+        VLOG_INFO("ofproto_rule_has_out_port,actions->ofpacts_len=%d,b->len=%d",actions->ofpacts_len,actions->ofpacts->len);
         return ofpacts_output_to_port(actions->ofpacts,
                                       actions->ofpacts_len, port);
     }
@@ -4204,8 +4205,10 @@ collect_rule(struct rule *rule, const struct rule_criteria *c,
     OVS_REQUIRES(ofproto_mutex)
 {
     if ((c->table_id == rule->table_id || c->table_id == 0xff)
-        && ofproto_rule_has_out_port(rule, c->out_port)
-        && ofproto_rule_has_out_group(rule, c->out_group)
+       /* && ofproto_rule_has_out_port(rule, c->out_port)
+        * && ofproto_rule_has_out_group(rule, c->out_group)
+        * fm->out_port not defined
+        */
         && !((rule->flow_cookie ^ c->cookie) & c->cookie_mask)
         && (!rule_is_hidden(rule) || c->include_hidden)
         && cls_rule_visible_in_version(&rule->cr, c->version)) {
@@ -4243,7 +4246,7 @@ collect_rules_loose(struct ofproto *ofproto,
         goto exit;
     }
 
-    if (criteria->cookie_mask == OVS_BE64_MAX) {
+    if (criteria->cookie_mask == OVS_BE64_MAX) {//no run
         struct rule *rule;
 
         HINDEX_FOR_EACH_WITH_HASH (rule, cookie_node,
@@ -4253,7 +4256,7 @@ collect_rules_loose(struct ofproto *ofproto,
                 collect_rule(rule, criteria, rules, &n_readonly);
             }
         }
-    } else {
+    } else {//run
         FOR_EACH_MATCHING_TABLE (table, criteria->table_id, ofproto) {
             struct rule *rule;
 
@@ -5959,7 +5962,7 @@ handle_flow_mod_pof__(struct ofproto *ofproto, const struct ofputil_pof_flow_mod
     }
     ovs_mutex_unlock(&ofproto_mutex);
 
-    return 0;
+    return error;
 }
 
 static enum ofperr
@@ -7582,7 +7585,6 @@ ofproto_pof_flow_mod_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
     ofm->n_conjs = 0;
 
     bool check_buffer_id = false;
-    //VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: before add_pof_flow_init");
 
     switch (ofm->command) {
     case OFPFC_ADD:
@@ -7606,7 +7608,6 @@ ofproto_pof_flow_mod_init(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
     if (error) {
         ofproto_flow_mod_uninit(ofm);
     }
-    //VLOG_INFO("+++++++++++sqy ofproto_pof_flow_mod_init: after add_pof_flow_init");
     return 0;
 }
 

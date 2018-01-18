@@ -3797,7 +3797,6 @@ dp_netdev_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet_,
     if (OVS_UNLIKELY(!dp->upcall_cb)) {
         return ENODEV;
     }
-    VLOG_INFO("+++++++++++sqy dp_netdev_upcall: before dp->upcall_cb");
 
     if (OVS_UNLIKELY(!VLOG_DROP_DBG(&upcall_rl))) {
         struct ds ds = DS_EMPTY_INITIALIZER;
@@ -3887,16 +3886,19 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
                               struct dp_netdev_pmd_thread *pmd,
                               long long now)
 {
+    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: 1111111111111");*/
     struct dp_netdev_actions *actions;
     struct dp_netdev_flow *flow = batch->flow;
 
+    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: before dp_netdev_flow_used");*/
     dp_netdev_flow_used(flow, batch->array.count, batch->byte_count,
                         batch->tcp_flags, now);
-
+    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_flow_used");*/
     actions = dp_netdev_flow_get_actions(flow);
-
+    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_flow_get_actions");*/
     dp_netdev_execute_actions(pmd, &batch->array, true, &flow->flow,
                               actions->actions, actions->size, now);
+    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_execute_actions");*/
 }
 
 static inline void
@@ -3956,7 +3958,7 @@ emc_processing(struct dp_netdev_pmd_thread *pmd, struct dp_packet_batch *packets
         if (!md_is_valid) {
             pkt_metadata_init(&packet->md, port_no);
         }
-        miniflow_extract(packet, &key->mf);
+        pof_miniflow_extract(packet, &key->mf);
         key->len = 0; /* Not computed yet. */
         key->hash = dpif_netdev_packet_get_rss_hash(packet, &key->mf);
 
@@ -3999,11 +4001,9 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
     ofpbuf_clear(put_actions);
 
     dpif_flow_hash(pmd->dp->dpif, &match.flow, sizeof match.flow, &ufid);
-    VLOG_INFO("+++++++++++sqy handle_packet_upcall: before dp_netdev_upcall");
     error = dp_netdev_upcall(pmd, packet, &match.flow, &match.wc,
                              &ufid, DPIF_UC_MISS, NULL, actions,
                              put_actions);
-    VLOG_INFO("+++++++++++sqy handle_packet_upcall: after dp_netdev_upcall");
     if (OVS_UNLIKELY(error && error != ENOSPC)) {  //sqy notes: no run
         dp_packet_delete(packet);
         (*lost_cnt)++;
@@ -4113,10 +4113,8 @@ fast_path_processing(struct dp_netdev_pmd_thread *pmd,
             }
 
             miss_cnt++;
-            VLOG_INFO("+++++++++++sqy fast_path_processing: before handle_packet_upcall");
             handle_packet_upcall(pmd, packets[i], &keys[i], &actions,
                                  &put_actions, &lost_cnt, now);
-            VLOG_INFO("+++++++++++sqy fast_path_processing: after handle_packet_upcall");
         }
 
         ofpbuf_uninit(&actions);
@@ -4178,22 +4176,21 @@ dp_netdev_input__(struct dp_netdev_pmd_thread *pmd,
     odp_port_t in_port;
 
     n_batches = 0;
-    VLOG_INFO("+++++++++++sqy dp_netdev_input__: before emc_processing");
     newcnt = emc_processing(pmd, packets, keys, batches, &n_batches,
                             md_is_valid, port_no);
     if (OVS_UNLIKELY(newcnt)) {
         packets->count = newcnt;
         /* Get ingress port from first packet's metadata. */
         in_port = packets->packets[0]->md.in_port.odp_port;
-        VLOG_INFO("+++++++++++sqy dp_netdev_input__: before fast_path_processing");
-        fast_path_processing(pmd, packets, keys, batches, &n_batches, in_port, now);
-        VLOG_INFO("+++++++++++sqy dp_netdev_input__: after fast_path_processing");
+        if (NULL != pmd){
+        fast_path_processing(pmd, packets, keys, batches, &n_batches, in_port, now);}
+        /*VLOG_INFO("+++++++++++sqy dp_netdev_input__: after fast_path_processing");*/
     }
 
     for (i = 0; i < n_batches; i++) {
+        if(NULL==batches[i].flow){n_batches=0;break;}
         batches[i].flow->batch = NULL;
     }
-
     for (i = 0; i < n_batches; i++) {
         packet_batch_per_flow_execute(&batches[i], pmd, now);
     }

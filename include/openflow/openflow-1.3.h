@@ -99,6 +99,13 @@ struct ofp13_instruction_meter {
 };
 OFP_ASSERT(sizeof(struct ofp13_instruction_meter) == 8);
 
+/* Discribe a particular action struct with each type. */
+struct pof_instruction_apply_actions{
+    uint8_t action_num;
+    uint8_t pad[7];   /*8 bytes aligned*/
+};
+OFP_ASSERT(sizeof(struct pof_instruction_apply_actions) == 8);
+
 /* enum ofp_config_flags value OFPC_INVALID_TTL_TO_CONTROLLER
  * is deprecated in OpenFlow 1.3 */
 

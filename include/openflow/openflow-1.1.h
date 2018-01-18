@@ -283,16 +283,17 @@ struct ofp11_instruction {
     ovs_be16 type;              /* Instruction type */
     ovs_be16 len;               /* Length of this struct in bytes. */
     uint8_t pad[4];             /* Align to 64-bits */
-    uint8_t  instruction_data[POF_MAX_INSTRUCTION_LENGTH];
+    /*uint8_t  instruction_data[POF_MAX_INSTRUCTION_LENGTH];*/
 };
-OFP_ASSERT(sizeof(struct ofp11_instruction) == 304);
+OFP_ASSERT(sizeof(struct ofp11_instruction) == 8);
 
 /* Instruction structure for OFPIT_GOTO_TABLE */
 struct ofp11_instruction_goto_table {
-    ovs_be16 type;                 /* OFPIT_GOTO_TABLE */
-    ovs_be16 len;                  /* Length of this struct in bytes. */
     uint8_t table_id;              /* Set next table in the lookup pipeline */
-    uint8_t pad[3];                /* Pad to 64 bits. */
+    uint8_t match_field_num;
+    ovs_be16 packet_offset;
+	ovs_be16 type;                 /* OFPIT_GOTO_TABLE */
+	ovs_be16 len;                  /* Length of this struct in bytes. */
 };
 OFP_ASSERT(sizeof(struct ofp11_instruction_goto_table) == 8);
 

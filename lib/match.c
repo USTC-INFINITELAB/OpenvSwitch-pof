@@ -152,10 +152,65 @@ pof_match_set_value(struct match_x *match, unsigned int value_idx, const struct 
     int i=0;
     ovs_assert(value_idx < POF_N_VALUES);
     for(i=0; i<POF_MAX_FIELD_LENGTH_IN_BYTE;i++){
-        match->wc.masks.value[value_idx][i] =1;
+        match->wc.masks.value[value_idx][i] =*((uint8_t*)(&in6addr_exact)+i);
         match->flow.value[value_idx][i] = *((uint8_t*)value+i);
+        VLOG_INFO("pof_match_set_value value [%d]=%d",i,*((uint8_t*)value+i));
     }
 }
+/*
+void
+pof_match_set_value8(struct match_x *match, unsigned int value_idx, uint8_t value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);
+    int i=0;
+    ovs_assert(value_idx < POF_N_VALUES);
+        match->wc.masks.value[value_idx] =OVS_BE8_MAX;
+        match->flow.value[value_idx] = value & OVS_BE8_MAX;
+
+}
+void
+pof_match_set_value16(struct match_x *match, unsigned int value_idx, ovs_be16 value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);
+    int i=0;
+    ovs_assert(value_idx < POF_N_VALUES);
+        match->wc.masks.value[value_idx] =OVS_BE16_MAX;
+        match->flow.value[value_idx] = value & OVS_BE16_MAX;
+}
+void
+pof_match_set_value32(struct match_x *match, unsigned int value_idx, ovs_be32 value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);
+    int i=0;
+    ovs_assert(value_idx < POF_N_VALUES);
+
+        match->wc.masks.value[value_idx] =OVS_BE32_MAX;
+        match->flow.value[value_idx] = value & OVS_BE32_MAX;
+
+
+}
+void
+pof_match_set_value64(struct match_x *match, unsigned int value_idx, ovs_be64 value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);
+    int i=0;
+    ovs_assert(value_idx < POF_N_VALUES);
+        match->wc.masks.value[value_idx] =OVS_BE64_MAX;
+        match->flow.value[value_idx] = value&OVS_BE64_MAX;
+
+}
+void
+pof_match_set_value48(struct match_x *match, unsigned int value_idx, const struct eth_addr value)
+{
+    /*match_set_reg_masked(match, reg_idx, value, UINT32_MAX);
+    int i=0;
+    ovs_assert(value_idx < POF_N_VALUES);
+        match->wc.masks.value[value_idx] =eth_addr_exact;
+        match->flow.value[value_idx] = value & eth_addr_exact;
+
+
+}*/
+
 
 void
 pof_match_set_value_masked(struct match_x *match, unsigned int value_idx,

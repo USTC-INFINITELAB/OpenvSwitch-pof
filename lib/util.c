@@ -761,12 +761,12 @@ int
 parse_int_string(const char *s, uint8_t *valuep, int field_width, char **tail)
 {
     unsigned long long int integer;
-    int i;
+    int i,ii;
 
     if (!strncmp(s, "0x", 2) || !strncmp(s, "0X", 2)) {
         uint8_t *hexit_str;
         int len = 0;
-        int val_idx;
+        int val_idx,val0,val;
         int err = 0;
 
         s += 2;
@@ -797,14 +797,25 @@ parse_int_string(const char *s, uint8_t *valuep, int field_width, char **tail)
 
         val_idx = field_width;
         for (i = len - 1; i >= 0; i -= 2) {
-            val_idx--;
-            valuep[val_idx] = hexit_str[i];
+        	val_idx--;
+        	valuep[val_idx] = hexit_str[i];
+        	VLOG_INFO("+++++++++++xyh parse_int_string:valuep[%d]=%d,hexit_str[%d]=%d",val_idx,valuep[val_idx],i,hexit_str[i]);
             if (i > 0) {
+
                 valuep[val_idx] += hexit_str[i - 1] << 4;
+                VLOG_INFO("+++++++++++xyh parse_int_string i>0:valuep[%d]=%d,hexit_str[%d]=%d",val_idx,valuep[val_idx],i,hexit_str[i]);
             }
         }
 
-        memset(valuep, 0, val_idx);
+        /*val0=val_idx;
+        val=field_width-val_idx;
+        for (ii=field_width;ii<=val_idx;ii--){
+        	valuep[ii-val_idx]=valuep[ii];
+        	VLOG_INFO("+++++++++++xyh parse_int_string:valuep[%d]=%d",ii-val_idx,valuep[ii-val_idx]);
+
+        }*/
+
+        memset(valuep+val, 0, val_idx);
 
 free:
         free(hexit_str);
@@ -819,6 +830,8 @@ free:
 
     for (i = field_width - 1; i >= 0; i--) {
         valuep[i] = integer;
+        VLOG_INFO("+++++++++++xyh parse_int_string:valuep[%d]=%d",i,valuep[i]);
+
         integer >>= 8;
     }
     if (integer) {

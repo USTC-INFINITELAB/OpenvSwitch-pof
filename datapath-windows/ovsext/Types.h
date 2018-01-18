@@ -19,6 +19,7 @@
 
 /* Defines the userspace specific data types
  * for files included from user space. */
+typedef unsigned long long long uint128_t;
 typedef unsigned long long uint64, uint64_t, ovs_be64, u64;
 typedef long long int64, int64_t;
 typedef unsigned int uint32, uint32_t, ovs_be32, u32;

@@ -43,14 +43,14 @@ struct match;
 /* Some flow fields are mutually exclusive or only appear within the flow
  * pipeline.  IPv6 headers are bigger than IPv4 and MPLS, and IPv6 ND packets
  * are bigger than TCP,UDP and IGMP packets. */
-/*#define FLOW_MAX_PACKET_U64S (FLOW_U64S                                   \
-     Unused in datapath   - FLOW_U64_SIZE(regs)                       \
-                              - FLOW_U64_SIZE(metadata)                   \*/
-    /* L2.5/3              - FLOW_U64_SIZE(nw_src)  *//* incl. nw_dst  \
-                              - FLOW_U64_SIZE(mpls_lse)                   \ */
-    /* L4                   - FLOW_U64_SIZE(tp_src)                     \
-                             )*/
-#define FLOW_MAX_PACKET_U64S (FLOW_U64S)
+#define FLOW_MAX_PACKET_U64S (FLOW_U64S                                   \
+     /*Unused in datapath*/   - FLOW_U64_SIZE(regs)                       \
+                              - FLOW_U64_SIZE(metadata)                   \
+    /* L2.5/3 */              - FLOW_U64_SIZE(nw_src)  /* incl. nw_dst */ \
+                              - FLOW_U64_SIZE(mpls_lse)                   \
+    /* L4  */                 - FLOW_U64_SIZE(tp_src)                     \
+                             )
+/*#define FLOW_MAX_PACKET_U64S (FLOW_U64S)*/
 extern const uint8_t flow_segment_u64s[];
 
 #define FLOW_U64_OFFSET(FIELD)                          \
@@ -512,6 +512,7 @@ struct pkt_metadata;
  * 'dst->map' is ignored on input and set on output to indicate which fields
  * were extracted. */
 void miniflow_extract(struct dp_packet *packet, struct miniflow *dst);
+void pof_miniflow_extract(struct dp_packet *packet, struct miniflow *dst);
 
 void pof_miniflow_map_init(struct miniflow *, const struct pof_flow *src);
 void miniflow_map_init(struct miniflow *, const struct flow *);

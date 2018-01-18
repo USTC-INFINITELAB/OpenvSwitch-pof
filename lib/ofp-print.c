@@ -661,6 +661,13 @@ ofp10_match_print(struct ds *f, const struct ofp10_match *om, int verbosity)
     free(s);
 }
 
+void
+pof_match_print(struct ds *f, const struct pof_match *om, int verbosity)
+{
+    char *s = ofp10_match_to_string(om, verbosity);
+    ds_put_cstr(f, s);
+    free(s);
+}
 char *
 ofp10_match_to_string(const struct ofp10_match *om, int verbosity)
 {
@@ -777,7 +784,7 @@ ofp_print_flow_flags(struct ds *s, enum ofputil_flow_mod_flags flags)
 static void
 ofp_print_flow_mod(struct ds *s, const struct ofp_header *oh, int verbosity)
 {
-    struct ofputil_flow_mod fm;
+    struct ofputil_pof_flow_mod fm;
     struct ofpbuf ofpacts;
     bool need_priority;
     enum ofperr error;
@@ -787,8 +794,11 @@ ofp_print_flow_mod(struct ds *s, const struct ofp_header *oh, int verbosity)
     protocol = ofputil_protocol_from_ofp_version(oh->version);
     protocol = ofputil_protocol_set_tid(protocol, true);
 
+    char *allowed_stest = ofputil_protocols_to_string(protocol);
+	VLOG_INFO("+++++++++++xyh ofp_print_flow_mod protocol=%s",allowed_stest);
     ofpbuf_init(&ofpacts, 64);
-    error = ofputil_decode_flow_mod(&fm, oh, protocol, NULL, &ofpacts,
+    error = ofputil_decode_flow_mod_pof(&fm, oh, protocol, NULL, &ofpacts,
+
                                     OFPP_MAX, 255);
     if (error) {
         ofpbuf_uninit(&ofpacts);
@@ -823,8 +833,10 @@ ofp_print_flow_mod(struct ds *s, const struct ofp_header *oh, int verbosity)
     ds_put_char(s, ' ');
     ofpraw_decode(&raw, oh);
     if (verbosity >= 3 && raw == OFPRAW_OFPT10_FLOW_MOD) {
-        const struct ofp10_flow_mod *ofm = ofpmsg_body(oh);
-        ofp10_match_print(s, &ofm->match, verbosity);
+
+//        const struct ofp10_flow_mod *ofm = ofpmsg_body(oh);
+//        ofp10_match_print(s, &ofm->match, verbosity);
+        match_format(&fm.match, s, fm.priority);
 
         /* ofp_print_match() doesn't print priority. */
         need_priority = true;
@@ -840,6 +852,7 @@ ofp_print_flow_mod(struct ds *s, const struct ofp_header *oh, int verbosity)
         /* nx_match_to_string() doesn't print priority. */
         need_priority = true;
     } else {
+
         match_format(&fm.match, s, fm.priority);
 
         /* match_format() does print priority. */
@@ -1767,7 +1780,6 @@ ofp_print_pof_flow_stats_reply(struct ds *string, const struct ofp_header *oh)
         int retval;
 
         retval = ofputil_decode_pof_flow_stats_reply(&fs, &b, true, &ofpacts);
-        /*VLOG_INFO("+++++++++++sqy ofp_print_pof_flow_stats_reply: retval = %d", retval);*/
         if (retval) {
             if (retval != EOF) {
                 ds_put_cstr(string, " ***parse error sqy***");
@@ -3436,9 +3448,7 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
 {
     const void *msg = oh;
 
-    VLOG_INFO("+++++++++++sqy ofp_to_string__: before ofp_header_to_string__ ");
     ofp_header_to_string__(oh, raw, string);
-    VLOG_INFO("+++++++++++sqy ofp_to_string: after ofp_header_to_string__ ");
     enum ofptype type = ofptype_from_ofpraw(raw);
     switch (type) {
     case OFPTYPE_GROUP_STATS_REQUEST:
@@ -3629,7 +3639,7 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
 
     case OFPTYPE_FLOW_STATS_REPLY:
         ofp_print_stats(string, oh);
-        VLOG_INFO("+++++++++++sqy ofp_to_string__: OFPTYPE_FLOW_STATS_REPLY ");
+        /*VLOG_INFO("+++++++++++sqy ofp_to_string__: OFPTYPE_FLOW_STATS_REPLY ");*/
         ofp_print_pof_flow_stats_reply(string, oh);
         break;
 
@@ -3752,7 +3762,7 @@ ofp_to_string(const void *oh_, size_t len, int verbosity)
 {
     struct ds string = DS_EMPTY_INITIALIZER;
     const struct ofp_header *oh = oh_;
-    VLOG_INFO("+++++++++++sqy ofp_to_string: start ");
+    /*VLOG_INFO("+++++++++++sqy ofp_to_string: start ");*/
     if (!len) {
         ds_put_cstr(&string, "OpenFlow message is empty\n");
     } else if (len < sizeof(struct ofp_header)) {
