@@ -633,6 +633,17 @@ mf_is_value_valid(const struct mf_field *mf, const union mf_value *value)
 /* Copies the value of field 'mf' from 'flow' into 'value'.  The caller is
  * responsible for ensuring that 'flow' meets 'mf''s prerequisites. */
 void
+pof_mf_get_value(const struct mf_field *mf, const struct pof_fp_flow *flow,
+             union mf_value *value)
+{
+    int i = floor((mf->flow_be32ofs*4)/8);
+    /*to do: considering the appropriate length of a field in struct pof_fp_flow. */
+    value->be64 = flow->pof_normal[i];
+}
+
+/* Copies the value of field 'mf' from 'flow' into 'value'.  The caller is
+ * responsible for ensuring that 'flow' meets 'mf''s prerequisites. */
+void
 mf_get_value(const struct mf_field *mf, const struct flow *flow,
              union mf_value *value)
 {
@@ -1238,6 +1249,33 @@ mf_mask_field_masked(const struct mf_field *mf, const union mf_value *mask,
     mf_set_flow_value(mf, &mask_value, &wc->masks);
 }
 
+/* Unwildcard the bits in 'mask' of the 'wc' member field described by 'mf'.
+ * The caller is responsible for ensuring that 'wc' meets 'mf''s
+ * prerequisites. */
+void
+pof_mf_mask_field_masked(const struct mf_field *mf, const union mf_value *mask,
+                     struct pof_fp_flow_wildcards *wc)
+{
+    union mf_value mask_value;
+    int j = floor((mf->flow_be32ofs*4)/8);
+    size_t i = j;
+
+    pof_mf_get_value(mf, &wc->masks, &mask_value);
+    int len = j + mf->n_bytes;
+    for ( ; i < len && i < 8; i++) {
+        mask_value.b[i] |= mask->b[i-j];
+    }
+    /* to do: the field which will be 'set_field' corrosponds to more than
+     * one field in struct pof_fp_flow.
+     * while( len - 8 >0){
+        len = len -8;
+        for (size_t z = 0 ; z < len && z < 8 && i<128; z++, i++) {
+            mask_value.b[i] |= mask->b[i-j];
+        }
+    }*/
+    pof_mf_set_flow_value(mf, &mask_value, &wc->masks);
+}
+
 /* Unwildcard 'wc' member field described by 'mf'.  The caller is
  * responsible for ensuring that 'mask' meets 'mf''s prerequisites. */
 void
@@ -1295,6 +1333,17 @@ mf_field_len(const struct mf_field *mf, const union mf_value *value,
     }
 
     return len;
+}
+
+/* Sets 'flow' member field described by 'mf' to 'value'.  The caller is
+ * responsible for ensuring that 'flow' meets 'mf''s prerequisites.*/
+void
+pof_mf_set_flow_value(const struct mf_field *mf,
+                  const union mf_value *value, struct pof_fp_flow *flow)
+{
+    int i = floor((mf->flow_be32ofs*4)/8);
+    /*to do: considering the appropriate length of a field in struct pof_fp_flow. */
+    flow->pof_normal[i] = value->be64;
 }
 
 /* Sets 'flow' member field described by 'mf' to 'value'.  The caller is
@@ -1575,6 +1624,24 @@ mf_set_flow_value_masked(const struct mf_field *field,
     apply_mask((const uint8_t *) value, (const uint8_t *) mask,
                (uint8_t *) &tmp, field->n_bytes);
     mf_set_flow_value(field, &tmp, flow);
+}
+
+/* Sets 'flow' member field described by 'field' to 'value', except that bits
+ * for which 'mask' has a 0-bit keep their existing values.  The caller is
+ * responsible for ensuring that 'flow' meets 'field''s prerequisites.*/
+void
+pof_mf_set_flow_value_masked(const struct mf_field *field,
+                         const union mf_value *value,
+                         const union mf_value *mask,
+                         struct pof_fp_flow *flow)
+{
+    union mf_value tmp;
+    int inner_off = field->flow_be32ofs*4 - floor((field->flow_be32ofs*4)/8)*8;
+
+    pof_mf_get_value(field, flow, &tmp);
+    apply_mask((const uint8_t *) value, (const uint8_t *) mask + inner_off,
+               (uint8_t *) &tmp + inner_off, field->n_bytes);
+    pof_mf_set_flow_value(field, &tmp, flow);
 }
 
 bool

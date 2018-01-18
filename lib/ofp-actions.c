@@ -113,7 +113,7 @@ enum ofp_raw_action_type {
     /* OF1.0(2): uint8_t. */
     OFPAT_RAW10_SET_VLAN_PCP,
 
-    /* OF1.1(1), OF1.2+(1) is deprecated (use Set-Field): uint16_t.
+    /* OF1.1(25), OF1.2+(25) is deprecated (use Set-Field): uint16_t.
      *
      * [Semantics differ slightly between the 1.0 and 1.1 versions of the VLAN
      * modification actions: the 1.0 versions push a VLAN header if none is
@@ -207,9 +207,9 @@ enum ofp_raw_action_type {
     /* NX1.0+(21): struct nx_action_cnt_ids, ... */
     NXAST_RAW_DEC_TTL_CNT_IDS,
 
-    /* OF1.2-1.4(25): struct ofp12_action_set_field, ... */
+    /* OF1.2-1.4(1): struct ofp12_action_set_field, ... */
     OFPAT_RAW12_SET_FIELD,
-    /* OF1.5+(25): struct ofp12_action_set_field, ... */
+    /* OF1.5+(1): struct ofp12_action_set_field, ... */
     OFPAT_RAW15_SET_FIELD,
     /* NX1.0-1.4(7): struct nx_action_reg_load.
      *
@@ -2413,8 +2413,18 @@ struct ofp12_action_set_field {
      *
      * The "pad" member is the beginning of the above. */
     uint8_t pad[4];
+
+    ovs_be16 field_id;  /*0xffff means metadata,
+                          0x8XXX means from table parameter,
+                          otherwise means from packet data. */
+    ovs_be16 offset;  /*bit unit*/
+    ovs_be16 len_field;    /*length in bit unit*/
+    uint8_t pad2[2];   /*8 bytes aligned*/
+
+    uint8_t value[POF_MAX_FIELD_LENGTH_IN_BYTE];
+    uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];
 };
-OFP_ASSERT(sizeof(struct ofp12_action_set_field) == 8);
+OFP_ASSERT(sizeof(struct ofp12_action_set_field) == 48);
 
 /* Action structure for NXAST_REG_LOAD.
  *
@@ -2530,12 +2540,36 @@ decode_ofpat_set_field(const struct ofp12_action_set_field *oasf,
     return 0;
 }
 
+
+static enum ofperr
+decode_pof_set_field(const struct ofp12_action_set_field *oasf,
+                       bool may_mask, struct ofpbuf *ofpacts)
+{
+
+    union mf_value value, mask;
+    struct mf_field *field;
+
+    field->id = oasf->field_id;
+    field->flow_be32ofs = oasf->offset;
+    field->n_bytes = oasf->len_field;
+
+    value.ipv6 = *(struct in6_addr *)oasf->value;
+    mask.ipv6 = *(struct in6_addr *)oasf->mask;
+
+    if (!may_mask) {
+        memset(&mask, 0xff, field->n_bytes);
+    }
+
+    ofpact_put_set_field(ofpacts, field, &value, &mask);
+    return 0;
+}
+
 static enum ofperr
 decode_OFPAT_RAW12_SET_FIELD(const struct ofp12_action_set_field *oasf,
                              enum ofp_version ofp_version OVS_UNUSED,
                              struct ofpbuf *ofpacts)
 {
-    return decode_ofpat_set_field(oasf, false, ofpacts);
+    return decode_pof_set_field(oasf, true, ofpacts);
 }
 
 static enum ofperr

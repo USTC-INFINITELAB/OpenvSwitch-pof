@@ -222,6 +222,9 @@ struct flow_wildcards {
 struct pof_flow_wildcards {
     struct pof_flow masks;
 };
+struct pof_fp_flow_wildcards {
+    struct pof_fp_flow masks;
+};
 #define WC_MASK_FIELD(WC, FIELD) \
     memset(&(WC)->masks.FIELD, 0xff, sizeof (WC)->masks.FIELD)
 #define WC_MASK_FIELD_MASK(WC, FIELD, MASK)     \

@@ -2290,7 +2290,7 @@ bool mf_is_value_valid(const struct mf_field *, const union mf_value *value);
 
 void mf_get_value(const struct mf_field *, const struct flow *,
                   union mf_value *value);
-void pof_mf_get_value(const struct mf_field *, const struct pof_flow *,
+void pof_mf_get_value(const struct mf_field *, const struct pof_fp_flow *,
                   union mf_value *value);
 void mf_set_value(const struct mf_field *, const union mf_value *value,
                   struct match *, char **err_str);
@@ -2298,15 +2298,23 @@ void pof_mf_set_value(const struct mf_field *, const union mf_value *value,
                   struct match_x *, char **err_str);
 void mf_set_flow_value(const struct mf_field *, const union mf_value *value,
                        struct flow *);
+void pof_mf_set_flow_value(const struct mf_field *, const union mf_value *value,
+                       struct pof_fp_flow *);
 void mf_set_flow_value_masked(const struct mf_field *,
                               const union mf_value *value,
                               const union mf_value *mask,
                               struct flow *);
+void pof_mf_set_flow_value_masked(const struct mf_field *,
+                              const union mf_value *value,
+                              const union mf_value *mask,
+                              struct pof_fp_flow *);
 bool mf_is_tun_metadata(const struct mf_field *);
 bool mf_is_set(const struct mf_field *, const struct flow *);
 void mf_mask_field(const struct mf_field *, struct flow_wildcards *);
 void mf_mask_field_masked(const struct mf_field *, const union mf_value *mask,
                           struct flow_wildcards *);
+void pof_mf_mask_field_masked(const struct mf_field *, const union mf_value *mask,
+                          struct pof_fp_flow_wildcards *);
 int mf_field_len(const struct mf_field *, const union mf_value *value,
                  const union mf_value *mask, bool *is_masked);
 
