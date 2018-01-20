@@ -6098,6 +6098,8 @@ ofpacts_decode_pof1(const void *actions, size_t actions_len,
 {
     struct ofpbuf openflow = ofpbuf_const_initializer(actions, actions_len);
 
+    int i=0;
+    for (i=0; i<actions_len/POF_MAX_ACTION_LENGTH; i++){
         const struct ofp_action_header *action = openflow.data;
         enum ofp_raw_action_type raw;
         enum ofperr error;
@@ -6115,24 +6117,7 @@ VLOG_INFO("+++++++++++sqy ofpacts_decode_pof1: before ofpact_pull_raw");
             log_bad_action(actions, actions_len, action, error);
             return error;
         }
-
-    return 0;
-}
-static enum ofperr
-ofpacts_decode_pof2(const void *actions, size_t actions_len,
-               enum ofp_version ofp_version, struct ofpbuf *ofpacts)
-{
-    struct ofpbuf openflow = ofpbuf_const_initializer(actions, actions_len);
-        const struct ofp_action_header *action = openflow.data;
-        enum ofp_raw_action_type raw;
-        enum ofperr error;
-        uint64_t arg;
-VLOG_INFO("+++++++++++sqy ofpacts_decode_pof2: before ofpact_pull_raw");
-        error = ofpact_pull_raw(&openflow, ofp_version, &raw, &arg);
-        if (error) {
-            VLOG_INFO("+++++++++++sqy ofpacts_decode_pof2: error");
-            return error;
-        }
+    }
     return 0;
 }
 
@@ -6896,11 +6881,9 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         const struct ofp_action_header *actions;
         size_t actions_len;
         get_actions_from_piaa(piaa, &actions, &actions_len);
-        actions_len = POF_MAX_ACTION_LENGTH;
+        actions_len = POF_MAX_ACTION_LENGTH * action_num;
         /*get_actions_from_instruction(insts[OVSINST_OFPIT11_APPLY_ACTIONS],
                                      &actions, &actions_len);*/
-        int i=0;
-        for (i=0; i<action_num; i++){
             VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: after get_actions_from_instruction");
             error = ofpacts_decode_pof1(actions, actions_len, version, ofpacts);
             VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: after ofpacts_decode_pof1");
@@ -6908,15 +6891,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
                 VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: error ofpacts_decode_pof1");
                 goto exit;
             }
-        }
-        /*for (i=action_num; i<POF_MAX_ACTION_NUMBER_PER_INSTRUCTION; i++){
-            error = ofpacts_decode_pof2(actions, actions_len, version, ofpacts);
-            VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: after ofpacts_decode_pof2");
-            if (error) {
-                VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: error ofpacts_decode_pof2");
-                goto exit;
-            }
-        }*/
+
     }
     if (insts[OVSINST_OFPIT11_CLEAR_ACTIONS]) {
         VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_CLEAR_ACTIONS");
@@ -8350,11 +8325,11 @@ ofpact_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
         return error;
     }
 
-    if (action->deprecation) {
+   /* if (action->deprecation) {
         VLOG_INFO_RL(&rl, "%s is deprecated in %s (%s)",
                      action->name, ofputil_version_to_string(ofp_version),
                      action->deprecation);
-    }
+    }*/
 
     length = ntohs(oah->len);
     if (length > buf->size) {
@@ -8386,7 +8361,7 @@ ofpact_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
         }
     }
 
-    ofpbuf_pull(buf, length);
+    ofpbuf_pull(buf, POF_MAX_ACTION_LENGTH-4);
 
     return 0;
 }
