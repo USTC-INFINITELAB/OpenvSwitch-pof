@@ -1259,7 +1259,7 @@ pof_mf_mask_field_masked(const struct mf_field *mf, const union mf_value *mask,
     union mf_value mask_value;
     int j = floor((mf->flow_be32ofs*4)/8);
     size_t i = j;
-
+VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: before pof_mf_get_value");
     pof_mf_get_value(mf, &wc->masks, &mask_value);
     int len = j + mf->n_bytes;
     for ( ; i < len && i < 8; i++) {
@@ -1273,7 +1273,9 @@ pof_mf_mask_field_masked(const struct mf_field *mf, const union mf_value *mask,
             mask_value.b[i] |= mask->b[i-j];
         }
     }*/
+    VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: before pof_mf_set_flow_value");
     pof_mf_set_flow_value(mf, &mask_value, &wc->masks);
+    VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: after pof_mf_set_flow_value");
 }
 
 /* Unwildcard 'wc' member field described by 'mf'.  The caller is

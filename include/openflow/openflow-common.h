@@ -125,7 +125,7 @@ enum ofp_version {
 /*Define the max action number in one instruction.*/
 #define POF_MAX_ACTION_NUMBER_PER_INSTRUCTION 6
 /*Define the max action length in unit of byte.*/
-#define POF_MAX_ACTION_LENGTH 44
+#define POF_MAX_ACTION_LENGTH 48
 /* Values below this cutoff are 802.3 packets and the two bytes
  * following MAC addresses are used as a frame length.  Otherwise, the
  * two bytes are used as the Ethernet type.

@@ -4700,15 +4700,16 @@ static void
 pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
                  struct xlate_ctx *ctx)
 {
+    VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: start");
     struct pof_fp_flow_wildcards *wc = ctx->wc;
     struct pof_fp_flow *flow = &ctx->xin->flow;
     const struct ofpact *a;
-
+VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: 11");
     if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
         tnl_neigh_snoop(flow, wc, ctx->xbridge->name);
     }
     /* dl_type already in the mask, not set below. */
-
+VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: 22");
     OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
         struct ofpact_controller *controller;
         const struct ofpact_metadata *metadata;
@@ -4736,13 +4737,18 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             break;
 
         case OFPACT_SET_FIELD:
+            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: OFPACT_SET_FIELD");
             set_field = ofpact_get_SET_FIELD(a);
+            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after ofpact_get_SET_FIELD");
             mf = set_field->field;
 
+            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: before pof_mf_mask_field_masked");
             pof_mf_mask_field_masked(mf, ofpact_set_field_mask(set_field), wc);
+            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_mask_field_masked");
             pof_mf_set_flow_value_masked(mf, set_field->value,
                                      ofpact_set_field_mask(set_field),
                                      flow);
+            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_set_flow_value_masked");
             break;
 
         case OFPACT_EXIT:

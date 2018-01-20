@@ -527,7 +527,7 @@ decode_OFPAT_RAW11_OUTPUT(const struct ofp11_action_output *oao,
 {
     struct ofpact_output *output;
     enum ofperr error;
-VLOG_INFO("+++++++++++sqy decode_OFPAT_RAW11_OUTPUT:start");
+    VLOG_INFO("+++++++++++sqy decode_OFPAT_RAW11_OUTPUT:start");
     output = ofpact_put_OUTPUT(out);
     output->max_len = 0;/*ntohs(OVS_BE16_MAX);ntohs(oao->max_len);*/
 
@@ -535,7 +535,7 @@ VLOG_INFO("+++++++++++sqy decode_OFPAT_RAW11_OUTPUT:start");
     if (error) {
         return error;
     }
-VLOG_INFO("+++++++++++sqy decode_OFPAT_RAW11_OUTPUT:end");
+    VLOG_INFO("+++++++++++sqy decode_OFPAT_RAW11_OUTPUT:end");
     return ofpact_check_output_port(output->port, OFPP_MAX);
 }
 
@@ -2412,7 +2412,7 @@ struct ofp12_action_set_field {
      * - Enough 0-bytes to pad out to a multiple of 64 bits.
      *
      * The "pad" member is the beginning of the above. */
-    uint8_t pad[4];
+
 
     ovs_be16 field_id;  /*0xffff means metadata,
                           0x8XXX means from table parameter,
@@ -2423,6 +2423,7 @@ struct ofp12_action_set_field {
 
     uint8_t value[POF_MAX_FIELD_LENGTH_IN_BYTE];
     uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];
+    uint8_t pad[4];
 };
 OFP_ASSERT(sizeof(struct ofp12_action_set_field) == 48);
 
@@ -2545,22 +2546,30 @@ static enum ofperr
 decode_pof_set_field(const struct ofp12_action_set_field *oasf,
                        bool may_mask, struct ofpbuf *ofpacts)
 {
-
     union mf_value value, mask;
-    struct mf_field *field;
+    struct mf_field field;
+    field.id = ntohs(oasf->field_id);
+    field.flow_be32ofs = ntohs(oasf->offset)/4;
+    field.n_bytes =ntohs(oasf->len_field)/8;
+    VLOG_INFO("+++++sqy decode_pof_set_field:field_id=%d,len=%d,offset=%d",
+              field.id,field.n_bytes,field.flow_be32ofs);
 
-    field->id = oasf->field_id;
-    field->flow_be32ofs = oasf->offset;
-    field->n_bytes = oasf->len_field;
+    void *copy_dst, *copy_dst2;
+    uint8_t *payload, *payload2;
 
-    value.ipv6 = *(struct in6_addr *)oasf->value;
-    mask.ipv6 = *(struct in6_addr *)oasf->mask;
+    payload = &(oasf->value);
+    copy_dst = &value;
+    memcpy(copy_dst, payload, field.n_bytes);
+
+    payload2 = &(oasf->mask);
+    copy_dst2 = &mask;
+    memcpy(copy_dst2, payload2, field.n_bytes);
 
     if (!may_mask) {
-        memset(&mask, 0xff, field->n_bytes);
+        memset(&mask, 0xff, field.n_bytes);
     }
-
-    ofpact_put_set_field(ofpacts, field, &value, &mask);
+    VLOG_INFO("+++++++++++sqy decode_pof_set_field: before ofpact_put_set_field");
+    ofpact_put_set_field(ofpacts, &field, &value, &mask);
     return 0;
 }
 
@@ -2569,7 +2578,9 @@ decode_OFPAT_RAW12_SET_FIELD(const struct ofp12_action_set_field *oasf,
                              enum ofp_version ofp_version OVS_UNUSED,
                              struct ofpbuf *ofpacts)
 {
+    VLOG_INFO("+++++++++++sqy ofp-actions.c: before decode_pof_set_field");
     return decode_pof_set_field(oasf, true, ofpacts);
+    VLOG_INFO("+++++++++++sqy  ofp-actions.c: finish decode_OFPAT_RAW12_SET_FIELD");
 }
 
 static enum ofperr
@@ -3058,7 +3069,6 @@ ofpact_put_set_field(struct ofpbuf *ofpacts, const struct mf_field *field,
 {
     struct ofpact_set_field *sf = ofpact_put_SET_FIELD(ofpacts);
     sf->field = field;
-
     /* Fill in the value and mask if given, otherwise put zeroes so that the
      * caller may fill in the value and mask itself. */
     if (value) {
