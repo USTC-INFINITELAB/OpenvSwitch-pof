@@ -2412,7 +2412,7 @@ struct ofp12_action_set_field {
      * - Enough 0-bytes to pad out to a multiple of 64 bits.
      *
      * The "pad" member is the beginning of the above. */
-
+    uint8_t pad[4];
 
     ovs_be16 field_id;  /*0xffff means metadata,
                           0x8XXX means from table parameter,
@@ -2423,7 +2423,7 @@ struct ofp12_action_set_field {
 
     uint8_t value[POF_MAX_FIELD_LENGTH_IN_BYTE];
     uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];
-    uint8_t pad[4];
+
 };
 OFP_ASSERT(sizeof(struct ofp12_action_set_field) == 48);
 
@@ -2547,29 +2547,31 @@ decode_pof_set_field(const struct ofp12_action_set_field *oasf,
                        bool may_mask, struct ofpbuf *ofpacts)
 {
     union mf_value value, mask;
-    struct mf_field field;
-    field.id = ntohs(oasf->field_id);
-    field.flow_be32ofs = ntohs(oasf->offset)/4;
-    field.n_bytes =ntohs(oasf->len_field)/8;
+    struct mf_field field1;
+
+    uint16_t field_id = ntohs(oasf->field_id);
+    uint16_t offset = ntohs(oasf->offset)/8;
+    uint16_t len =ntohs(oasf->len_field)/8;
     VLOG_INFO("+++++sqy decode_pof_set_field:field_id=%d,len=%d,offset=%d",
-              field.id,field.n_bytes,field.flow_be32ofs);
+              field_id, len, offset);
 
     void *copy_dst, *copy_dst2;
     uint8_t *payload, *payload2;
 
     payload = &(oasf->value);
     copy_dst = &value;
-    memcpy(copy_dst, payload, field.n_bytes);
+    memcpy(copy_dst, payload, len);
 
     payload2 = &(oasf->mask);
     copy_dst2 = &mask;
-    memcpy(copy_dst2, payload2, field.n_bytes);
+    memcpy(copy_dst2, payload2, len);
 
     if (!may_mask) {
-        memset(&mask, 0xff, field.n_bytes);
+        memset(&mask, 0xff, len);
     }
     VLOG_INFO("+++++++++++sqy decode_pof_set_field: before ofpact_put_set_field");
-    ofpact_put_set_field(ofpacts, &field, &value, &mask);
+    ofpact_put_pof_set_field(ofpacts, &field1, &value, &mask, field_id, offset, len);
+    VLOG_INFO("+++++++++++sqy decode_pof_set_field: after ofpact_put_set_field");
     return 0;
 }
 
@@ -3057,6 +3059,38 @@ format_SET_FIELD(const struct ofpact_set_field *a, struct ds *s)
         ds_put_format(s, "%s->%s%s",
                       colors.special, colors.end, a->field->name);
     }
+}
+
+
+struct ofpact_set_field *
+ofpact_put_pof_set_field(struct ofpbuf *ofpacts, const struct mf_field *field,
+                     const void *value, const void *mask, uint16_t field_id, uint16_t offset,
+                         uint16_t len)
+{
+    struct ofpact_set_field *sf = ofpact_put_SET_FIELD(ofpacts);
+    sf->field = field;
+    sf->field_id =field_id;
+    sf->offset = offset;
+    sf->len =len;
+    /* Fill in the value and mask if given, otherwise put zeroes so that the
+     * caller may fill in the value and mask itself. */
+    if (value) {
+        ofpbuf_put_uninit(ofpacts, 2 * len);
+        sf = ofpacts->header;
+        memcpy(sf->value, value, len);
+        if (mask) {
+            memcpy(ofpact_pof_set_field_mask(sf), mask, len);
+        } else {
+            memset(ofpact_pof_set_field_mask(sf), 0xff, len);
+        }
+    } else {
+        ofpbuf_put_zeros(ofpacts, 2 * len);
+        sf = ofpacts->header;
+    }
+    /* Update length. */
+    ofpact_finish_SET_FIELD(ofpacts, &sf);
+
+    return sf;
 }
 
 /* Appends an OFPACT_SET_FIELD ofpact with enough space for the value and mask
@@ -8361,7 +8395,7 @@ ofpact_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
         }
     }
 
-    ofpbuf_pull(buf, POF_MAX_ACTION_LENGTH-4);
+    ofpbuf_pull(buf, POF_MAX_ACTION_LENGTH);
 
     return 0;
 }

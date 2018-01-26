@@ -33,6 +33,8 @@
 #include "flow.h"
 #include "unaligned.h"
 #include "util.h"
+#include "openvswitch/vlog.h"
+VLOG_DEFINE_THIS_MODULE(odp_execute);
 
 /* Masked copy of an ethernet address. 'src' is already properly masked. */
 static void
@@ -231,6 +233,7 @@ odp_execute_set_action(struct dp_packet *packet, const struct nlattr *a)
     struct pkt_metadata *md = &packet->md;
 
     switch (type) {
+    VLOG_INFO("+++++++++++sqy odp_execute_set_action: before switch-case");
     case OVS_KEY_ATTR_PRIORITY:
         md->skb_priority = nl_attr_get_u32(a);
         break;
@@ -338,6 +341,7 @@ odp_execute_set_action(struct dp_packet *packet, const struct nlattr *a)
     case OVS_KEY_ATTR_CT_LABELS:
     case __OVS_KEY_ATTR_MAX:
     default:
+        VLOG_INFO("+++++++++++sqy odp_execute_set_action: case: default");
         OVS_NOT_REACHED();
     }
 }
@@ -547,6 +551,7 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
         }
 
         switch ((enum ovs_action_attr) type) {
+        VLOG_INFO("+++++++++++sqy odp_execute_actions: before swicth-case");
         case OVS_ACTION_ATTR_HASH: {
             const struct ovs_action_hash *hash_act = nl_attr_get(a);
 
@@ -602,12 +607,14 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
             break;
 
         case OVS_ACTION_ATTR_SET:
+            VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_set_action");
             for (i = 0; i < cnt; i++) {
                 odp_execute_set_action(packets[i], nl_attr_get(a));
             }
             break;
 
         case OVS_ACTION_ATTR_SET_MASKED:
+            VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_masked_set_action");
             for (i = 0; i < cnt; i++) {
                 odp_execute_masked_set_action(packets[i], nl_attr_get(a));
             }

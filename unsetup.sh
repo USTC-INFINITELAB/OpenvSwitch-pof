@@ -14,8 +14,12 @@ killall ovs-vswitchd
 rm /usr/local/etc/openvswitch/conf.db
 ps -ef|grep ovs
 
-sleep 2s
+sleep 1s
 cd  /home/sqy/dpdk-16.07
+./tools/dpdk-devbind.py --bind=igb 0000:05:00.1
+./tools/dpdk-devbind.py --bind=igb 0000:05:00.0
+
+sleep 1s
 umount -t hugetlbfs none /dev/hugepages
 #./tools/dpdk-devbind.py  --status
 #echo "Input the number of unbind DPDK ports (even): (Enter)"

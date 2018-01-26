@@ -618,7 +618,7 @@ pof_miniflow_extract(struct dp_packet *packet, struct miniflow *dst)
     } else {
 
         /* data_pull(datap, sizep, ETH_ADDR_LEN * 2) is used to move the pointer data. */
-        miniflow_push_pof_words(mf, pof_normal, data, 8);
+        miniflow_push_pof_words(mf, pof_normal, data, 14);
     }
  out:
     dst->map = mf.map;

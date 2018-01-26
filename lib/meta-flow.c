@@ -633,10 +633,10 @@ mf_is_value_valid(const struct mf_field *mf, const union mf_value *value)
 /* Copies the value of field 'mf' from 'flow' into 'value'.  The caller is
  * responsible for ensuring that 'flow' meets 'mf''s prerequisites. */
 void
-pof_mf_get_value(const struct mf_field *mf, const struct pof_fp_flow *flow,
+pof_mf_get_value(const struct pof_match_u *mf, const struct pof_fp_flow *flow,
              union mf_value *value)
 {
-    int i = floor((mf->flow_be32ofs*4)/8);
+    int i = (mf->offset/8);
     /*to do: considering the appropriate length of a field in struct pof_fp_flow. */
     value->be64 = flow->pof_normal[i];
 }
@@ -1253,18 +1253,25 @@ mf_mask_field_masked(const struct mf_field *mf, const union mf_value *mask,
  * The caller is responsible for ensuring that 'wc' meets 'mf''s
  * prerequisites. */
 void
-pof_mf_mask_field_masked(const struct mf_field *mf, const union mf_value *mask,
+pof_mf_mask_field_masked(const struct pof_match_u *mf, const union mf_value *mask,
                      struct pof_fp_flow_wildcards *wc)
 {
     union mf_value mask_value;
-    int j = floor((mf->flow_be32ofs*4)/8);
-    size_t i = j;
-VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: before pof_mf_get_value");
+    int inner_off = mf->offset - (mf->offset/8)*8;
+    int i = inner_off;
+
     pof_mf_get_value(mf, &wc->masks, &mask_value);
-    int len = j + mf->n_bytes;
+    VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: inneroff=%d, mf->len=%d", inner_off , mf->len );
+    int len = inner_off + mf->len;
+    VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: 111");
     for ( ; i < len && i < 8; i++) {
-        mask_value.b[i] |= mask->b[i-j];
+        VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: mask_value.b[i] =%d,mask->b[i-inner_off] =%d",
+                  mask_value.b[i], mask->b[i-inner_off]);
+        mask_value.b[i] |= mask->b[i-inner_off];
+        VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: mask_value.b[i] =%d,mask->b[i-inner_off] =%d",
+                  mask_value.b[i], mask->b[i-inner_off]);
     }
+
     /* to do: the field which will be 'set_field' corrosponds to more than
      * one field in struct pof_fp_flow.
      * while( len - 8 >0){
@@ -1273,7 +1280,6 @@ VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: before pof_mf_get_value");
             mask_value.b[i] |= mask->b[i-j];
         }
     }*/
-    VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: before pof_mf_set_flow_value");
     pof_mf_set_flow_value(mf, &mask_value, &wc->masks);
     VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: after pof_mf_set_flow_value");
 }
@@ -1340,12 +1346,14 @@ mf_field_len(const struct mf_field *mf, const union mf_value *value,
 /* Sets 'flow' member field described by 'mf' to 'value'.  The caller is
  * responsible for ensuring that 'flow' meets 'mf''s prerequisites.*/
 void
-pof_mf_set_flow_value(const struct mf_field *mf,
+pof_mf_set_flow_value(const struct pof_match_u *mf,
                   const union mf_value *value, struct pof_fp_flow *flow)
 {
-    int i = floor((mf->flow_be32ofs*4)/8);
+    int i = (mf->offset/8);
+    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value 111");
     /*to do: considering the appropriate length of a field in struct pof_fp_flow. */
     flow->pof_normal[i] = value->be64;
+    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value 222");
 }
 
 /* Sets 'flow' member field described by 'mf' to 'value'.  The caller is
@@ -1632,18 +1640,22 @@ mf_set_flow_value_masked(const struct mf_field *field,
  * for which 'mask' has a 0-bit keep their existing values.  The caller is
  * responsible for ensuring that 'flow' meets 'field''s prerequisites.*/
 void
-pof_mf_set_flow_value_masked(const struct mf_field *field,
+pof_mf_set_flow_value_masked(const struct pof_match_u *field,
                          const union mf_value *value,
                          const union mf_value *mask,
                          struct pof_fp_flow *flow)
 {
     union mf_value tmp;
-    int inner_off = field->flow_be32ofs*4 - floor((field->flow_be32ofs*4)/8)*8;
+    int inner_off = field->offset - (field->offset/8)*8;
 
+    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked 111");
     pof_mf_get_value(field, flow, &tmp);
+    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked 222");
     apply_mask((const uint8_t *) value, (const uint8_t *) mask + inner_off,
-               (uint8_t *) &tmp + inner_off, field->n_bytes);
+               (uint8_t *) &tmp + inner_off, field->len);
+    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked: after apply mask");
     pof_mf_set_flow_value(field, &tmp, flow);
+    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked: after pof_mf_set_flow_value");
 }
 
 bool

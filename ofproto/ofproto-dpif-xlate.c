@@ -4700,21 +4700,20 @@ static void
 pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
                  struct xlate_ctx *ctx)
 {
-    VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: start");
     struct pof_fp_flow_wildcards *wc = ctx->wc;
     struct pof_fp_flow *flow = &ctx->xin->flow;
     const struct ofpact *a;
-VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: 11");
+
     if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
         tnl_neigh_snoop(flow, wc, ctx->xbridge->name);
     }
     /* dl_type already in the mask, not set below. */
-VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: 22");
     OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
         struct ofpact_controller *controller;
         const struct ofpact_metadata *metadata;
         const struct ofpact_set_field *set_field;
         const struct mf_field *mf;
+        struct pof_match_u *pf;
 
         if (ctx->error) {//sqy notes: false
             break;
@@ -4736,17 +4735,18 @@ VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: 22");
                                 ofpact_get_OUTPUT(a)->max_len, true);
             break;
 
-        case OFPACT_SET_FIELD:
-            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: OFPACT_SET_FIELD");
+        case OFPACT_SET_FIELD:            
             set_field = ofpact_get_SET_FIELD(a);
-            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after ofpact_get_SET_FIELD");
-            mf = set_field->field;
+            pf->field_id = set_field->field_id;
+            pf->len = set_field->len;
+            pf->offset = set_field->offset;
 
-            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: before pof_mf_mask_field_masked");
-            pof_mf_mask_field_masked(mf, ofpact_set_field_mask(set_field), wc);
+            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: OFPACT_SET_FIELD, fieldid=%d, len=%d, offset=%d",
+                      pf->field_id, pf->len, pf->offset);
+            pof_mf_mask_field_masked(pf, ofpact_pof_set_field_mask(set_field), wc);
             VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_mask_field_masked");
-            pof_mf_set_flow_value_masked(mf, set_field->value,
-                                     ofpact_set_field_mask(set_field),
+            pof_mf_set_flow_value_masked(pf, set_field->value,
+                                     ofpact_pof_set_field_mask(set_field),
                                      flow);
             VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_set_flow_value_masked");
             break;
@@ -5469,7 +5469,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
 
     COVERAGE_INC(xlate_actions);
 
-    if (xin->frozen_state) {
+    if (xin->frozen_state) { //sqy note: xin->frozen_state = null;
         const struct frozen_state *state = xin->frozen_state;
 
         xlate_report(&ctx, "Thawing frozen state:");
@@ -5545,7 +5545,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
             xlate_report_actions(&ctx, "- Restoring actions",
                                  xin->ofpacts, xin->ofpacts_len);
         }
-    } else if (OVS_UNLIKELY(flow->recirc_id)) {
+    } else if (OVS_UNLIKELY(flow->recirc_id)) { //sqy note: flow->recirc_id = 0.
         static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(1, 1);
 
         VLOG_WARN_RL(&rl, "Recirculation context not found for ID %"PRIx32,
@@ -5555,7 +5555,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
     }
 
     /* Tunnel metadata in udpif format must be normalized before translation. */
-    if (flow->tunnel.flags & FLOW_TNL_F_UDPIF) {
+    if (flow->tunnel.flags & FLOW_TNL_F_UDPIF) {  //sqy note: tunnel.flags = 0.
         const struct tun_table *tun_tab = ofproto_dpif_get_tun_tab(xin->ofproto);
         int err;
 
@@ -5567,7 +5567,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
             ctx.error = XLATE_INVALID_TUNNEL_METADATA;
             goto exit;
         }
-    } else if (!flow->tunnel.metadata.tab) {
+    } else if (!flow->tunnel.metadata.tab) {  //sqy: flow->tunnel.metadata.tab = null, run here
         /* If the original flow did not come in on a tunnel, then it won't have
          * FLOW_TNL_F_UDPIF set. However, we still need to have a metadata
          * table in case we generate tunnel actions. */
@@ -5575,7 +5575,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
     }
     ctx.wc->masks.tunnel.metadata.tab = flow->tunnel.metadata.tab;
 
-    if (!xin->ofpacts && !ctx.rule) {
+    if (!xin->ofpacts && !ctx.rule) {  //sqy note: ctx.rule = null, xin->ofpacts = null, run here.
         ctx.rule = rule_dpif_lookup_from_table_pof(
             ctx.xbridge->ofproto, ctx.xin->tables_version, flow, xin->packet, ctx.wc,
             ctx.xin->resubmit_stats, &ctx.table_id,
@@ -5584,16 +5584,16 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
         if (ctx.xin->resubmit_stats) {
             rule_dpif_credit_stats(ctx.rule, ctx.xin->resubmit_stats);     //sqy notes: run here
         }
-        if (ctx.xin->xcache) {
+        if (ctx.xin->xcache) {  //sqy notes: ctx.xin->xcache = null, no run
             struct xc_entry *entry;
 
-            entry = xlate_cache_add_entry(ctx.xin->xcache, XC_RULE);  //sqy notes: no run
+            entry = xlate_cache_add_entry(ctx.xin->xcache, XC_RULE);
             entry->rule = ctx.rule;
             rule_dpif_ref(ctx.rule);
         }
 
-        if (OVS_UNLIKELY(ctx.xin->resubmit_hook)) {
-            ctx.xin->resubmit_hook(ctx.xin, ctx.rule, 0); //sqy notes: no run
+        if (OVS_UNLIKELY(ctx.xin->resubmit_hook)) {  //sqy notes: ctx.xin->resubmit_hook = null, no run
+            ctx.xin->resubmit_hook(ctx.xin, ctx.rule, 0);
         }
     }
 
@@ -5603,7 +5603,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
                                          ctx.base_flow.in_port.ofp_port);
 
     /* Tunnel stats only for not-thawed packets. */
-    if (!xin->frozen_state && in_port && in_port->is_tunnel) { //sqy notes: no run
+    if (!xin->frozen_state && in_port && in_port->is_tunnel) { //sqy notes: !null && not null && false, no run
         if (ctx.xin->resubmit_stats) {
             netdev_vport_inc_rx(in_port->netdev, ctx.xin->resubmit_stats);
             if (in_port->bfd) {
@@ -5619,13 +5619,13 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
         }
     }
 
-    if (!xin->frozen_state && process_special(&ctx, in_port)) {  //sqy notes: no run,xin->frozen_state=0
+    if (!xin->frozen_state && process_special(&ctx, in_port)) {  //sqy notes: no run
         /* process_special() did all the processing for this packet.
          *
          * We do not perform special processing on thawed packets, since that
          * was done before they were frozen and should not be redone. */
     } else if (in_port && in_port->xbundle
-               && xbundle_mirror_out(xbridge, in_port->xbundle)) {
+               && xbundle_mirror_out(xbridge, in_port->xbundle)) {  //sqy notes: no run
         if (ctx.xin->packet != NULL) {
             static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(1, 5);
             VLOG_WARN_RL(&rl, "bridge %s: dropping packet received on port "
@@ -5642,7 +5642,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
         size_t sample_actions_len = ctx.odp_actions->size;
 
         if (tnl_process_ecn(flow)
-            && (!in_port || may_receive(in_port, &ctx))) {//sqy notes: tnl_process_ecn(flow)=true,  run here
+            && (!in_port || may_receive(in_port, &ctx))) {//sqy notes: true && (!true || true),run here
             const struct ofpact *ofpacts;
             size_t ofpacts_len;
 
