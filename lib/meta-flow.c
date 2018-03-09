@@ -1658,6 +1658,22 @@ pof_mf_set_flow_value_masked(const struct pof_match_u *field,
     VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked: after pof_mf_set_flow_value");
 }
 
+
+void
+pof_mf_set_flow_value_v1(const struct pof_match_u *field,
+                         const union mf_value *value,
+                         const union mf_value *mask,
+                         struct pof_flow *flow)
+{
+    union mf_value tmp;
+
+    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked 111");
+    for(int i=0; i<POF_MAX_FIELD_LENGTH_IN_BYTE; i++){
+        flow->value[0][i]=value->b[i];
+    }
+    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked: after pof_mf_set_flow_value");
+}
+
 bool
 mf_is_tun_metadata(const struct mf_field *mf)
 {
