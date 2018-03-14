@@ -2851,7 +2851,6 @@ static void
 compose_output_action__(struct xlate_ctx *ctx, ofp_port_t ofp_port,
                         const struct xlate_bond_recirc *xr, bool check_stp)
 {
-    VLOG_INFO("+++++++++++sqy compose_output_action__: start ");
     const struct xport *xport = get_ofp_port(ctx->xbridge, ofp_port);
     struct flow_wildcards *wc = ctx->wc;
     struct flow *flow = &ctx->xin->flow;
@@ -3088,9 +3087,9 @@ compose_output_action__(struct xlate_ctx *ctx, ofp_port_t ofp_port,
     }
 
     if (out_port != ODPP_NONE) {              //*********sqy notes: run here
-        VLOG_INFO("+++++++++++sqy compose_output_action__: start xlate_commit_actions");
+        /*VLOG_INFO("+++++++++++sqy compose_output_action__: start xlate_commit_actions");*/
         xlate_commit_actions(ctx);
-        VLOG_INFO("+++++++++++sqy compose_output_action__: finish xlate_commit_actions");
+        /*VLOG_INFO("+++++++++++sqy compose_output_action__: finish xlate_commit_actions");*/
 
         if (xr) {                    //*********sqy notes: xr=0;
             struct ovs_action_hash *act_hash;
@@ -4749,17 +4748,16 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             flow->offset[0] = htons(pf->offset);
             flow->flag = true;
 
-            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: OFPACT_SET_FIELD, fieldid=%d, len=%d, offset=%d",
-                      pf->field_id, pf->len, pf->offset);
+           /* VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: OFPACT_SET_FIELD, fieldid=%d, len=%d, offset=%d",
+                      pf->field_id, pf->len, pf->offset);*/
             pof_mf_mask_field_masked(pf, ofpact_pof_set_field_mask(set_field), wc);
-            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_mask_field_masked");
             /*pof_mf_set_flow_value_masked(pf, set_field->value,
                                      ofpact_pof_set_field_mask(set_field),
                                      flow);*/
             pof_mf_set_flow_value_v1(pf, set_field->value,
                                      ofpact_pof_set_field_mask(set_field),
                                      flow);
-            VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_set_flow_value_masked");
+            /*VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_set_flow_value_masked");*/
             break;
 
         case OFPACT_EXIT:

@@ -1261,15 +1261,12 @@ pof_mf_mask_field_masked(const struct pof_match_u *mf, const union mf_value *mas
     int i = inner_off;
 
     pof_mf_get_value(mf, &wc->masks, &mask_value);
-    VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: inneroff=%d, mf->len=%d", inner_off , mf->len );
+    /*VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: inneroff=%d, mf->len=%d", inner_off , mf->len );*/
     int len = inner_off + mf->len;
-    VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: 111");
     for ( ; i < len && i < 8; i++) {
-        VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: mask_value.b[i] =%d,mask->b[i-inner_off] =%d",
-                  mask_value.b[i], mask->b[i-inner_off]);
         mask_value.b[i] |= mask->b[i-inner_off];
-        VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: mask_value.b[i] =%d,mask->b[i-inner_off] =%d",
-                  mask_value.b[i], mask->b[i-inner_off]);
+        /*VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: mask_value.b[i] =%d,mask->b[i-inner_off] =%d",
+                  mask_value.b[i], mask->b[i-inner_off]);*/
     }
 
     /* to do: the field which will be 'set_field' corrosponds to more than
@@ -1281,7 +1278,6 @@ pof_mf_mask_field_masked(const struct pof_match_u *mf, const union mf_value *mas
         }
     }*/
     pof_mf_set_flow_value(mf, &mask_value, &wc->masks);
-    VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: after pof_mf_set_flow_value");
 }
 
 /* Unwildcard 'wc' member field described by 'mf'.  The caller is
@@ -1667,11 +1663,10 @@ pof_mf_set_flow_value_v1(const struct pof_match_u *field,
 {
     union mf_value tmp;
 
-    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked 111");
     for(int i=0; i<POF_MAX_FIELD_LENGTH_IN_BYTE; i++){
-        flow->value[0][i]=value->b[i];
+        flow->value[0][i] = value->b[i];
+        /*VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked value->b[i]= %d, flow->value[0][i]=%d", value->b[i], flow->value[0][i]);*/
     }
-    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked: after pof_mf_set_flow_value");
 }
 
 bool

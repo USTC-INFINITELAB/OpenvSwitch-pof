@@ -2569,6 +2569,7 @@ decode_pof_set_field(const struct ofp12_action_set_field *oasf,
     if (!may_mask) {
         memset(&mask, 0xff, len);
     }
+
     VLOG_INFO("+++++++++++sqy decode_pof_set_field: before ofpact_put_set_field");
     ofpact_put_pof_set_field(ofpacts, &field1, &value, &mask, field_id, offset, len);
     VLOG_INFO("+++++++++++sqy decode_pof_set_field: after ofpact_put_set_field");

@@ -52,21 +52,19 @@ static void
 odp_pof_set_field(struct dp_packet *packet, const struct ovs_key_set_field *key,
                   const struct ovs_key_set_field *mask)
 {
-    VLOG_INFO("+++++++++++sqy odp_pof_set_field:key->offset = %d, len= %d, fieldid= %d", key->offset, key->len, key->field_id);
+   /* VLOG_INFO("+++++++++++sqy odp_pof_set_field:key->offset = %d, len= %d, fieldid= %d", key->offset, key->len, key->field_id);*/
     uint8_t *value = dp_packet_pof_set_field(packet, key->offset);
 
     if (value) {
         if (!mask) {
-            VLOG_INFO("+++++++++++sqy odp_pof_set_field: 222222");
             for(int i=0; i<key->len; i++){
                 *(value+i) = key->value[i];
-                VLOG_INFO("+++++++++++sqy odp_pof_set_field: %d, %d", key->value[i], *(value+i));
             }
         } else {
-            VLOG_INFO("+++++++++++sqy odp_pof_set_field: 333333333");
             for(int i=0; i<key->len; i++){
+                /*VLOG_INFO("+++++++++++sqy 3333 odp_pof_set_field before: %d, %d", key->value[i], *(value+i));*/
                 *(value+i) = key->value[i];
-                VLOG_INFO("+++++++++++sqy odp_pof_set_field: %d, %d", key->value[i], *(value+i));
+                /*VLOG_INFO("+++++++++++sqy odp_pof_set_field after: %d, %d", key->value[i], *(value+i));*/
             }
             /*ether_addr_copy_masked(&eh->eth_src, key->eth_src, mask->eth_src);
             ether_addr_copy_masked(&eh->eth_dst, key->eth_dst, mask->eth_dst);*/
@@ -384,10 +382,10 @@ odp_execute_masked_set_action(struct dp_packet *packet,
 
     switch (type) {
     case OVS_KEY_ATTR_SET_FIELD:
-        VLOG_INFO("+++++++++++sqy odp_execute_masked_set_action: before OVS_KEY_ATTR_SET_FIELD");
+        /*VLOG_INFO("+++++++++++sqy odp_execute_masked_set_action: before OVS_KEY_ATTR_SET_FIELD");*/
         odp_pof_set_field(packet, nl_attr_get(a),
                           get_mask(a, struct ovs_key_set_field));
-        VLOG_INFO("+++++++++++sqy odp_execute_masked_set_action: after OVS_KEY_ATTR_SET_FIELD");
+        /*VLOG_INFO("+++++++++++sqy odp_execute_masked_set_action: after OVS_KEY_ATTR_SET_FIELD");*/
         break;
     case OVS_KEY_ATTR_PRIORITY:
         md->skb_priority = nl_attr_get_u32(a)
@@ -555,7 +553,6 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
                     const struct nlattr *actions, size_t actions_len,
                     odp_execute_cb dp_execute_action)
 {
-    VLOG_INFO("+++++++++++sqy odp_execute_actions: start ++++++++++++++++++++++++++");
     struct dp_packet **packets = batch->packets;
     int cnt = batch->count;
     const struct nlattr *a;
@@ -564,7 +561,7 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
 
     NL_ATTR_FOR_EACH_UNSAFE (a, left, actions, actions_len) {
         int type = nl_attr_type(a);
-        VLOG_INFO("+++++++++++sqy odp_execute_actions: type = %d", type);
+        /*VLOG_INFO("+++++++++++sqy odp_execute_actions: type = %d", type);*/
         bool last_action = (left <= NLA_ALIGN(a->nla_len));
 
         if (requires_datapath_assistance(a)) {
@@ -640,14 +637,14 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
             break;
 
         case OVS_ACTION_ATTR_SET:
-            VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_set_action");
+            /*VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_set_action");*/
             for (i = 0; i < cnt; i++) {
                 odp_execute_set_action(packets[i], nl_attr_get(a));
             }
             break;
 
         case OVS_ACTION_ATTR_SET_MASKED:
-            VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_masked_set_action");
+           /* VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_masked_set_action");*/
             for (i = 0; i < cnt; i++) {
                 odp_execute_masked_set_action(packets[i], nl_attr_get(a));
             }

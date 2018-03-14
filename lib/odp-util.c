@@ -5458,6 +5458,7 @@ get_set_field_key(const struct pof_flow *flow, struct ovs_key_set_field *eth)
 
     for(int i=0; i<16; i++){
         eth->value[i] = flow->value[0][i];
+        VLOG_INFO("+++++++++++sqy get_set_field_key: eth->value[i]=%d, flow->value[0][i] = %d", eth->value[i], flow->value[0][i]);
     }
 }
 
@@ -5480,28 +5481,24 @@ commit_pof_set_field_action(const struct flow *flow, struct flow *base_flow,
 {
     struct ovs_key_set_field key, base, mask;
 
-    VLOG_INFO("+++++++++++sqy commit_pof_set_field_action: 111");
     struct pof_flow * pflow = flow;
     struct pof_flow * pbase = base_flow;
-    VLOG_INFO("+++++++++++sqy commit_pof_set_field_action: before get_set_field_key");
     get_set_field_key(pflow, &key);
     get_set_field_key(pbase, &base);
     use_masked = true;
     /*get_set_field_key(&wc->masks, &mask);*/
-    VLOG_INFO("+++++++++++sqy commit_pof_set_field_action: before get_set_field_key mask");
     get_set_field_key(pflow, &mask);
-    for(int i=0; i<16; i++){
-        mask.value[i] = 1;
-    }
+   /* for(int i=0; i<16; i++){
+        mask.value[i] = 254;
+    }*/
 
-    VLOG_INFO("+++++++++++sqy commit_pof_set_field_action: before pof_commit");
+    /*VLOG_INFO("+++++++++++sqy commit_pof_set_field_action: before pof_commit");*/
     if (pof_commit(OVS_KEY_ATTR_SET_FIELD, use_masked,
                &key, &base, &mask, sizeof key, odp_actions, pflow->flag)) {     //sqy notes: commit return false, no run
-        VLOG_INFO("+++++++++++sqy commit_pof_set_field_action: after pof_commit");
+        /*VLOG_INFO("+++++++++++sqy commit_pof_set_field_action: after pof_commit");*/
         put_set_field_key(&base, base_flow);
         put_set_field_key(&mask, &wc->masks);
     }
-    VLOG_INFO("+++++++++++sqy commit_pof_set_field_action: finish");
 }
 
 static void
@@ -5980,9 +5977,7 @@ commit_odp_actions(const struct flow *flow, struct flow *base,
 {
     enum slow_path_reason slow1, slow2;
 
-    VLOG_INFO("+++++++++++sqy commit_odp_actions: start commit_pof_set_field_action");
     commit_pof_set_field_action(flow, base, odp_actions, wc, use_masked);
-    VLOG_INFO("+++++++++++sqy commit_odp_actions: finish commit_pof_set_field_action");
 
     commit_set_ether_addr_action(flow, base, odp_actions, wc, use_masked);
     slow1 = commit_set_nw_action(flow, base, odp_actions, wc, use_masked);  // sqy notes: return 0
