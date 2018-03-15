@@ -62,8 +62,8 @@ odp_pof_set_field(struct dp_packet *packet, const struct ovs_key_set_field *key,
             }
         } else {
             for(int i=0; i<key->len; i++){
-                /*VLOG_INFO("+++++++++++sqy 3333 odp_pof_set_field before: %d, %d", key->value[i], *(value+i));*/
-                *(value+i) = key->value[i];
+                VLOG_INFO("+++++++++++sqy 3333 odp_pof_set_field before:key->value[i]= %d, %d, %d", key->value[i], *(value+i), mask->value[i] );
+                *(value+i) = key->value[i] |(*(value+i) & ~mask->value[i]);
                 /*VLOG_INFO("+++++++++++sqy odp_pof_set_field after: %d, %d", key->value[i], *(value+i));*/
             }
             /*ether_addr_copy_masked(&eh->eth_src, key->eth_src, mask->eth_src);

@@ -4244,6 +4244,7 @@ ovs_to_odp_frag(uint8_t nw_frag, bool is_mask)
 
 static void get_ethernet_key(const struct flow *, struct ovs_key_ethernet *);
 static void get_set_field_key(const struct pof_flow *, struct ovs_key_set_field *);
+static void get_set_field_mask(const struct pof_flow *, struct ovs_key_set_field *);
 static void put_ethernet_key(const struct ovs_key_ethernet *, struct flow *);
 static void put_set_field_key(const struct ovs_key_set_field *, struct pof_flow *);
 static void get_ipv4_key(const struct flow *, struct ovs_key_ipv4 *,
@@ -5463,6 +5464,19 @@ get_set_field_key(const struct pof_flow *flow, struct ovs_key_set_field *eth)
 }
 
 static void
+get_set_field_mask(const struct pof_flow *flow, struct ovs_key_set_field *eth)
+{
+    eth->field_id = ntohs(flow->field_id[0]);
+    eth->len = ntohs(flow->len[0]);
+    eth->offset = ntohs(flow->offset[0]);
+
+    for(int i=0; i<16; i++){
+        eth->value[i] = flow->mask[0][i];
+        VLOG_INFO("+++++++++++sqy get_set_field_mask: eth->value[i]=%d, flow->mask[0][i] = %d", eth->value[i], flow->mask[0][i]);
+    }
+}
+
+static void
 put_set_field_key(const struct ovs_key_set_field *eth, struct pof_flow *flow)
 {
     flow->field_id[0] = eth->field_id;
@@ -5487,7 +5501,7 @@ commit_pof_set_field_action(const struct flow *flow, struct flow *base_flow,
     get_set_field_key(pbase, &base);
     use_masked = true;
     /*get_set_field_key(&wc->masks, &mask);*/
-    get_set_field_key(pflow, &mask);
+    get_set_field_mask(pflow, &mask);
    /* for(int i=0; i<16; i++){
         mask.value[i] = 254;
     }*/
