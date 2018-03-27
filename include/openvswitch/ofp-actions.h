@@ -55,6 +55,7 @@
 #define OFPACTS                                                         \
     /* Output. */                                                       \
     OFPACT(OUTPUT,          ofpact_output,      ofpact, "output")       \
+    OFPACT(DROP,            ofpact_drop,        ofpact, "drop")         \
     OFPACT(GROUP,           ofpact_group,       ofpact, "group")        \
     OFPACT(CONTROLLER,      ofpact_controller,  userdata, "controller") \
     OFPACT(ENQUEUE,         ofpact_enqueue,     ofpact, "enqueue")      \
@@ -262,6 +263,15 @@ struct ofpact_output {
     struct ofpact ofpact;
     ofp_port_t port;            /* Output port. */
     uint16_t max_len;           /* Max send len, for port OFPP_CONTROLLER. */
+};
+
+/* tsf: OFPACT_DROP.
+ *
+ * Used for OFPAT_DROP.
+ * */
+struct ofpact_drop {
+	struct ofpact ofpact;
+	uint32_t reason_code;
 };
 
 /* OFPACT_CONTROLLER.

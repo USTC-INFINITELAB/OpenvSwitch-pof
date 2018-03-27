@@ -111,10 +111,7 @@ EXTRA_DIST = \
         dpdk_unsetup.sh \
 	.cproject \
 	.project \
-	.idea/OpenvSwitch-pof.iml \
-    .idea/modules.xml \
-    .idea/vcs.xml \
-    .idea/workspace.xml \
+	.idea/vcs.xml \
 	OVS206.config \
 	OVS206.creator \
         OVS206.creator.user \

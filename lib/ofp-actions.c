@@ -108,6 +108,9 @@ enum ofp_raw_action_type {
     /* OF1.1+(0): struct ofp11_action_output. */
     OFPAT_RAW11_OUTPUT,
 
+    /* OF1.0+(8): struct ofp11_action_drop. */
+    OFPAT_RAW11_DROP,
+
     /* OF1.0(1): uint16_t. */
     OFPAT_RAW10_SET_VLAN_VID,
     /* OF1.0(2): uint8_t. */
@@ -150,10 +153,10 @@ enum ofp_raw_action_type {
      * ovs_be32. */
     OFPAT_RAW_SET_NW_DST,
 
-    /* OF1.0(8), OF1.1(7), OF1.2+(7) is deprecated (use Set-Field): uint8_t. */
+    /* OF1.0(38), OF1.1(7), OF1.2+(7) is deprecated (use Set-Field): uint8_t. */
     OFPAT_RAW_SET_NW_TOS,
 
-    /* OF1.1(8), OF1.2+(8) is deprecated (use Set-Field): uint8_t. */
+    /* OF1.1(38), OF1.2+(38) is deprecated (use Set-Field): uint8_t. */
     OFPAT_RAW11_SET_NW_ECN,
 
     /* OF1.0(9), OF1.1(9), OF1.2+(9) is deprecated (use Set-Field):
@@ -383,6 +386,7 @@ ofpact_next_flattened(const struct ofpact *ofpact)
 {
     switch (ofpact->type) {
     case OFPACT_OUTPUT:
+    case OFPACT_DROP:  /* tsf: add OFPACT_DROP */
     case OFPACT_GROUP:
     case OFPACT_CONTROLLER:
     case OFPACT_ENQUEUE:
@@ -632,6 +636,95 @@ format_OUTPUT(const struct ofpact_output *a, struct ds *s)
         }
     }
 }
+
+/* tsf: Drop actions. */
+
+/* tsf: Action structure for OFPAT11_DROP */
+struct ofp11_action_drop {
+    ovs_be16 type;
+    ovs_be16 len;
+//    uint8_t pad[4];  /* 64 bits alignment. */
+
+    uint32_t reason_code;
+    uint8_t pad2[8];  /* 64 bits alignment. */
+};
+ OFP_ASSERT(sizeof(struct ofp11_action_drop) == 16);
+
+/* tsf: encode_DROP
+ *
+ * support ofp_version OF1.0(+), skip version judgment.
+ * encode ofpact_drop into ofp10_action_drop.
+ */
+static void
+encode_DROP(const struct ofpact_drop *drop,
+            enum ofp_version ofp_version, struct ofpbuf *out)
+{
+    struct ofp11_action_drop *oad;
+    oad = put_OFPAT11_DROP(out);
+    oad->reason_code = htonl(drop->reason_code);
+}
+
+/* tsf: format_DROP. */
+static void
+format_DROP(const struct ofpact_drop *a, struct ds *s)
+{
+    ds_put_format(s, "%sdrop,reason_code:%s%"PRIu32,
+                  colors.special, colors.end, a->reason_code);
+}
+
+/* tsf: parse_DROP. */
+static char * OVS_WARN_UNUSED_RESULT
+parse_DROP(char *arg, struct ofpbuf *ofpacts,
+           enum ofputil_protocol *usable_protocols OVS_UNUSED)
+{
+	struct ofpact_drop *od = ofpact_put_DROP(ofpacts);
+	VLOG_INFO("++++++++tsf parse_DROP: reason_code: %d.", str_to_u32(arg, od->reason_code));
+    return str_to_u32(arg, od->reason_code);
+}
+
+/* tsf: ofpact_put_DROP.
+*
+*  store 'reason_code' into struct ofpact_drop.
+*/
+static enum ofperr
+ofpact_put_pof_ofpact_drop(struct ofpbuf *ofpacts, uint32_t reason_code)
+{
+    struct ofpact_drop *od = ofpact_put_DROP(ofpacts);
+    od->reason_code = reason_code;
+    return 0;
+}
+
+/* tsf: decode_pof_action_drop.
+*
+* 'may_mask' may be not cared flag.
+*/
+static enum ofperr
+decode_pof_ofpat_drop(const struct ofp11_action_drop *oad,
+                        bool may_mask, struct ofpbuf *ofpacts)
+{
+    uint32_t reason_code;
+    reason_code = ntohl(oad->reason_code);
+    VLOG_INFO("++++++tsf decode_pof_action_drop: reason_code: %d.", reason_code);
+
+    VLOG_INFO("++++++tsf decode_pof_action_drop: before ofpact_put_pof_action_drop.");
+    ofpact_put_pof_ofpact_drop(ofpacts, reason_code);
+    VLOG_INFO("++++++tsf decode_pof_action_drop: after ofpact_put_pof_action_drop.");
+
+    return 0;
+}
+
+/* tsf: decode_OFPAT_RAW10_DROP. */
+static enum ofperr
+decode_OFPAT_RAW11_DROP(const struct ofp11_action_drop *oad,
+                        enum ofp_version ofp_version OVS_UNUSED,
+                        struct ofpbuf *ofpacts)
+{
+    VLOG_INFO("+++++++++++tsf ofp-actions.c/ecode_OFPAT_RAW11_DROP: start.");
+    enum ofperr error = decode_pof_ofpat_drop(oad, true, ofpacts);
+    VLOG_INFO("+++++++++++tsf ofp-actions.c/ecode_OFPAT_RAW11_DROP: end.");
+    return error;  // tsf: if decode successfully, return 8 (drop_enum) to let ovs add drop flows
+}
+
 
 /* Group actions. */
 
@@ -6140,12 +6233,16 @@ ofpacts_decode_pof1(const void *actions, size_t actions_len,
         enum ofp_raw_action_type raw;
         enum ofperr error;
         uint64_t arg;
-VLOG_INFO("+++++++++++sqy ofpacts_decode_pof1: before ofpact_pull_raw");
+        VLOG_INFO("+++++++++++sqy ofpacts_decode_pof1: before ofpact_pull_raw");
         error = ofpact_pull_raw(&openflow, ofp_version, &raw, &arg);
         if (!error) {
             VLOG_INFO("+++++++++++sqy ofpacts_decode_pof1: before ofpact_decode");
             error = ofpact_decode(action, raw, ofp_version, arg, ofpacts);
             VLOG_INFO("+++++++++++sqy ofpacts_decode_pof1: after ofpact_decode");
+        }
+
+        if(raw == 2) {
+            VLOG_INFO("++++++tsf ofpacts_pull_pull_openflow_instructions: detect OFPAT_RAW11_DROP.");
         }
 
         if (error) {
@@ -6167,12 +6264,19 @@ ofpacts_decode(const void *actions, size_t actions_len,
         enum ofp_raw_action_type raw;
         enum ofperr error;
         uint64_t arg;
-/*VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_pull_raw");*/
+        /*VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_pull_raw");*/
         error = ofpact_pull_raw(&openflow, ofp_version, &raw, &arg);
         if (!error) {
             /*VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_decode");*/
             error = ofpact_decode(action, raw, ofp_version, arg, ofpacts);
             /*VLOG_INFO("+++++++++++sqy ofpacts_decode: after ofpact_decode");*/
+            /*  // dump raw action data
+            struct ds s;
+            ds_init(&s);
+            ds_put_hex_dump(&s, actions, actions_len, 0, false);
+            VLOG_INFO("+++++tsf ofpacts_decode: ds_put_hex_dump_action: %s", ds_cstr(&s));
+            ds_destroy(&s);
+            */
         }
 
         if (error) {
@@ -6282,6 +6386,7 @@ ofpact_is_set_or_move_action(const struct ofpact *a)
     case OFPACT_SET_VLAN_PCP:
     case OFPACT_SET_VLAN_VID:
         return true;
+    case OFPACT_DROP: /* tsf */
     case OFPACT_BUNDLE:
     case OFPACT_CLEAR_ACTIONS:
     case OFPACT_CT:
@@ -6360,6 +6465,7 @@ ofpact_is_allowed_in_actions_set(const struct ofpact *a)
      * the OpenFlow specification nor map to actions that are defined in
      * the specification.  Thus the order in which they should be applied
      * in the action set is undefined. */
+    case OFPACT_DROP: /* tsf */
     case OFPACT_BUNDLE:
     case OFPACT_CONTROLLER:
     case OFPACT_CT:
@@ -6552,6 +6658,7 @@ ovs_instruction_type_from_ofpact_type(enum ofpact_type type)
     case OFPACT_GOTO_TABLE:
         return OVSINST_OFPIT11_GOTO_TABLE;
     case OFPACT_OUTPUT:
+    case OFPACT_DROP:  /* tsf: Add OFPACT_DROP */
     case OFPACT_GROUP:
     case OFPACT_CONTROLLER:
     case OFPACT_ENQUEUE:
@@ -6757,7 +6864,7 @@ decode_pof_instructions(const struct ofp11_instruction insts[],
 {
     const struct ofp11_instruction *inst;
     size_t left;
-VLOG_INFO("+++++++++++sqy decode_openflow11_instructions: before decode_openflow11_instruction");
+    VLOG_INFO("+++++++++++sqy decode_openflow11_instructions: before decode_openflow11_instruction");
     memset(out, 0, N_OVS_INSTRUCTIONS * sizeof *out);
     INSTRUCTION_FOR_EACH (inst, left, insts, n_insts) {
         enum ovs_instruction_type type;
@@ -6790,7 +6897,7 @@ decode_openflow11_instructions(const struct ofp11_instruction insts[],
 {
     const struct ofp11_instruction *inst;
     size_t left;
-VLOG_INFO("+++++++++++sqy decode_openflow11_instructions: before decode_openflow11_instruction");
+    VLOG_INFO("+++++++++++sqy decode_openflow11_instructions: before decode_openflow11_instruction, n_insts: %d", n_insts);
     memset(out, 0, N_OVS_INSTRUCTIONS * sizeof *out);
     INSTRUCTION_FOR_EACH (inst, left, insts, n_insts) {
         enum ovs_instruction_type type;
@@ -6878,6 +6985,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
     }
 
     instructions = ofpbuf_try_pull(openflow, instructions_len);
+    /*VLOG_INFO("++++++tsf ofpacts_pull_openflow_instructions: ofpbuf_try_pull: instruction_len: %d", instructions_len);*/
     if (instructions == NULL) {
         VLOG_WARN_RL(&rl, "OpenFlow message instructions length %u exceeds "
                      "remaining message length (%"PRIu32")",
@@ -6920,13 +7028,13 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         actions_len = POF_MAX_ACTION_LENGTH * action_num;
         /*get_actions_from_instruction(insts[OVSINST_OFPIT11_APPLY_ACTIONS],
                                      &actions, &actions_len);*/
-            VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: after get_actions_from_instruction");
-            error = ofpacts_decode_pof1(actions, actions_len, version, ofpacts);
-            VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: after ofpacts_decode_pof1");
-            if (error) {
-                VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: error ofpacts_decode_pof1");
-                goto exit;
-            }
+        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: after get_actions_from_instruction");
+        error = ofpacts_decode_pof1(actions, actions_len, version, ofpacts);
+        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: after ofpacts_decode_pof1");
+        if (error) {
+            VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: error ofpacts_decode_pof1");
+            goto exit;
+        }
 
     }
     if (insts[OVSINST_OFPIT11_CLEAR_ACTIONS]) {
@@ -7067,6 +7175,9 @@ ofpact_check__(enum ofputil_protocol *usable_protocols, struct ofpact *a,
     case OFPACT_OUTPUT:
         return ofpact_check_output_port(ofpact_get_OUTPUT(a)->port,
                                         max_ports);
+
+    case OFPACT_DROP:  /* tsf: no check and return directly. */
+     	return 0;
 
     case OFPACT_CONTROLLER:
         return 0;
@@ -7475,6 +7586,7 @@ ofpacts_verify(const struct ofpact ofpacts[], size_t ofpacts_len,
     enum ovs_instruction_type inst;
 
     inst = OVSINST_OFPIT13_METER;
+    VLOG_INFO("++++++tsf ofpacts_verify: before OFPACT_FOR_EACH, ofpacts_len: %d", ofpacts_len);
     OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
         enum ovs_instruction_type next;
         enum ofperr error;
@@ -7627,10 +7739,11 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_SET_ETH_DST, 5 },
         { OFPACT_SET_IPV4_SRC, 6 },
         { OFPACT_SET_IPV4_DST, 7 },
-        { OFPACT_SET_IP_DSCP, 8 },
+        { OFPACT_SET_IP_DSCP, 38 }, /* tsf: change 8 to 38 */
         { OFPACT_SET_L4_SRC_PORT, 9 },
         { OFPACT_SET_L4_DST_PORT, 10 },
         { OFPACT_ENQUEUE, 11 },
+        {OFPACT_DROP, 8}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         { 0, -1 },
     };
 
@@ -7644,7 +7757,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_SET_IPV4_SRC, 5 },
         { OFPACT_SET_IPV4_DST, 6 },
         { OFPACT_SET_IP_DSCP, 7 },
-        { OFPACT_SET_IP_ECN, 8 },
+        { OFPACT_SET_IP_ECN, 38 }, /* tsf: change 8 to 38 */
         { OFPACT_SET_L4_SRC_PORT, 9 },
         { OFPACT_SET_L4_DST_PORT, 10 },
         /* OFPAT_COPY_TTL_OUT (11) not supported. */
@@ -7661,12 +7774,14 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_GROUP, 22 },
         { OFPACT_SET_IP_TTL, 23 },
         { OFPACT_DEC_TTL, 24 },
+        {OFPACT_DROP, 8},  /* tsf: according to enum ofp_raw_action_type (of1.1+) */
         { 0, -1 },
     };
 
     /* OpenFlow 1.2, 1.3, and 1.4 actions. */
     static const struct ofpact_map of12[] = {
         { OFPACT_OUTPUT, 0 },
+        {OFPACT_DROP, 8},  /* tsf: according to enum ofp_raw_action_type (of1.1+) */
         /* OFPAT_COPY_TTL_OUT (11) not supported. */
         /* OFPAT_COPY_TTL_IN (12) not supported. */
         { OFPACT_SET_MPLS_TTL, 15 },
@@ -7765,6 +7880,7 @@ ofpact_outputs_to_port(const struct ofpact *ofpact, ofp_port_t port)
     case OFPACT_CONTROLLER:
         return port == OFPP_CONTROLLER;
 
+    case OFPACT_DROP:  /* tsf */
     case OFPACT_OUTPUT_REG:
     case OFPACT_OUTPUT_TRUNC:
     case OFPACT_BUNDLE:
@@ -7908,7 +8024,10 @@ ofpacts_format(const struct ofpact *ofpacts, size_t ofpacts_len,
                struct ds *string)
 {
     if (!ofpacts_len) {
+    	/*VLOG_INFO("++++++tsf ofpacts_format: ofpacts_len(0), then put_drop_format");*/
         ds_put_format(string, "%sdrop%s", colors.drop, colors.end);
+        /*ds_put_format(string, "%sdrop,reason_code:%s%"PRIu32,
+            	                  colors.special, colors.end, ofpact_get_DROP(ofpacts)->reason_code);*/ // see format_DROP()
     } else {
         const struct ofpact *a;
 
@@ -8041,9 +8160,11 @@ ofpacts_parse__(char *str, struct ofpbuf *ofpacts,
             error = parse_reg_load(value, ofpacts);
         } else if (!strcasecmp(key, "bundle_load")) {
             error = parse_bundle_load(value, ofpacts);
-        } else if (!strcasecmp(key, "drop")) {
+        }
+        /*else if (!strcasecmp(key, "drop")) {
             drop = true;
-        } else if (!strcasecmp(key, "apply_actions")) {
+        } */
+        else if (!strcasecmp(key, "apply_actions")) {
             return xstrdup("apply_actions is the default instruction");
         } else if (ofputil_port_from_string(key, &port)) {
             ofpact_put_OUTPUT(ofpacts)->port = port;
@@ -8333,6 +8454,8 @@ ofpact_decode_raw(enum ofp_version ofp_version,
     }
 
     hdrs.ofp_version = ofp_version;
+    VLOG_INFO("++++++tsf ofpact_decode_raw: hdrs.vendor: %d, hdrs.type: %d, hdrs.ofp_version: %d.",
+        		hdrs.vendor, hdrs.type, hdrs.ofp_version);  /* tsf: dump-flows's version is OF1.0 by default. */
     HMAP_FOR_EACH_WITH_HASH (inst, decode_node, ofpact_hdrs_hash(&hdrs),
                              ofpact_decode_hmap()) {
         if (ofpact_hdrs_equal(&hdrs, &inst->hdrs)) {

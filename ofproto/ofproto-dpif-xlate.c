@@ -4714,6 +4714,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         struct ofpact_controller *controller;
         const struct ofpact_metadata *metadata;
         const struct ofpact_set_field *set_field;
+        const struct ofpact_drop *drop;
         const struct mf_field *mf;
         struct pof_match_u *pf;
 
@@ -4735,6 +4736,13 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         case OFPACT_OUTPUT:
             xlate_output_action(ctx, ofpact_get_OUTPUT(a)->port,
                                 ofpact_get_OUTPUT(a)->max_len, true);
+            break;
+
+        case OFPACT_DROP:    /* tsf: add OFPACT_DROP */
+             /* no operation means to drop */
+             //ctx->error = 1;     /* tsf: any enum error. */
+        	drop = ofpact_get_DROP(a);
+            VLOG_INFO("action_drop has been done! The drop reason is %d.", drop->reason_code);
             break;
 
         case OFPACT_SET_FIELD:            

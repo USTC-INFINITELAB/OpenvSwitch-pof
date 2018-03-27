@@ -1,6 +1,6 @@
 #set -e
 
-cd /home/sqy/OpenvSwitch-pof
+cd /home/tsf/OpenvSwitch-pof
 
 
 #ovs-vsctl del-br br0
@@ -15,9 +15,9 @@ rm /usr/local/etc/openvswitch/conf.db
 ps -ef|grep ovs
 
 sleep 1s
-cd  /home/sqy/dpdk-16.07
-./tools/dpdk-devbind.py --bind=igb 0000:05:00.1
-./tools/dpdk-devbind.py --bind=igb 0000:05:00.0
+cd  /home/tsf/dpdk-16.07
+./tools/dpdk-devbind.py --bind=igb 0000:05:00.2
+./tools/dpdk-devbind.py --bind=igb 0000:05:00.3
 
 sleep 1s
 umount -t hugetlbfs none /dev/hugepages
