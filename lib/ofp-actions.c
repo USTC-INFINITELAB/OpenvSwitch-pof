@@ -2412,7 +2412,7 @@ struct ofp12_action_set_field {
      * - Enough 0-bytes to pad out to a multiple of 64 bits.
      *
      * The "pad" member is the beginning of the above. */
-    uint8_t pad[4];
+    /*uint8_t pad[4];*/
 
     ovs_be16 field_id;  /*0xffff means metadata,
                           0x8XXX means from table parameter,
@@ -2424,6 +2424,7 @@ struct ofp12_action_set_field {
     uint8_t value[POF_MAX_FIELD_LENGTH_IN_BYTE];
     uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];
 
+    uint8_t pad[4];
 };
 OFP_ASSERT(sizeof(struct ofp12_action_set_field) == 48);
 
