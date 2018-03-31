@@ -111,7 +111,7 @@ enum ofp_raw_action_type {
     /* OF1.0+(8): struct ofp11_action_drop. */
     OFPAT_RAW11_DROP,
 
-    /* OF1.0(1): uint16_t. */
+    /* OF1.0(25): uint16_t. */
     OFPAT_RAW10_SET_VLAN_VID,
     /* OF1.0(2): uint8_t. */
     OFPAT_RAW10_SET_VLAN_PCP,
@@ -210,7 +210,7 @@ enum ofp_raw_action_type {
     /* NX1.0+(21): struct nx_action_cnt_ids, ... */
     NXAST_RAW_DEC_TTL_CNT_IDS,
 
-    /* OF1.2-1.4(1): struct ofp12_action_set_field, ... */
+    /* OF1.0-1.4(1): struct ofp12_action_set_field, ... */
     OFPAT_RAW12_SET_FIELD,
     /* OF1.5+(1): struct ofp12_action_set_field, ... */
     OFPAT_RAW15_SET_FIELD,
@@ -2967,32 +2967,62 @@ set_field_to_set_field(const struct ofpact_set_field *sf,
     pad_ofpat(out, start_ofs);
 }
 
+/* tsf: convert ofpact_set_field to ofp12_action_set_field */
+static void
+set_field_to_pof_set_field(const struct ofpact_set_field *sf,
+                       enum ofp_version ofp_version, struct ofpbuf *out)
+{
+    struct ofp12_action_set_field *oasf OVS_UNUSED;
+    oasf = put_OFPAT12_SET_FIELD(out);
+    oasf->field_id = htons(sf->field_id);
+    oasf->offset = htons(sf->offset * 8);
+    oasf->len_field = htons(sf->len * 8);
+
+    void *copy_dst, *copy_dst2;
+    union mf_value *payload, *payload2;
+
+    payload = sf->value;
+    copy_dst = oasf->value;
+    memcpy(copy_dst, payload, sf->len);
+
+    payload2 = sf->value + sf->len;
+    copy_dst2 = oasf->mask;
+    memcpy(copy_dst2, payload2, sf->len);
+}
+
 static void
 encode_SET_FIELD(const struct ofpact_set_field *sf,
                  enum ofp_version ofp_version, struct ofpbuf *out)
 {
+    set_field_to_pof_set_field(sf, ofp_version, out);
+}
+
+/*static void
+encode_SET_FIELD(const struct ofpact_set_field *sf,
+                 enum ofp_version ofp_version, struct ofpbuf *out)
+{
     if (ofp_version >= OFP15_VERSION) {
-        /* OF1.5+ only has Set-Field (reg_load is redundant so we drop it
-         * entirely). */
+         *//*OF1.5+ only has Set-Field (reg_load is redundant so we drop it
+         * entirely).*//*
         set_field_to_set_field(sf, ofp_version, out);
     } else if (sf->ofpact.raw == NXAST_RAW_REG_LOAD ||
                sf->ofpact.raw == NXAST_RAW_REG_LOAD2) {
-        /* It came in as reg_load, send it out the same way. */
+         *//*It came in as reg_load, send it out the same way.*//*
         set_field_to_nxast(sf, out);
     } else if (ofp_version < OFP12_VERSION) {
-        /* OpenFlow 1.0 and 1.1 don't have Set-Field. */
+         *//*OpenFlow 1.0 and 1.1 don't have Set-Field.*//*
         set_field_to_legacy_openflow(sf, ofp_version, out);
     } else if (is_all_ones(ofpact_set_field_mask(sf), sf->field->n_bytes)) {
-        /* We're encoding to OpenFlow 1.2, 1.3, or 1.4.  The action sets an
-         * entire field, so encode it as OFPAT_SET_FIELD. */
+         *//*We're encoding to OpenFlow 1.2, 1.3, or 1.4.  The action sets an
+         * entire field, so encode it as OFPAT_SET_FIELD.*//*
         set_field_to_set_field(sf, ofp_version, out);
     } else {
-        /* We're encoding to OpenFlow 1.2, 1.3, or 1.4.  The action cannot be
+         *//*We're encoding to OpenFlow 1.2, 1.3, or 1.4.  The action cannot be
          * encoded as OFPAT_SET_FIELD because it does not set an entire field,
-         * so encode it as reg_load. */
+         * so encode it as reg_load*//*.
         set_field_to_nxast(sf, out);
     }
-}
+}*/
 
 /* Parses the input argument 'arg' into the key, value, and delimiter
  * components that are common across the reg_load and set_field action format.
@@ -3072,6 +3102,52 @@ set_field_parse__(char *arg, struct ofpbuf *ofpacts,
     return NULL;
 }
 
+/* Parses a "set_field" action with argument 'arg', appending the parsed
+ * action to 'ofpacts'.
+ *
+ * Returns NULL if successful, otherwise a malloc()'d string describing the
+ * error.  The caller is responsible for freeing the returned string. */
+static char * OVS_WARN_UNUSED_RESULT
+pof_set_field_parse__(char *arg, struct ofpbuf *ofpacts,
+                  enum ofputil_protocol *usable_protocols)
+{
+    char *value;
+    char *delim;
+    char *key;
+    const struct mf_field *mf;
+    union mf_value sf_value, sf_mask;
+    char *error;
+
+    error = set_field_split_str(arg, &key, &value, &delim);
+    if (error) {
+        return error;
+    }
+
+    mf = mf_from_name(key);
+    if (!mf) {
+        return xasprintf("%s is not a valid OXM field name", key);
+    }
+    if (!mf->writable) {
+        return xasprintf("%s is read-only", key);
+    }
+
+    delim[0] = '\0';
+    error = mf_parse(mf, value, &sf_value, &sf_mask);
+    if (error) {
+        return error;
+    }
+
+    if (!mf_is_value_valid(mf, &sf_value)) {
+        return xasprintf("%s is not a valid value for field %s", value, key);
+    }
+
+    *usable_protocols &= mf->usable_protocols_exact;
+
+    ofpact_put_set_field(ofpacts, mf, &sf_value, &sf_mask);
+    return NULL;
+}
+
+
 /* Parses 'arg' as the argument to a "set_field" action, and appends such an
  * action to 'ofpacts'.
  *
@@ -3082,7 +3158,7 @@ parse_SET_FIELD(const char *arg, struct ofpbuf *ofpacts,
                 enum ofputil_protocol *usable_protocols)
 {
     char *copy = xstrdup(arg);
-    char *error = set_field_parse__(copy, ofpacts, usable_protocols);
+    char *error = pof_set_field_parse__(copy, ofpacts, usable_protocols);
     free(copy);
     return error;
 }
@@ -3132,7 +3208,8 @@ parse_reg_load(char *arg, struct ofpbuf *ofpacts)
     return NULL;
 }
 
-static void
+/* tsf: format_SET_FIELD supports openflow. */
+/*static void
 format_SET_FIELD(const struct ofpact_set_field *a, struct ds *s)
 {
     if (a->ofpact.raw == NXAST_RAW_REG_LOAD) {
@@ -3154,8 +3231,43 @@ format_SET_FIELD(const struct ofpact_set_field *a, struct ds *s)
         ds_put_format(s, "%s->%s%s",
                       colors.special, colors.end, a->field->name);
     }
-}
+}*/
 
+/* tsf: format_SET_FIELD supports pof. */
+static void
+format_SET_FIELD(const struct ofpact_set_field *osf, struct ds *s)
+{
+	VLOG_INFO("++++++tsf format_SET_FIELD: start, field_len: %d Bytes", osf->len);
+	ds_put_format(s, "%sset_field->%s", colors.special, colors.end);
+
+	union mf_value value, mask;
+	void *copy_dst, *copy_dst2;
+	char *value_dst, *mask_dst;
+	uint8_t *payload, *payload2;
+
+	payload = &(osf->value);
+	/*VLOG_INFO("++++++tsf format_SET_FIELD: payload_addr: %p", payload);*/
+	copy_dst = &value;
+	memset(copy_dst, 0x00, 128 / 8);
+	memcpy(copy_dst, payload, osf->len);
+	inet_ntop(AF_INET6, copy_dst, value_dst, INET6_ADDRSTRLEN);
+	ds_put_format(s, "%svalue=%s/%"PRIu16"%s", colors.special, value_dst, osf->len * 8, colors.end);
+	VLOG_INFO("++++++tsf format_SET_FIELD:  after set_field->value");
+
+	/*payload2 = ofpact_pof_set_field_mask(osf);
+	VLOG_INFO("++++++tsf format_SET_FIELD: payload2_addr: %p", payload2);
+	copy_dst2 = &mask;
+	memset(copy_dst2, 0x00, 128 / 8);
+	VLOG_INFO("++++++tsf format_SET_FIELD: 111 copy_dst2: %s", (char *) copy_dst2);
+	memcpy(copy_dst2, payload2, osf->len);
+	VLOG_INFO("++++++tsf format_SET_FIELD: 222 copy_dst2: %s", (char *) copy_dst2);
+	inet_ntop(AF_INET6, copy_dst2, mask_dst, INET6_ADDRSTRLEN);
+	VLOG_INFO("++++++tsf format_SET_FIELD: mask_dst: %s", *mask_dst);
+	ds_put_format(s, "%s,mask=%s/%"PRIu16"%s", colors.special, mask_dst, osf->len * 8, colors.end);
+	VLOG_INFO("++++++tsf format_SET_FIELD:  after set_field->mask");*/
+
+	VLOG_INFO("++++++tsf format_SET_FIELD: end");
+}
 
 struct ofpact_set_field *
 ofpact_put_pof_set_field(struct ofpbuf *ofpacts, const struct mf_field *field,
@@ -6228,16 +6340,26 @@ ofpacts_decode_pof1(const void *actions, size_t actions_len,
     struct ofpbuf openflow = ofpbuf_const_initializer(actions, actions_len);
 
     int i=0;
+    VLOG_INFO("++++++tsf action_len: %d, POF_MAX_ACTION_LENGTH: %d, result = %d",
+    		actions_len, POF_MAX_ACTION_LENGTH, actions_len/POF_MAX_ACTION_LENGTH);
     for (i=0; i<actions_len/POF_MAX_ACTION_LENGTH; i++){
+    	VLOG_INFO("++++++tsf ofpacts_decode_pof1: %dth time", i);
         const struct ofp_action_header *action = openflow.data;
         enum ofp_raw_action_type raw;
         enum ofperr error;
         uint64_t arg;
-        VLOG_INFO("+++++++++++sqy ofpacts_decode_pof1: before ofpact_pull_raw");
+        VLOG_INFO("+++++++++++sqy ofpacts_decode_pof1: before ofpact_pull_raw, in pof");
         error = ofpact_pull_raw(&openflow, ofp_version, &raw, &arg);
         if (!error) {
             VLOG_INFO("+++++++++++sqy ofpacts_decode_pof1: before ofpact_decode");
             error = ofpact_decode(action, raw, ofp_version, arg, ofpacts);
+            /*  // dump raw action data
+            struct ds s;
+            ds_init(&s);
+            ds_put_hex_dump(&s, actions, actions_len, 0, false);
+            VLOG_INFO("+++++tsf ofpacts_decode: ds_put_hex_dump_action: %s", ds_cstr(&s));
+            ds_destroy(&s);
+            */
             VLOG_INFO("+++++++++++sqy ofpacts_decode_pof1: after ofpact_decode");
         }
 
@@ -6246,7 +6368,7 @@ ofpacts_decode_pof1(const void *actions, size_t actions_len,
         }
 
         if (error) {
-            VLOG_INFO("+++++++++++sqy ofpacts_decode_pof1: before log_bad_action");
+            VLOG_INFO("+++++++++++sqy ofpacts_decode_pof1: before log_bad_action, in pof");
             log_bad_action(actions, actions_len, action, error);
             return error;
         }
@@ -6259,28 +6381,26 @@ ofpacts_decode(const void *actions, size_t actions_len,
                enum ofp_version ofp_version, struct ofpbuf *ofpacts)
 {
     struct ofpbuf openflow = ofpbuf_const_initializer(actions, actions_len);
+    VLOG_INFO("++++++tsf ofpacts_decode: actions_len:%d, openflow.size:%d, action_num:%d in openflow",
+              actions_len, openflow.size, actions_len / POF_MAX_ACTION_LENGTH);
+    int i = 0;
     while (openflow.size) {
+    	VLOG_INFO("++++++tsf i: %dth", i++);
         const struct ofp_action_header *action = openflow.data;
         enum ofp_raw_action_type raw;
         enum ofperr error;
         uint64_t arg;
         /*VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_pull_raw");*/
+        VLOG_INFO("++++++tsf: ofpacts_decode: before ofpact_pull_raw, in openflow");
         error = ofpact_pull_raw(&openflow, ofp_version, &raw, &arg);
         if (!error) {
             /*VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_decode");*/
             error = ofpact_decode(action, raw, ofp_version, arg, ofpacts);
             /*VLOG_INFO("+++++++++++sqy ofpacts_decode: after ofpact_decode");*/
-            /*  // dump raw action data
-            struct ds s;
-            ds_init(&s);
-            ds_put_hex_dump(&s, actions, actions_len, 0, false);
-            VLOG_INFO("+++++tsf ofpacts_decode: ds_put_hex_dump_action: %s", ds_cstr(&s));
-            ds_destroy(&s);
-            */
         }
 
         if (error) {
-            VLOG_INFO("+++++++++++sqy ofpacts_decode: before log_bad_action");
+            VLOG_INFO("+++++++++++sqy ofpacts_decode: before log_bad_action, in openflow");
             log_bad_action(actions, actions_len, action, error);
             return error;
         }
@@ -6314,7 +6434,9 @@ ofpacts_pull_openflow_actions__(struct ofpbuf *openflow,
         return OFPERR_OFPBRC_BAD_LEN;
     }
 
+    VLOG_INFO("++++++tsf ofpacts_pull_openflow_actions__, before ofpacts_decode in OF1.0");
     error = ofpacts_decode(actions, actions_len, version, ofpacts);
+    /*error = ofpacts_decode_pof1(actions, actions_len, version, ofpacts);*/  /* tsf */
     if (error) {
         ofpacts->size = orig_size;
         return error;
@@ -6969,7 +7091,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
 
     ofpbuf_clear(ofpacts);
     if (version == OFP10_VERSION) {
-        /*VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore ofpacts_pull_openflow_actions__  10");*/
+        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore ofpacts_pull_openflow_actions__  10");
         return ofpacts_pull_openflow_actions__(openflow, instructions_len,
                                                version,
                                                (1u << N_OVS_INSTRUCTIONS) - 1,
@@ -6985,7 +7107,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
     }
 
     instructions = ofpbuf_try_pull(openflow, instructions_len);
-    /*VLOG_INFO("++++++tsf ofpacts_pull_openflow_instructions: ofpbuf_try_pull: instruction_len: %d", instructions_len);*/
+    VLOG_INFO("++++++tsf ofpacts_pull_openflow_instructions: ofpbuf_try_pull: instruction_len: %d", instructions_len);
     if (instructions == NULL) {
         VLOG_WARN_RL(&rl, "OpenFlow message instructions length %u exceeds "
                      "remaining message length (%"PRIu32")",
@@ -7732,7 +7854,7 @@ get_ofpact_map(enum ofp_version version)
     /* OpenFlow 1.0 actions. */
     static const struct ofpact_map of10[] = {
         { OFPACT_OUTPUT, 0 },
-        { OFPACT_SET_VLAN_VID, 1 },
+        { OFPACT_SET_VLAN_VID, 25 }, /* tsf: change 1 to 25 */
         { OFPACT_SET_VLAN_PCP, 2 },
         { OFPACT_STRIP_VLAN, 3 },
         { OFPACT_SET_ETH_SRC, 4 },
@@ -7744,13 +7866,14 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_SET_L4_DST_PORT, 10 },
         { OFPACT_ENQUEUE, 11 },
         {OFPACT_DROP, 8}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
+        {OFPACT_SET_FIELD, 1}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         { 0, -1 },
     };
 
     /* OpenFlow 1.1 actions. */
     static const struct ofpact_map of11[] = {
         { OFPACT_OUTPUT, 0 },
-        { OFPACT_SET_VLAN_VID, 1 },
+        { OFPACT_SET_VLAN_VID, 25 }, /* tsf: change 1 to 25 */
         { OFPACT_SET_VLAN_PCP, 2 },
         { OFPACT_SET_ETH_SRC, 3 },
         { OFPACT_SET_ETH_DST, 4 },
@@ -7775,6 +7898,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_SET_IP_TTL, 23 },
         { OFPACT_DEC_TTL, 24 },
         {OFPACT_DROP, 8},  /* tsf: according to enum ofp_raw_action_type (of1.1+) */
+        {OFPACT_SET_FIELD, 1}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         { 0, -1 },
     };
 
@@ -7794,7 +7918,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_GROUP, 22 },
         { OFPACT_SET_IP_TTL, 23 },
         { OFPACT_DEC_TTL, 24 },
-        { OFPACT_SET_FIELD, 25 },
+        { OFPACT_SET_FIELD, 1 },  /* tsf: change 25 to 1*/
         /* OF1.3+ OFPAT_PUSH_PBB (26) not supported. */
         /* OF1.3+ OFPAT_POP_PBB (27) not supported. */
         { 0, -1 },
@@ -8479,7 +8603,9 @@ ofpact_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
     enum ofperr error;
 
     *raw = *arg = 0;
+    VLOG_INFO("++++++tsf ofpact_pull_raw: before ofpact_decode_raw");
     error = ofpact_decode_raw(ofp_version, oah, buf->size, &action);
+    VLOG_INFO("++++++tsf ofpact_pull_raw: after ofpact_decode_raw");
     if (error) {
         return error;
     }
@@ -8520,7 +8646,8 @@ ofpact_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
         }
     }
 
-    ofpbuf_pull(buf, POF_MAX_ACTION_LENGTH);
+    /*ofpbuf_pull(buf, POF_MAX_ACTION_LENGTH);*/
+    ofpbuf_pull(buf, length);
 
     return 0;
 }

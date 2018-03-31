@@ -112,6 +112,10 @@ EXTRA_DIST = \
 	.cproject \
 	.project \
 	.idea/vcs.xml \
+	.idea/OpenvSwitch-pof.iml \
+	.idea/misc.xml \
+	.idea/modules.xml \
+	.idea/workspace.xml \
 	OVS206.config \
 	OVS206.creator \
         OVS206.creator.user \

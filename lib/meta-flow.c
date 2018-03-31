@@ -2789,6 +2789,28 @@ mf_format_ct_state_string(ovs_be32 value, ovs_be32 mask, struct ds *s)
 /* Appends to 's' a string representation of field 'mf' whose value is in
  * 'value' and 'mask'.  'mask' may be NULL to indicate an exact match. */
 void
+mf_pof_format(const struct mf_field *mf, uint16_t field_len,
+          const union mf_value *value, const union mf_value *mask,
+          struct ds *s)  // tsf: run here
+{
+    if (mask) {
+        if (is_all_zeros(mask, field_len)) {
+            ds_put_cstr(s, "ANY");
+            return;
+        } else if (is_all_ones(mask, field_len)) {
+            mask = NULL;
+        }
+    }
+
+    /*mf_format_integer_string(mf, (uint8_t *) value, (uint8_t *) mask, s);*/
+    ipv6_format_masked(&value->ipv6, mask ? &mask->ipv6 : NULL, s);
+    ds_put_hex_dump(s, &value->ipv6, field_len, 0, false);
+    VLOG_INFO("++++++tsf after mf_pof_format: s = %s", s);
+}
+
+/* Appends to 's' a string representation of field 'mf' whose value is in
+ * 'value' and 'mask'.  'mask' may be NULL to indicate an exact match. */
+void
 mf_format(const struct mf_field *mf,
           const union mf_value *value, const union mf_value *mask,
           struct ds *s)

@@ -2375,6 +2375,9 @@ char *mf_parse_value(const struct mf_field *, const char *, union mf_value *);
 void mf_format(const struct mf_field *,
                const union mf_value *value, const union mf_value *mask,
                struct ds *);
+void mf_pof_format(const struct mf_field *, uint16_t field_len,
+               const union mf_value *value, const union mf_value *mask,
+               struct ds *);
 void mf_format_subvalue(const union mf_subvalue *subvalue, struct ds *s);
 
 /* Field Arrays. */
