@@ -639,6 +639,7 @@ pof_mf_get_value(const struct pof_match_u *mf, const struct pof_fp_flow *flow,
     int i = (mf->offset/8);
     /*to do: considering the appropriate length of a field in struct pof_fp_flow. */
     value->be64 = flow->pof_normal[i];
+    /*VLOG_INFO("++++++tsf pof_mf_get_value: value->be64:%d", ntohll(value->be64));*/
 }
 
 /* Copies the value of field 'mf' from 'flow' into 'value'.  The caller is
@@ -1264,9 +1265,11 @@ pof_mf_mask_field_masked(const struct pof_match_u *mf, const union mf_value *mas
     /*VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: inneroff=%d, mf->len=%d", inner_off , mf->len );*/
     int len = inner_off + mf->len;
     for ( ; i < len && i < 8; i++) {
+    	/*VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked 111: mask_value.b[%d] =%d,mask->b[%d] =%d",
+    	                  i, mask_value.b[i], i-inner_off, mask->b[i-inner_off]);*/
         mask_value.b[i] |= mask->b[i-inner_off];
-        /*VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked: mask_value.b[i] =%d,mask->b[i-inner_off] =%d",
-                  mask_value.b[i], mask->b[i-inner_off]);*/
+        VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked 222: mask_value.b[%d] =%d,mask->b[%d] =%d",
+                 i, mask_value.b[i], i-inner_off, mask->b[i-inner_off]);
     }
 
     /* to do: the field which will be 'set_field' corrosponds to more than
@@ -1346,10 +1349,10 @@ pof_mf_set_flow_value(const struct pof_match_u *mf,
                   const union mf_value *value, struct pof_fp_flow *flow)
 {
     int i = (mf->offset/8);
-    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value 111");
+    /*VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value 111");*/
     /*to do: considering the appropriate length of a field in struct pof_fp_flow. */
     flow->pof_normal[i] = value->be64;
-    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value 222");
+    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value 222, flow->normal[%d]=%d",i, ntohll(flow->pof_normal[i]));
 }
 
 /* Sets 'flow' member field described by 'mf' to 'value'.  The caller is
@@ -1664,11 +1667,23 @@ pof_mf_set_flow_value_v1(const struct pof_match_u *field,
     union mf_value tmp;
 
     for(int i=0; i<POF_MAX_FIELD_LENGTH_IN_BYTE; i++){
+    	VLOG_INFO("+++++++++++tsf pof_mf_set_flow_value_masked value->b[i]= %d, flow->value[0][i]=%d", value->b[i], flow->value[0][i]);
         flow->value[0][i] = value->b[i];
         flow->mask[0][i] = mask->b[i];
         VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked value->b[i]= %d, flow->value[0][i]=%d", value->b[i], flow->value[0][i]);
         VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked mask->b[i]= %d, flow->mask[0][i]=%d", mask->b[i], flow->mask[0][i]);
     }
+}
+
+void pof_mf_modify_field_value(const struct pof_match_u *mf,
+							   uint32_t increment,
+							   const union mf_value *mask,
+							   struct pof_flow *flow)
+{
+	int i = mf->offset/8;
+	VLOG_INFO("++++++tsf pof_mf_modify_field_value: before modify_field_value: value = %d, increment = %d", flow->value[0][i], increment);
+	flow->value[0][i] += increment;
+	VLOG_INFO("++++++tsf pof_mf_modify_field_value: after modify_field_value: value = %d", flow->value[0][i]);
 }
 
 bool

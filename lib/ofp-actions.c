@@ -367,6 +367,8 @@ static void put_reg_load(struct ofpbuf *openflow,
 
 static enum ofperr ofpact_pull_raw(struct ofpbuf *, enum ofp_version,
                                    enum ofp_raw_action_type *, uint64_t *arg);
+static enum ofperr ofpact_pof_pull_raw(struct ofpbuf *, enum ofp_version,
+                                   enum ofp_raw_action_type *, uint64_t *arg);
 static void *ofpact_put_raw(struct ofpbuf *, enum ofp_version,
                             enum ofp_raw_action_type, uint64_t arg);
 
@@ -770,7 +772,7 @@ encode_MODIFY_FIELD(const struct ofpact_modify_field *omf,
 static void
 format_MODIFY_FIELD(const struct ofpact_modify_field *a, struct ds *s)
 {
-    ds_put_format(s, "%smodify_field:field_id=%s%"PRIu16",offset=%"PRIu16",len=%"PRIu16",increment=%"PRIu32,
+    ds_put_format(s, "%smodify_field->field_id=%s%"PRIu16",offset=%"PRIu16",len=%"PRIu16",increment=%"PRIu32,
                   colors.special, colors.end, a->field_id, a->offset, a->len_field, a->increment);
 }
 
@@ -818,10 +820,12 @@ decode_OFPAT_RAW10_MODIFY_FIELD(const struct ofp10_action_modify_field *oamf,
 {
     struct ofpact_modify_field *omf = ofpact_put_MODIFY_FIELD(ofpacts);
 
+    VLOG_INFO("+++++++++++tsf ofp-actions.c/ecode_OFPAT_RAW10_MODIFY_FIELD: start.");
     omf->field_id = ntohs(oamf->field_id);
     omf->offset = ntohs(oamf->offset);
     omf->len_field = ntohs(oamf->len_field);
     omf->increment = ntohl(oamf->increment);
+    VLOG_INFO("+++++++++++tsf ofp-actions.c/ecode_OFPAT_RAW10_MODIFY_FIELD: end.");
 
     return 0;
 }
@@ -3352,7 +3356,8 @@ format_SET_FIELD(const struct ofpact_set_field *osf, struct ds *s)
 	memset(copy_dst, 0x00, 128 / 8);
 	memcpy(copy_dst, payload, osf->len);
 	inet_ntop(AF_INET6, copy_dst, value_dst, INET6_ADDRSTRLEN);
-	ds_put_format(s, "%svalue=%s/%"PRIu16"%s", colors.special, value_dst, osf->len * 8, colors.end);
+	ds_put_format(s, "%sfield_id=%"PRIu16",offset=%"PRIu16",len=%"PRIu16",value=%s/%"PRIu16"%s",
+                  colors.special, osf->field_id, osf->offset * 8, osf->len * 8, value_dst, osf->len * 8, colors.end);
 	VLOG_INFO("++++++tsf format_SET_FIELD:  after set_field->value");
 
 	/*payload2 = ofpact_pof_set_field_mask(osf);
@@ -3367,7 +3372,7 @@ format_SET_FIELD(const struct ofpact_set_field *osf, struct ds *s)
 	ds_put_format(s, "%s,mask=%s/%"PRIu16"%s", colors.special, mask_dst, osf->len * 8, colors.end);
 	VLOG_INFO("++++++tsf format_SET_FIELD:  after set_field->mask");*/
 
-	VLOG_INFO("++++++tsf format_SET_FIELD: end");
+	/*VLOG_INFO("++++++tsf format_SET_FIELD: end");*/
 }
 
 struct ofpact_set_field *
@@ -6493,7 +6498,7 @@ ofpacts_decode(const void *actions, size_t actions_len,
         uint64_t arg;
         /*VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_pull_raw");*/
         VLOG_INFO("++++++tsf: ofpacts_decode: before ofpact_pull_raw, in openflow");
-        error = ofpact_pull_raw(&openflow, ofp_version, &raw, &arg);
+        error = ofpact_pof_pull_raw(&openflow, ofp_version, &raw, &arg);
         if (!error) {
             /*VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_decode");*/
             error = ofpact_decode(action, raw, ofp_version, arg, ofpacts);
@@ -6591,6 +6596,7 @@ ofpact_is_set_or_move_action(const struct ofpact *a)
 {
     switch (a->type) {
     case OFPACT_SET_FIELD:
+    case OFPACT_MODIFY_FIELD:  /* tsf */
     case OFPACT_REG_MOVE:
     case OFPACT_SET_ETH_DST:
     case OFPACT_SET_ETH_SRC:
@@ -6617,7 +6623,6 @@ ofpact_is_set_or_move_action(const struct ofpact *a)
     case OFPACT_CONTROLLER:
     case OFPACT_DEC_MPLS_TTL:
     case OFPACT_DEC_TTL:
-    case OFPACT_MODIFY_FIELD:  /* tsf */
     case OFPACT_ENQUEUE:
     case OFPACT_EXIT:
     case OFPACT_UNROLL_XLATE:
@@ -8706,6 +8711,65 @@ ofpact_decode_raw(enum ofp_version ofp_version,
 
 static enum ofperr
 ofpact_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
+                enum ofp_raw_action_type *raw, uint64_t *arg)
+{
+    const struct ofp_action_header *oah = buf->data;
+    const struct ofpact_raw_instance *action;
+    unsigned int length;
+    enum ofperr error;
+
+    *raw = *arg = 0;
+    VLOG_INFO("++++++tsf ofpact_pull_raw: before ofpact_decode_raw");
+    error = ofpact_decode_raw(ofp_version, oah, buf->size, &action);
+    VLOG_INFO("++++++tsf ofpact_pull_raw: after ofpact_decode_raw");
+    if (error) {
+        return error;
+    }
+
+   /* if (action->deprecation) {
+        VLOG_INFO_RL(&rl, "%s is deprecated in %s (%s)",
+                     action->name, ofputil_version_to_string(ofp_version),
+                     action->deprecation);
+    }*/
+
+    length = ntohs(oah->len);
+    if (length > buf->size) {
+        VLOG_WARN_RL(&rl, "OpenFlow action %s length %u exceeds action buffer "
+                     "length %"PRIu32, action->name, length, buf->size);
+        return OFPERR_OFPBAC_BAD_LEN;
+    }
+    if (length < action->min_length || length > action->max_length) {
+        VLOG_WARN_RL(&rl, "OpenFlow action %s length %u not in valid range "
+                     "[%hu,%hu]", action->name, length,
+                     action->min_length, action->max_length);
+        return OFPERR_OFPBAC_BAD_LEN;
+    }
+    if (length % 8) {
+        VLOG_WARN_RL(&rl, "OpenFlow action %s length %u is not a multiple "
+                     "of 8", action->name, length);
+        return OFPERR_OFPBAC_BAD_LEN;
+    }
+
+    *raw = action->raw;
+    *arg = 0;
+    if (action->arg_len) {
+        const uint8_t *p;
+        int i;
+
+        p = ofpbuf_at_assert(buf, action->arg_ofs, action->arg_len);
+        for (i = 0; i < action->arg_len; i++) {
+            *arg = (*arg << 8) | p[i];
+        }
+    }
+
+    ofpbuf_pull(buf, POF_MAX_ACTION_LENGTH);
+    /*ofpbuf_pull(buf, length);*/
+
+    return 0;
+}
+
+static enum ofperr
+ofpact_pof_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
                 enum ofp_raw_action_type *raw, uint64_t *arg)
 {
     const struct ofp_action_header *oah = buf->data;

@@ -4704,6 +4704,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 {
     struct pof_fp_flow_wildcards *wc = ctx->wc;
     struct pof_flow *flow = &ctx->xin->flow;
+    struct pof_fp_flow *base_flow = &ctx->xin->flow;
     const struct ofpact *a;
 
     if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
@@ -4715,6 +4716,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         const struct ofpact_metadata *metadata;
         const struct ofpact_set_field *set_field;
         const struct ofpact_drop *drop;
+        const struct ofpact_modify_field *modify_field;
         const struct mf_field *mf;
         struct pof_match_u *pf;
 
@@ -4745,6 +4747,43 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             VLOG_INFO("action_drop has been done! The drop reason is %d.", drop->reason_code);
             break;
 
+        case OFPACT_MODIFY_FIELD:
+        	modify_field = ofpact_get_MODIFY_FIELD(a);
+        	pf->field_id = modify_field->field_id;
+        	pf->len = modify_field->len_field/8;
+        	pf->offset = modify_field->offset/8;
+        	VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_MODIFY_FIELD, field_id=%d, len=%d, offset=%d",
+        	                      pf->field_id, pf->len, pf->offset);  // bytes
+
+        	flow->field_id[0] = htons(pf->field_id);
+        	flow->len[0] = htons(pf->len);
+        	flow->offset[0] = htons(pf->offset);
+
+        	int lowest_segment_offset = (pf->offset + pf->len) / 8;   // low bytes location
+        	int inner_offset = (pf->offset + pf->len) - ((pf->offset + pf->len)/8)*8;  // the last uint8_t location
+        	union mf_value flow_value;  // find the lowest bytes
+            union mf_value flow_mask;
+        	flow_value.be64 = base_flow->pof_normal[lowest_segment_offset];
+
+
+        	if (inner_offset > 0) {
+        		inner_offset = inner_offset - 1;
+        	}
+
+        	VLOG_INFO("++++++tsf pof_do_xlate_actions: OFPACT_MODIFI_FIELD: before lowest_segment_offset=%d,inner_offset=%d,value=%x",
+        			lowest_segment_offset, inner_offset, flow_value.b[inner_offset]);
+        	flow_value.b[inner_offset] += modify_field->increment;
+        	base_flow->pof_normal[lowest_segment_offset] = flow_value.be64;
+        	VLOG_INFO("++++++tsf pof_do_xlate_actions: OFPACT_MODIFI_FIELD: after lowest_segment_offset=%d,inner_offset=%d,value=%x",
+        	        			lowest_segment_offset, inner_offset, flow_value.b[inner_offset]);
+
+        	for(int i=0; i<14; i++){
+        	     VLOG_INFO("+++++++++++tsf pof_do_xlate_actions base_flow->value[0][%d]=0x%lx / 0x%lx",
+        	               i, ntohll(base_flow->pof_normal[i]), base_flow->pof_normal[i]);
+        	}
+
+        	break;
+
         case OFPACT_SET_FIELD:            
             set_field = ofpact_get_SET_FIELD(a);
             pf->field_id = set_field->field_id;
@@ -4756,7 +4795,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             flow->offset[0] = htons(pf->offset);
             flow->flag = true;
 
-           /* VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: OFPACT_SET_FIELD, fieldid=%d, len=%d, offset=%d",
+           /*VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: OFPACT_SET_FIELD, fieldid=%d, len=%d, offset=%d",
                       pf->field_id, pf->len, pf->offset);*/
             pof_mf_mask_field_masked(pf, ofpact_pof_set_field_mask(set_field), wc);
             /*pof_mf_set_flow_value_masked(pf, set_field->value,
@@ -4765,6 +4804,10 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             pof_mf_set_flow_value_v1(pf, set_field->value,
                                      ofpact_pof_set_field_mask(set_field),
                                      flow);
+            for(int i=0; i<14; i++) {
+                VLOG_INFO("+++++++++++tsf pof_do_xlate_actions base_flow->value[0][%d]=0x%lx / 0x%lx",
+                          i, ntohll(base_flow->pof_normal[i]), base_flow->pof_normal[i]);
+            }
             /*VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_set_flow_value_masked");*/
             break;
 
