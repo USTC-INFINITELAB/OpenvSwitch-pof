@@ -81,6 +81,7 @@
     OFPACT(STACK_PUSH,      ofpact_stack,       ofpact, "push")         \
     OFPACT(STACK_POP,       ofpact_stack,       ofpact, "pop")          \
     OFPACT(DEC_TTL,         ofpact_cnt_ids,     cnt_ids, "dec_ttl")     \
+    OFPACT(MODIFY_FIELD,    ofpact_modify_field,  ofpact, "modify_field") \
     OFPACT(SET_MPLS_LABEL,  ofpact_mpls_label,  ofpact, "set_mpls_label") \
     OFPACT(SET_MPLS_TC,     ofpact_mpls_tc,     ofpact, "set_mpls_tc")  \
     OFPACT(SET_MPLS_TTL,    ofpact_mpls_ttl,    ofpact, "set_mpls_ttl") \
@@ -272,6 +273,18 @@ struct ofpact_output {
 struct ofpact_drop {
 	struct ofpact ofpact;
 	uint32_t reason_code;
+};
+
+/* OFPACT_MODIFY_FIELD.
+ *
+ * Used for OFPAT10_MODIFY_FIELD. */
+struct ofpact_modify_field {
+    struct ofpact ofpact;
+
+    uint16_t field_id;
+    uint16_t offset;
+    uint16_t len_field;
+    uint32_t increment;
 };
 
 /* OFPACT_CONTROLLER.

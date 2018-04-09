@@ -111,6 +111,9 @@ enum ofp_raw_action_type {
     /* OF1.0+(8): struct ofp11_action_drop. */
     OFPAT_RAW11_DROP,
 
+    /* OF1.0+(3): struct ofp10_action_modify_field. */
+    OFPAT_RAW10_MODIFY_FIELD,
+
     /* OF1.0(25): uint16_t. */
     OFPAT_RAW10_SET_VLAN_VID,
     /* OF1.0(2): uint8_t. */
@@ -132,12 +135,12 @@ enum ofp_raw_action_type {
      * TCI.] */
     OFPAT_RAW11_PUSH_VLAN,
 
-    /* OF1.0(3): void. */
+    /* OF1.0(33): void. */
     OFPAT_RAW10_STRIP_VLAN,
     /* OF1.1+(18): void. */
     OFPAT_RAW11_POP_VLAN,
 
-    /* OF1.0(4), OF1.1(3), OF1.2+(3) is deprecated (use Set-Field): struct
+    /* OF1.0(4), OF1.1(33), OF1.2+(33) is deprecated (use Set-Field): struct
      * ofp_action_dl_addr. */
     OFPAT_RAW_SET_DL_SRC,
 
@@ -411,6 +414,7 @@ ofpact_next_flattened(const struct ofpact *ofpact)
     case OFPACT_STACK_PUSH:
     case OFPACT_STACK_POP:
     case OFPACT_DEC_TTL:
+    case OFPACT_MODIFY_FIELD:  /* tsf: add OFPACT_MODIFY_FIELD */
     case OFPACT_SET_MPLS_LABEL:
     case OFPACT_SET_MPLS_TC:
     case OFPACT_SET_MPLS_TTL:
@@ -723,6 +727,103 @@ decode_OFPAT_RAW11_DROP(const struct ofp11_action_drop *oad,
     enum ofperr error = decode_pof_ofpat_drop(oad, true, ofpacts);
     VLOG_INFO("+++++++++++tsf ofp-actions.c/ecode_OFPAT_RAW11_DROP: end.");
     return error;  // tsf: if decode successfully, return 8 (drop_enum) to let ovs add drop flows
+}
+
+/* tsf: Modify_field actions. */
+
+/* tsf: Action structure for OFPAT_RAW10_MODIFY_FIELD. */
+struct ofp10_action_modify_field {
+    ovs_be16 type;                  /* OFPAT_RAW10_MODIFY_FIELD. */
+    ovs_be16 len;                   /* Length is padded to 64 bits. */
+//  uint8_t pad[4];
+
+    ovs_be16 field_id;  /*0xffff means metadata,
+                          0x8XXX means from table parameter,
+                          otherwise means from packet data. */
+    ovs_be16 offset;  /*bit unit*/
+    ovs_be16 len_field;    /*length in bit unit*/
+    uint8_t pad2[2];   /*8 bytes aligned*/
+    ovs_be32 increment;
+};
+OFP_ASSERT(sizeof(struct ofp10_action_modify_field) == 16);
+
+/* tsf: encode_MODIFY_FIELD.
+ *
+ * encode ofpact_modify_field into ofp10_action_modify_field.
+ * */
+static void
+encode_MODIFY_FIELD(const struct ofpact_modify_field *omf,
+                    enum ofp_version ofp_version, struct ofpbuf *out)
+{
+    struct ofp10_action_modify_field *oamf;
+    oamf = put_OFPAT10_MODIFY_FIELD(out);
+    oamf->field_id = htons(omf->field_id);
+    oamf->offset = htons(omf->offset);
+    oamf->len_field = htons(omf->len_field);
+    oamf->increment = htonl(omf->increment);
+}
+
+/* tsf: format_MODIFY_FIELD.
+ *
+ * the format of dump-flows
+ * */
+static void
+format_MODIFY_FIELD(const struct ofpact_modify_field *a, struct ds *s)
+{
+    ds_put_format(s, "%smodify_field:field_id=%s%"PRIu16",offset=%"PRIu16",len=%"PRIu16",increment=%"PRIu32,
+                  colors.special, colors.end, a->field_id, a->offset, a->len_field, a->increment);
+}
+
+/* tsf: parse_MODIFY_FIELD.
+ *
+ * parse the str to uint*_t
+ * */
+static char * OVS_WARN_UNUSED_RESULT
+parse_MODIFY_FIELD(char *arg, struct ofpbuf *ofpacts,
+                   enum ofputil_protocol *usable_protocols OVS_UNUSED) {
+    struct ofpact_modify_field *modify_field = ofpact_put_MODIFY_FIELD(ofpacts);
+
+    char *key, *value;
+    while (ofputil_parse_key_value(&arg, &key, &value)) {
+        char *error = NULL;
+
+        if (!strcmp(key, "field_id")) {
+            error = str_to_u16(value, "field_id", &modify_field->field_id);
+        } else if (!strcmp(key, "offset")) {
+            error = str_to_u16(value, "offset", &modify_field->offset);
+        } else if (!strcmp(key, "len_field")) {
+            error = str_to_u16(value, "len_field", &modify_field->len_field);
+        } else if (!strcmp(key, "increment")) {
+            error = str_to_u32(value, &modify_field->increment);
+        } else {
+            error = xasprintf("invalid key \"%s\" in \"modify_field\" argument", key);
+        }
+
+        if (error) {
+            return error;
+        }
+
+        return NULL;
+    }
+}
+
+/* tsf: decode_OFPAT_RAW10_MODIFY_FIELD.
+ *
+ * convert ofp10_action_modify_field to ofpact_modify_field.
+ * */
+static enum ofperr
+decode_OFPAT_RAW10_MODIFY_FIELD(const struct ofp10_action_modify_field *oamf,
+                                enum ofp_version ofp_version OVS_UNUSED,
+                                struct ofpbuf *ofpacts)
+{
+    struct ofpact_modify_field *omf = ofpact_put_MODIFY_FIELD(ofpacts);
+
+    omf->field_id = ntohs(oamf->field_id);
+    omf->offset = ntohs(oamf->offset);
+    omf->len_field = ntohs(oamf->len_field);
+    omf->increment = ntohl(oamf->increment);
+
+    return 0;
 }
 
 
@@ -6516,6 +6617,7 @@ ofpact_is_set_or_move_action(const struct ofpact *a)
     case OFPACT_CONTROLLER:
     case OFPACT_DEC_MPLS_TTL:
     case OFPACT_DEC_TTL:
+    case OFPACT_MODIFY_FIELD:  /* tsf */
     case OFPACT_ENQUEUE:
     case OFPACT_EXIT:
     case OFPACT_UNROLL_XLATE:
@@ -6556,6 +6658,7 @@ ofpact_is_allowed_in_actions_set(const struct ofpact *a)
     switch (a->type) {
     case OFPACT_DEC_MPLS_TTL:
     case OFPACT_DEC_TTL:
+    case OFPACT_MODIFY_FIELD: /* tsf */
     case OFPACT_GROUP:
     case OFPACT_OUTPUT:
     case OFPACT_OUTPUT_TRUNC:
@@ -6781,6 +6884,7 @@ ovs_instruction_type_from_ofpact_type(enum ofpact_type type)
         return OVSINST_OFPIT11_GOTO_TABLE;
     case OFPACT_OUTPUT:
     case OFPACT_DROP:  /* tsf: Add OFPACT_DROP */
+    case OFPACT_MODIFY_FIELD: /* tsf */
     case OFPACT_GROUP:
     case OFPACT_CONTROLLER:
     case OFPACT_ENQUEUE:
@@ -7386,6 +7490,9 @@ ofpact_check__(enum ofputil_protocol *usable_protocols, struct ofpact *a,
         }
         return 0;
 
+    case OFPACT_MODIFY_FIELD:
+    	return 0;
+
     case OFPACT_SET_L4_SRC_PORT:
     case OFPACT_SET_L4_DST_PORT:
         if (!is_ip_any(flow) || (flow->nw_frag & FLOW_NW_FRAG_LATER) ||
@@ -7856,7 +7963,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_OUTPUT, 0 },
         { OFPACT_SET_VLAN_VID, 25 }, /* tsf: change 1 to 25 */
         { OFPACT_SET_VLAN_PCP, 2 },
-        { OFPACT_STRIP_VLAN, 3 },
+        { OFPACT_STRIP_VLAN, 33 },
         { OFPACT_SET_ETH_SRC, 4 },
         { OFPACT_SET_ETH_DST, 5 },
         { OFPACT_SET_IPV4_SRC, 6 },
@@ -7867,6 +7974,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_ENQUEUE, 11 },
         {OFPACT_DROP, 8}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         {OFPACT_SET_FIELD, 1}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
+        {OFPACT_MODIFY_FIELD, 3}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         { 0, -1 },
     };
 
@@ -7875,7 +7983,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_OUTPUT, 0 },
         { OFPACT_SET_VLAN_VID, 25 }, /* tsf: change 1 to 25 */
         { OFPACT_SET_VLAN_PCP, 2 },
-        { OFPACT_SET_ETH_SRC, 3 },
+        { OFPACT_SET_ETH_SRC, 33 },
         { OFPACT_SET_ETH_DST, 4 },
         { OFPACT_SET_IPV4_SRC, 5 },
         { OFPACT_SET_IPV4_DST, 6 },
@@ -7899,6 +8007,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_DEC_TTL, 24 },
         {OFPACT_DROP, 8},  /* tsf: according to enum ofp_raw_action_type (of1.1+) */
         {OFPACT_SET_FIELD, 1}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
+        {OFPACT_MODIFY_FIELD, 3}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         { 0, -1 },
     };
 
@@ -7919,6 +8028,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_SET_IP_TTL, 23 },
         { OFPACT_DEC_TTL, 24 },
         { OFPACT_SET_FIELD, 1 },  /* tsf: change 25 to 1*/
+        {OFPACT_MODIFY_FIELD, 3}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         /* OF1.3+ OFPAT_PUSH_PBB (26) not supported. */
         /* OF1.3+ OFPAT_POP_PBB (27) not supported. */
         { 0, -1 },
@@ -8026,6 +8136,7 @@ ofpact_outputs_to_port(const struct ofpact *ofpact, ofp_port_t port)
     case OFPACT_STACK_PUSH:
     case OFPACT_STACK_POP:
     case OFPACT_DEC_TTL:
+    case OFPACT_MODIFY_FIELD:  /* tsf */
     case OFPACT_SET_MPLS_LABEL:
     case OFPACT_SET_MPLS_TC:
     case OFPACT_SET_MPLS_TTL:
