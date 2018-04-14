@@ -6596,7 +6596,7 @@ ofpact_is_set_or_move_action(const struct ofpact *a)
 {
     switch (a->type) {
     case OFPACT_SET_FIELD:
-    case OFPACT_MODIFY_FIELD:  /* tsf */
+    /*case OFPACT_MODIFY_FIELD:*/  /* tsf */
     case OFPACT_REG_MOVE:
     case OFPACT_SET_ETH_DST:
     case OFPACT_SET_ETH_SRC:
@@ -6616,6 +6616,7 @@ ofpact_is_set_or_move_action(const struct ofpact *a)
     case OFPACT_SET_VLAN_VID:
         return true;
     case OFPACT_DROP: /* tsf */
+    case OFPACT_MODIFY_FIELD:  /* tsf */
     case OFPACT_BUNDLE:
     case OFPACT_CLEAR_ACTIONS:
     case OFPACT_CT:

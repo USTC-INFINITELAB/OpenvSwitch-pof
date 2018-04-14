@@ -1675,15 +1675,29 @@ pof_mf_set_flow_value_v1(const struct pof_match_u *field,
     }
 }
 
-void pof_mf_modify_field_value(const struct pof_match_u *mf,
+void pof_mf_modify_field_value(struct pof_match_u *mf,
 							   uint32_t increment,
-							   const union mf_value *mask,
-							   struct pof_flow *flow)
+							   struct pof_fp_flow *flow)
 {
-	int i = mf->offset/8;
-	VLOG_INFO("++++++tsf pof_mf_modify_field_value: before modify_field_value: value = %d, increment = %d", flow->value[0][i], increment);
-	flow->value[0][i] += increment;
-	VLOG_INFO("++++++tsf pof_mf_modify_field_value: after modify_field_value: value = %d", flow->value[0][i]);
+	int lowest_segment_offset = (mf->offset + mf->len) / 8;   // low bytes location
+	int inner_offset = (mf->offset + mf->len) - ((mf->offset + mf->len)/8)*8;  // the last uint8_t location
+
+	union mf_value flow_value; // find the lowest bytes
+	flow_value.be64 = flow->pof_normal[lowest_segment_offset];
+
+
+	if (inner_offset > 0) {
+	    inner_offset = inner_offset - 1;
+	}
+
+	VLOG_INFO("++++++tsf pof_do_xlate_actions: OFPACT_MODIFI_FIELD: before lowest_segment_offset=%d,inner_offset=%d,value=%x",
+	        lowest_segment_offset, inner_offset, flow_value.b[inner_offset]);
+
+	flow_value.b[inner_offset] += increment;
+	flow->pof_normal[lowest_segment_offset] = flow_value.be64;
+
+	VLOG_INFO("++++++tsf pof_do_xlate_actions: OFPACT_MODIFI_FIELD: after lowest_segment_offset=%d,inner_offset=%d,value=%x",
+	        lowest_segment_offset, inner_offset, flow_value.b[inner_offset]);
 }
 
 bool

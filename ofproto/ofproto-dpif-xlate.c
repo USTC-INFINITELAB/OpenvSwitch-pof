@@ -4398,6 +4398,7 @@ freeze_unroll_actions(const struct ofpact *a, const struct ofpact *end,
         case OFPACT_SET_TUNNEL:
         case OFPACT_REG_MOVE:
         case OFPACT_SET_FIELD:
+        case OFPACT_MODIFY_FIELD: /* tsf */
         case OFPACT_STACK_PUSH:
         case OFPACT_STACK_POP:
         case OFPACT_LEARN:
@@ -4718,7 +4719,6 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         const struct ofpact_drop *drop;
         const struct ofpact_modify_field *modify_field;
         const struct mf_field *mf;
-        struct pof_match_u *pf;
 
         if (ctx->error) {//sqy notes: false
             break;
@@ -4742,50 +4742,13 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 
         case OFPACT_DROP:    /* tsf: add OFPACT_DROP */
              /* no operation means to drop */
-             //ctx->error = 1;     /* tsf: any enum error. */
         	drop = ofpact_get_DROP(a);
-            VLOG_INFO("action_drop has been done! The drop reason is %d.", drop->reason_code);
+            /*VLOG_INFO("action_drop has been done! The drop reason is %d.", drop->reason_code);*/
             break;
 
-        case OFPACT_MODIFY_FIELD:
-        	modify_field = ofpact_get_MODIFY_FIELD(a);
-        	pf->field_id = modify_field->field_id;
-        	pf->len = modify_field->len_field/8;
-        	pf->offset = modify_field->offset/8;
-        	VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_MODIFY_FIELD, field_id=%d, len=%d, offset=%d",
-        	                      pf->field_id, pf->len, pf->offset);  // bytes
-
-        	flow->field_id[0] = htons(pf->field_id);
-        	flow->len[0] = htons(pf->len);
-        	flow->offset[0] = htons(pf->offset);
-
-        	int lowest_segment_offset = (pf->offset + pf->len) / 8;   // low bytes location
-        	int inner_offset = (pf->offset + pf->len) - ((pf->offset + pf->len)/8)*8;  // the last uint8_t location
-        	union mf_value flow_value;  // find the lowest bytes
-            union mf_value flow_mask;
-        	flow_value.be64 = base_flow->pof_normal[lowest_segment_offset];
-
-
-        	if (inner_offset > 0) {
-        		inner_offset = inner_offset - 1;
-        	}
-
-        	VLOG_INFO("++++++tsf pof_do_xlate_actions: OFPACT_MODIFI_FIELD: before lowest_segment_offset=%d,inner_offset=%d,value=%x",
-        			lowest_segment_offset, inner_offset, flow_value.b[inner_offset]);
-        	flow_value.b[inner_offset] += modify_field->increment;
-        	base_flow->pof_normal[lowest_segment_offset] = flow_value.be64;
-        	VLOG_INFO("++++++tsf pof_do_xlate_actions: OFPACT_MODIFI_FIELD: after lowest_segment_offset=%d,inner_offset=%d,value=%x",
-        	        			lowest_segment_offset, inner_offset, flow_value.b[inner_offset]);
-
-        	for(int i=0; i<14; i++){
-        	     VLOG_INFO("+++++++++++tsf pof_do_xlate_actions base_flow->value[0][%d]=0x%lx / 0x%lx",
-        	               i, ntohll(base_flow->pof_normal[i]), base_flow->pof_normal[i]);
-        	}
-
-        	break;
-
-        case OFPACT_SET_FIELD:            
+        case OFPACT_SET_FIELD:  {
             set_field = ofpact_get_SET_FIELD(a);
+            struct pof_match_u *pf;
             pf->field_id = set_field->field_id;
             pf->len = set_field->len;
             pf->offset = set_field->offset;
@@ -4793,7 +4756,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             flow->field_id[0] = htons(pf->field_id);
             flow->len[0] = htons(pf->len);
             flow->offset[0] = htons(pf->offset);
-            flow->flag = true;
+            flow->flag[0] = OFPACT_SET_FIELD;
 
            /*VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: OFPACT_SET_FIELD, fieldid=%d, len=%d, offset=%d",
                       pf->field_id, pf->len, pf->offset);*/
@@ -4804,12 +4767,39 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             pof_mf_set_flow_value_v1(pf, set_field->value,
                                      ofpact_pof_set_field_mask(set_field),
                                      flow);
-            for(int i=0; i<14; i++) {
+            /*for(int i=0; i<14; i++) {
                 VLOG_INFO("+++++++++++tsf pof_do_xlate_actions base_flow->value[0][%d]=0x%lx / 0x%lx",
                           i, ntohll(base_flow->pof_normal[i]), base_flow->pof_normal[i]);
-            }
+            }*/
             /*VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_set_flow_value_masked");*/
             break;
+        }
+
+        case OFPACT_MODIFY_FIELD: {
+            modify_field = ofpact_get_MODIFY_FIELD(a);
+            struct pof_match_u *pf;
+            pf->field_id = modify_field->field_id;
+            pf->len = modify_field->len_field / 8;
+            pf->offset = modify_field->offset / 8;
+            VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_MODIFY_FIELD, field_id=%d, len=%d, offset=%d",
+                      pf->field_id, pf->len, pf->offset);  // bytes
+
+            flow->field_id[1] = htons(pf->field_id);
+            flow->len[1] = htons(pf->len);
+            flow->offset[1] = htons(pf->offset);
+            flow->flag[1] = OFPACT_MODIFY_FIELD;
+
+            /*tsf: cut off increment from uint32_t into uint8_t*/
+            memset(flow->value[1], 0x00, sizeof(flow->value[0]));
+            memset(flow->mask[1], 0x00, sizeof(flow->mask[0]));
+            flow->value[1][0] = modify_field->increment;
+            flow->mask[1][0] = 0xff;
+            /*for (int i = 0; i < 16; i++) {  // tsf: display the whole packet
+                VLOG_INFO("+++++++++++tsf pof_do_xlate_actions:MODIFY_FIELD: flow->value[1][%d]=%d, flow->mask[1][%d]=%d",
+                        i, flow->value[1][i], i, flow->mask[1][i]);
+            }*/
+            break;
+        }
 
         case OFPACT_EXIT:
             ctx->exit = true;

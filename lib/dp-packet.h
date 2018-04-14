@@ -88,6 +88,7 @@ void *dp_packet_resize_l2(struct dp_packet *, int increment);
 void *dp_packet_resize_l2_5(struct dp_packet *, int increment);
 static inline void *dp_packet_l2(const struct dp_packet *);
 static inline void *dp_packet_pof_set_field(const struct dp_packet *, uint16_t);
+static inline void *dp_packet_pof_modify_field(const struct dp_packet *, uint16_t);
 static inline void dp_packet_reset_offsets(struct dp_packet *);
 static inline uint8_t dp_packet_l2_pad_size(const struct dp_packet *);
 static inline void dp_packet_set_l2_pad_size(struct dp_packet *, uint8_t);
@@ -273,6 +274,12 @@ dp_packet_l2(const struct dp_packet *b)
 
 static inline void *
 dp_packet_pof_set_field(const struct dp_packet *b, uint16_t offset)
+{
+    return (char *)dp_packet_data(b)+offset;
+}
+
+static inline void *
+dp_packet_pof_modify_field(const struct dp_packet *b, uint16_t offset)
 {
     return (char *)dp_packet_data(b)+offset;
 }

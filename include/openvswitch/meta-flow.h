@@ -2320,10 +2320,9 @@ void pof_mf_set_flow_value_v1(const struct pof_match_u *,
                               const union mf_value *value,
                               const union mf_value *mask,
                               struct pof_flow *);
-void pof_mf_modify_field_value(const struct pof_match_u *pf,
+void pof_mf_modify_field_value(struct pof_match_u *pf,
 							   uint32_t increment,
-							   const union mf_value *mask,
-							   struct pof_flow *flow);
+							   struct pof_fp_flow *base_flow);
 bool mf_is_tun_metadata(const struct mf_field *);
 bool mf_is_set(const struct mf_field *, const struct flow *);
 void mf_mask_field(const struct mf_field *, struct flow_wildcards *);
