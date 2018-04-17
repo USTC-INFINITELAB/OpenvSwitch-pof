@@ -4714,7 +4714,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
     /* dl_type already in the mask, not set below. */
     int i = 0;
     OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
-    	VLOG_INFO("+++++tsf pof_do_xlate_actions run %dth time, a->type:%d, a->len:%d", i++, a->type, a->len);
+    	/*VLOG_INFO("+++++tsf pof_do_xlate_actions run %dth time, a->type:%d, a->len:%d", i++, a->type, a->len);*/
         struct ofpact_controller *controller;
         const struct ofpact_metadata *metadata;
         const struct ofpact_set_field *set_field;
@@ -4787,8 +4787,8 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             pf->field_id = modify_field->field_id;
             pf->len = modify_field->len_field / 8;
             pf->offset = modify_field->offset / 8;
-            VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_MODIFY_FIELD, field_id=%d, len=%d, offset=%d",
-                      pf->field_id, pf->len, pf->offset);  // bytes
+            /*VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_MODIFY_FIELD, field_id=%d, len=%d, offset=%d",
+                      pf->field_id, pf->len, pf->offset);  // bytes*/
 
             flow->field_id[1] = htons(pf->field_id);
             flow->len[1] = htons(pf->len);
@@ -5715,7 +5715,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
                 OVS_NOT_REACHED();
             }
 
-            VLOG_INFO("++++++tsf xlate_actions ofpacts_len=%d", ofpacts_len);
+            /*VLOG_INFO("++++++tsf xlate_actions ofpacts_len=%d", ofpacts_len);*/
             mirror_ingress_packet(&ctx); //sqy notes: no mirror
             pof_do_xlate_actions(ofpacts, ofpacts_len, &ctx);
             if (ctx.error) {

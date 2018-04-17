@@ -1268,8 +1268,8 @@ pof_mf_mask_field_masked(const struct pof_match_u *mf, const union mf_value *mas
     	/*VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked 111: mask_value.b[%d] =%d,mask->b[%d] =%d",
     	                  i, mask_value.b[i], i-inner_off, mask->b[i-inner_off]);*/
         mask_value.b[i] |= mask->b[i-inner_off];
-        VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked 222: mask_value.b[%d] =%d,mask->b[%d] =%d",
-                 i, mask_value.b[i], i-inner_off, mask->b[i-inner_off]);
+        /*VLOG_INFO("+++++++++++sqy pof_mf_mask_field_masked 222: mask_value.b[%d] =%d,mask->b[%d] =%d",
+                 i, mask_value.b[i], i-inner_off, mask->b[i-inner_off]);*/
     }
 
     /* to do: the field which will be 'set_field' corrosponds to more than
@@ -1352,7 +1352,7 @@ pof_mf_set_flow_value(const struct pof_match_u *mf,
     /*VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value 111");*/
     /*to do: considering the appropriate length of a field in struct pof_fp_flow. */
     flow->pof_normal[i] = value->be64;
-    VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value 222, flow->normal[%d]=%d",i, ntohll(flow->pof_normal[i]));
+    /*VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value 222, flow->normal[%d]=%d",i, ntohll(flow->pof_normal[i]));*/
 }
 
 /* Sets 'flow' member field described by 'mf' to 'value'.  The caller is
@@ -1667,11 +1667,11 @@ pof_mf_set_flow_value_v1(const struct pof_match_u *field,
     union mf_value tmp;
 
     for(int i=0; i<POF_MAX_FIELD_LENGTH_IN_BYTE; i++){
-    	VLOG_INFO("+++++++++++tsf pof_mf_set_flow_value_masked value->b[i]= %d, flow->value[0][i]=%d", value->b[i], flow->value[0][i]);
+    	/*VLOG_INFO("+++++++++++tsf pof_mf_set_flow_value_masked value->b[i]= %d, flow->value[0][i]=%d", value->b[i], flow->value[0][i]);*/
         flow->value[0][i] = value->b[i];
         flow->mask[0][i] = mask->b[i];
-        VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked value->b[i]= %d, flow->value[0][i]=%d", value->b[i], flow->value[0][i]);
-        VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked mask->b[i]= %d, flow->mask[0][i]=%d", mask->b[i], flow->mask[0][i]);
+        /*VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked value->b[i]= %d, flow->value[0][i]=%d", value->b[i], flow->value[0][i]);
+        VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked mask->b[i]= %d, flow->mask[0][i]=%d", mask->b[i], flow->mask[0][i]);*/
     }
 }
 
@@ -1690,14 +1690,14 @@ void pof_mf_modify_field_value(struct pof_match_u *mf,
 	    inner_offset = inner_offset - 1;
 	}
 
-	VLOG_INFO("++++++tsf pof_do_xlate_actions: OFPACT_MODIFI_FIELD: before lowest_segment_offset=%d,inner_offset=%d,value=%x",
-	        lowest_segment_offset, inner_offset, flow_value.b[inner_offset]);
+	/*VLOG_INFO("++++++tsf pof_do_xlate_actions: OFPACT_MODIFI_FIELD: before lowest_segment_offset=%d,inner_offset=%d,value=%x",
+	        lowest_segment_offset, inner_offset, flow_value.b[inner_offset]);*/
 
 	flow_value.b[inner_offset] += increment;
 	flow->pof_normal[lowest_segment_offset] = flow_value.be64;
 
-	VLOG_INFO("++++++tsf pof_do_xlate_actions: OFPACT_MODIFI_FIELD: after lowest_segment_offset=%d,inner_offset=%d,value=%x",
-	        lowest_segment_offset, inner_offset, flow_value.b[inner_offset]);
+	/*VLOG_INFO("++++++tsf pof_do_xlate_actions: OFPACT_MODIFI_FIELD: after lowest_segment_offset=%d,inner_offset=%d,value=%x",
+	        lowest_segment_offset, inner_offset, flow_value.b[inner_offset]);*/
 }
 
 bool

@@ -62,7 +62,7 @@ odp_pof_set_field(struct dp_packet *packet, const struct ovs_key_set_field *key,
             }
         } else {
             for(int i=0; i<key->len; i++){
-                VLOG_INFO("+++++++++++sqy 3333 odp_pof_set_field before:key->value[i]= %d, %d, %d", key->value[i], *(value+i), mask->value[i] );
+                /*VLOG_INFO("+++++++++++sqy 3333 odp_pof_set_field before:key->value[i]= %d, %d, %d", key->value[i], *(value+i), mask->value[i] );*/
                 *(value+i) = key->value[i] |(*(value+i) & ~mask->value[i]);
                 /*VLOG_INFO("+++++++++++sqy odp_pof_set_field after: %d, %d", key->value[i], *(value+i));*/
             }
@@ -78,18 +78,18 @@ odp_pof_modify_field(struct dp_packet *packet, const struct ovs_key_modify_field
 {
 	uint8_t *value = dp_packet_pof_modify_field(packet, key->offset);
     uint8_t *lowest_byte = value + (key->len - 1);
-    VLOG_INFO("++++++tsf odp_pof_modify_field: *lowest_byte=%d", *lowest_byte);
+    /*VLOG_INFO("++++++tsf odp_pof_modify_field: *lowest_byte=%d", *lowest_byte);*/
 
     if (value) {
         if (!mask) {
             *lowest_byte += key->value[0];
-            VLOG_INFO("++++++tsf odp_pof_modify_field/wo mask: key->value[1]=%d, key->mask[1]=%d, *lowest_byte=%d",
-                      key->value[1], mask->value[1], *lowest_byte);
+            /*VLOG_INFO("++++++tsf odp_pof_modify_field/wo mask: key->value[1]=%d, key->mask[1]=%d, *lowest_byte=%d",
+                      key->value[1], mask->value[1], *lowest_byte);*/
         } else {
-        	*lowest_byte += key->value[0];
-            /**lowest_byte = key->value[0] + (*lowest_byte & mask->value[0]);*/
-            VLOG_INFO("++++++tsf odp_pof_modify_field/wt mask: key->value[0]=%d, key->mask[0]=%d, *lowest_byte=%d",
-                      key->value[0], mask->value[0], *lowest_byte);
+        	/**lowest_byte += key->value[0];*/
+            *lowest_byte = key->value[0] + (*lowest_byte & mask->value[0]);
+            /*VLOG_INFO("++++++tsf odp_pof_modify_field/wt mask: key->value[0]=%d, key->mask[0]=%d, *lowest_byte=%d",
+                      key->value[0], mask->value[0], *lowest_byte);*/
         }
     }
 }
@@ -407,10 +407,10 @@ odp_execute_masked_set_action(struct dp_packet *packet,
         VLOG_INFO("+++++++++++sqy odp_execute_masked_set_action: before OVS_KEY_ATTR_SET_FIELD");
         odp_pof_set_field(packet, nl_attr_get(a),
                           get_mask(a, struct ovs_key_set_field));
-        VLOG_INFO("+++++++++++sqy odp_execute_masked_set_action: after OVS_KEY_ATTR_SET_FIELD");
+        /*VLOG_INFO("+++++++++++sqy odp_execute_masked_set_action: after OVS_KEY_ATTR_SET_FIELD");*/
         break;
     case OVS_KEY_ATTR_MODIFY_FIELD:
-    	/*VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: before OVS_KEY_ATTR_MODIFY_FIELD");*/
+    	VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: before OVS_KEY_ATTR_MODIFY_FIELD");
     	odp_pof_modify_field(packet, nl_attr_get(a),
     						get_mask(a, struct ovs_key_modify_field));
     	/*VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: after OVS_KEY_ATTR_MODIFY_FIELD");*/
@@ -672,7 +672,7 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
             break;
 
         case OVS_ACTION_ATTR_SET_MASKED:
-            VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_masked_set_action");
+            /*VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_masked_set_action");*/
             for (i = 0; i < cnt; i++) {
                 odp_execute_masked_set_action(packets[i], nl_attr_get(a));
             }
