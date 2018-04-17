@@ -4712,12 +4712,15 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         tnl_neigh_snoop(flow, wc, ctx->xbridge->name);
     }
     /* dl_type already in the mask, not set below. */
+    int i = 0;
     OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
+    	VLOG_INFO("+++++tsf pof_do_xlate_actions run %dth time, a->type:%d, a->len:%d", i++, a->type, a->len);
         struct ofpact_controller *controller;
         const struct ofpact_metadata *metadata;
         const struct ofpact_set_field *set_field;
         const struct ofpact_drop *drop;
         const struct ofpact_modify_field *modify_field;
+        struct pof_match_u *pf = (struct pof_match_u *) malloc(sizeof(struct pof_match_u));
         const struct mf_field *mf;
 
         if (ctx->error) {//sqy notes: false
@@ -4736,8 +4739,10 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 
         switch (a->type) {
         case OFPACT_OUTPUT:
+        	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_OUTPUT->type:%d, len:%d", a->type, a->len);
             xlate_output_action(ctx, ofpact_get_OUTPUT(a)->port,
                                 ofpact_get_OUTPUT(a)->max_len, true);
+            free(pf);
             break;
 
         case OFPACT_DROP:    /* tsf: add OFPACT_DROP */
@@ -4747,8 +4752,8 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             break;
 
         case OFPACT_SET_FIELD:  {
+        	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_SET_FIELD->type:%d, len:%d", a->type, a->len);
             set_field = ofpact_get_SET_FIELD(a);
-            struct pof_match_u *pf;
             pf->field_id = set_field->field_id;
             pf->len = set_field->len;
             pf->offset = set_field->offset;
@@ -4767,17 +4772,18 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             pof_mf_set_flow_value_v1(pf, set_field->value,
                                      ofpact_pof_set_field_mask(set_field),
                                      flow);
+            free(pf);
             /*for(int i=0; i<14; i++) {
                 VLOG_INFO("+++++++++++tsf pof_do_xlate_actions base_flow->value[0][%d]=0x%lx / 0x%lx",
                           i, ntohll(base_flow->pof_normal[i]), base_flow->pof_normal[i]);
             }*/
             /*VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_set_flow_value_masked");*/
-            break;
         }
+        break;
 
         case OFPACT_MODIFY_FIELD: {
+        	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_MODIFY_FIELD->type:%d, len:%d", a->type, a->len);
             modify_field = ofpact_get_MODIFY_FIELD(a);
-            struct pof_match_u *pf;
             pf->field_id = modify_field->field_id;
             pf->len = modify_field->len_field / 8;
             pf->offset = modify_field->offset / 8;
@@ -4790,16 +4796,16 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             flow->flag[1] = OFPACT_MODIFY_FIELD;
 
             /*tsf: cut off increment from uint32_t into uint8_t*/
-            memset(flow->value[1], 0x00, sizeof(flow->value[0]));
-            memset(flow->mask[1], 0x00, sizeof(flow->mask[0]));
+            memset(flow->value[1], 0x00, sizeof(flow->value[1]));
+            memset(flow->mask[1], 0x00, sizeof(flow->mask[1]));
             flow->value[1][0] = modify_field->increment;
             flow->mask[1][0] = 0xff;
             /*for (int i = 0; i < 16; i++) {  // tsf: display the whole packet
                 VLOG_INFO("+++++++++++tsf pof_do_xlate_actions:MODIFY_FIELD: flow->value[1][%d]=%d, flow->mask[1][%d]=%d",
                         i, flow->value[1][i], i, flow->mask[1][i]);
             }*/
-            break;
         }
+        break;
 
         case OFPACT_EXIT:
             ctx->exit = true;
@@ -5709,6 +5715,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
                 OVS_NOT_REACHED();
             }
 
+            VLOG_INFO("++++++tsf xlate_actions ofpacts_len=%d", ofpacts_len);
             mirror_ingress_packet(&ctx); //sqy notes: no mirror
             pof_do_xlate_actions(ofpacts, ofpacts_len, &ctx);
             if (ctx.error) {

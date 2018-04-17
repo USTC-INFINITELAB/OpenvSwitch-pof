@@ -820,12 +820,12 @@ decode_OFPAT_RAW10_MODIFY_FIELD(const struct ofp10_action_modify_field *oamf,
 {
     struct ofpact_modify_field *omf = ofpact_put_MODIFY_FIELD(ofpacts);
 
-    VLOG_INFO("+++++++++++tsf ofp-actions.c/ecode_OFPAT_RAW10_MODIFY_FIELD: start.");
+    VLOG_INFO("+++++++++++tsf ofp-actions.c/decode_OFPAT_RAW10_MODIFY_FIELD: start.");
     omf->field_id = ntohs(oamf->field_id);
     omf->offset = ntohs(oamf->offset);
     omf->len_field = ntohs(oamf->len_field);
     omf->increment = ntohl(oamf->increment);
-    VLOG_INFO("+++++++++++tsf ofp-actions.c/ecode_OFPAT_RAW10_MODIFY_FIELD: end.");
+    VLOG_INFO("+++++++++++tsf ofp-actions.c/decode_OFPAT_RAW10_MODIFY_FIELD: end.");
 
     return 0;
 }
@@ -6596,7 +6596,7 @@ ofpact_is_set_or_move_action(const struct ofpact *a)
 {
     switch (a->type) {
     case OFPACT_SET_FIELD:
-    /*case OFPACT_MODIFY_FIELD:*/  /* tsf */
+    case OFPACT_MODIFY_FIELD:  /* tsf */
     case OFPACT_REG_MOVE:
     case OFPACT_SET_ETH_DST:
     case OFPACT_SET_ETH_SRC:
@@ -6616,7 +6616,7 @@ ofpact_is_set_or_move_action(const struct ofpact *a)
     case OFPACT_SET_VLAN_VID:
         return true;
     case OFPACT_DROP: /* tsf */
-    case OFPACT_MODIFY_FIELD:  /* tsf */
+    /*case OFPACT_MODIFY_FIELD:*/  /* tsf */
     case OFPACT_BUNDLE:
     case OFPACT_CLEAR_ACTIONS:
     case OFPACT_CT:
@@ -7253,6 +7253,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         get_piaa_from_instruction(insts[OVSINST_OFPIT11_APPLY_ACTIONS],
                                   &piaa, &action_num);
         action_num = piaa->action_num;
+        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: action_num: %d", action_num);
 
         const struct ofp_action_header *actions;
         size_t actions_len;
@@ -7821,10 +7822,13 @@ ofpacts_verify(const struct ofpact ofpacts[], size_t ofpacts_len,
     enum ovs_instruction_type inst;
 
     inst = OVSINST_OFPIT13_METER;
+    int i = 0;
     VLOG_INFO("++++++tsf ofpacts_verify: before OFPACT_FOR_EACH, ofpacts_len: %d", ofpacts_len);
     OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
         enum ovs_instruction_type next;
         enum ofperr error;
+        VLOG_INFO("++++++tsf ofpacts_verify: in OFPACT_FOR_EACH, run %dth time, a->type: %d, a->len: %d",
+        		i++, a->type, a->len);
 
         if (a->type == OFPACT_CONJUNCTION) {
             OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
