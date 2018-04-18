@@ -65,6 +65,7 @@
     /* Header changes. */                                               \
     OFPACT(SET_FIELD,       ofpact_set_field,   ofpact, "set_field")    \
     OFPACT(MODIFY_FIELD,    ofpact_modify_field,  ofpact, "modify_field") \
+    OFPACT(ADD_FIELD,       ofpact_add_field, ofpact, "add_field") \
     OFPACT(SET_VLAN_VID,    ofpact_vlan_vid,    ofpact, "set_vlan_vid") \
     OFPACT(SET_VLAN_PCP,    ofpact_vlan_pcp,    ofpact, "set_vlan_pcp") \
     OFPACT(STRIP_VLAN,      ofpact_null,        ofpact, "strip_vlan")   \
@@ -275,9 +276,10 @@ struct ofpact_drop {
 	uint32_t reason_code;
 };
 
-/* OFPACT_MODIFY_FIELD.
+/* tsf: OFPACT_MODIFY_FIELD.
  *
- * Used for OFPAT10_MODIFY_FIELD. */
+ * Used for OFPAT10_MODIFY_FIELD.
+ * */
 struct ofpact_modify_field {
     struct ofpact ofpact;
 
@@ -286,6 +288,20 @@ struct ofpact_modify_field {
     uint16_t len_field;
     uint32_t increment;
 };
+
+/* tsf: OFPACT_ADD_FIELD.
+ *
+ * Used for OFPAT10_ADD_FIELD.
+ * */
+struct ofpact_add_field {
+	struct ofpact ofpact;
+
+	uint16_t tag_id;
+	uint16_t tag_pos;
+	uint32_t tag_len;
+	uint8_t tag_value[POF_MAX_FIELD_LENGTH_IN_BYTE];
+};
+
 
 /* OFPACT_CONTROLLER.
  *
