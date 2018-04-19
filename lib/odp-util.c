@@ -4248,9 +4248,12 @@ static void get_set_field_key(const struct pof_flow *, struct ovs_key_set_field 
 static void get_set_field_mask(const struct pof_flow *, struct ovs_key_set_field *);
 static void get_modify_field_key(const struct pof_flow *, struct ovs_key_modify_field *);
 static void get_modify_field_mask(const struct pof_flow *, struct ovs_key_modify_field *);
+static void get_add_field_key(const struct pof_flow *, struct ovs_key_add_field *);
+static void get_add_field_mask(const struct pof_flow *, struct ovs_key_add_field *);
 static void put_ethernet_key(const struct ovs_key_ethernet *, struct flow *);
 static void put_set_field_key(const struct ovs_key_set_field *, struct pof_flow *);
 static void put_modify_field_key(const struct ovs_key_modify_field *, struct pof_flow *);
+static void put_add_field_key(const struct ovs_key_add_field *, struct pof_flow *);
 static void get_ipv4_key(const struct flow *, struct ovs_key_ipv4 *,
                          bool is_mask);
 static void put_ipv4_key(const struct ovs_key_ipv4 *, struct flow *,
@@ -5592,6 +5595,75 @@ put_modify_field_key(const struct ovs_key_modify_field *eth, struct pof_flow *fl
 }
 
 static void
+commit_pof_add_field_action(const struct flow *flow, struct flow *base_flow,
+                             struct ofpbuf *odp_actions,
+                             struct flow_wildcards *wc,
+                             bool use_masked)
+{
+    struct ovs_key_add_field key, base, mask;
+
+    struct pof_flow * pflow = flow;
+    struct pof_flow * pbase = base_flow;
+
+    get_add_field_key(pflow, &key);
+    get_add_field_key(pbase, &base);
+    use_masked = true;
+    get_add_field_mask(pflow, &mask);
+
+    VLOG_INFO("+++++++++++tsf commit_pof_add_field_action: before pof_commit");
+    if (pof_commit(OVS_KEY_ATTR_ADD_FIELD, use_masked,
+               &key, &base, &mask, sizeof key, odp_actions, pflow->flag)) {     //sqy notes: commit return false, no run
+        /*VLOG_INFO("+++++++++++tsf commit_pof_add_field_action: after pof_commit");*/
+        put_add_field_key(&base, base_flow);
+        put_add_field_key(&mask, &wc->masks);
+    }
+}
+
+static void
+get_add_field_key(const struct pof_flow *flow, struct ovs_key_add_field *eth)
+{
+	eth->field_id = ntohs(flow->field_id[2]);
+	eth->len = ntohs(flow->len[2]);
+	eth->offset = ntohs(flow->offset[2]);
+	VLOG_INFO("++++++tsf get_add_field_key: eth->field_id=%d, eth->len=%d, eth->offset=%d",
+					eth->field_id, eth->len, eth->offset);
+
+	for (int i = 0; i < 16; i++) {
+		eth->value[i] = flow->value[2][i];  // tsf: add 16 bytes most
+		VLOG_INFO("++++++tsf get_add_field_key:  eth->value[%d]=%d", i, eth->value[i]);
+	}
+}
+
+static void
+get_add_field_mask(const struct pof_flow *flow, struct ovs_key_add_field *eth)
+{
+	eth->field_id = ntohs(flow->field_id[2]);
+	eth->len = ntohs(flow->len[2]);
+	eth->offset = ntohs(flow->offset[2]);
+	VLOG_INFO("++++++tsf get_add_field_mask: eth->field_id=%d, eth->len=%d, eth->offset=%d",
+					eth->field_id, eth->len, eth->offset);
+
+	for (int i = 0; i < 16; i++) {
+		eth->value[i] = flow->mask[2][i];  // tsf: add 16 bytes most
+		VLOG_INFO("++++++tsf get_add_field_mask:  eth->value[%d]=%d", i, eth->value[i]);
+	}
+}
+
+static void
+put_add_field_key(const struct ovs_key_add_field *eth, struct pof_flow *flow)
+{
+	flow->field_id[2] =htons(eth->field_id);
+	flow->len[2] = htons(eth->len);
+	flow->offset[2] = htons(eth->offset);
+
+    for (int i = 0; i < 16; i++) {
+        flow->value[2][i] = eth->value[i];
+        VLOG_INFO("++++++tsf put_add_field_key:eth->value[%d]=%d",i, eth->value[i]);
+    }
+}
+
+
+static void
 commit_pof_action(const struct flow *flow, struct flow *base_flow,
 					struct ofpbuf *odp_actions,
 					struct flow_wildcards *wc,
@@ -5608,6 +5680,11 @@ commit_pof_action(const struct flow *flow, struct flow *base_flow,
 	if (pflow->flag[1] == OFPACT_MODIFY_FIELD) {
 		VLOG_INFO("++++++tsf commit_pof_action: commit_pof_modify_field_action.");
 		commit_pof_modify_field_action(flow, base_flow, odp_actions, wc, use_masked);
+	}
+
+	if (pflow->flag[2] == OFPACT_ADD_FIELD) {
+		VLOG_INFO("++++++tsf commit_pof_action: commit_pof_add_field_action.");
+		commit_pof_add_field_action(flow, base_flow, odp_actions, wc, use_masked);
 	}
 }
 

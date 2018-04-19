@@ -485,3 +485,20 @@ dp_packet_resize_l2(struct dp_packet *b, int increment)
     dp_packet_adjust_layer_offset(&b->l2_5_ofs, increment);
     return dp_packet_data(b);
 }
+
+/* tsf: Adjust the size of the pof's field portion of the dp_packet, updating the packet's
+ * pointer and the layer offsets.  The caller is responsible for
+ * modifying the contents. */
+void *
+dp_packet_pof_resize_field(struct dp_packet *b, int increment)
+{
+	if (increment >= 0) {
+		dp_packet_push_uninit(b, increment);
+	} else {
+		dp_packet_pull(b, -increment);
+	}
+
+	/* tsf: adjust the offset, skip it, not necessary in pof */
+
+	return dp_packet_data(b);
+}

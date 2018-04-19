@@ -4399,6 +4399,7 @@ freeze_unroll_actions(const struct ofpact *a, const struct ofpact *end,
         case OFPACT_REG_MOVE:
         case OFPACT_SET_FIELD:
         case OFPACT_MODIFY_FIELD: /* tsf */
+        case OFPACT_ADD_FIELD:  /* tsf */
         case OFPACT_STACK_PUSH:
         case OFPACT_STACK_POP:
         case OFPACT_LEARN:
@@ -4718,6 +4719,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         struct ofpact_controller *controller;
         const struct ofpact_metadata *metadata;
         const struct ofpact_set_field *set_field;
+        const struct ofpact_add_field *add_field;
         const struct ofpact_drop *drop;
         const struct ofpact_modify_field *modify_field;
         struct pof_match_u *pf = (struct pof_match_u *) malloc(sizeof(struct pof_match_u));
@@ -4804,6 +4806,28 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
                 VLOG_INFO("+++++++++++tsf pof_do_xlate_actions:MODIFY_FIELD: flow->value[1][%d]=%d, flow->mask[1][%d]=%d",
                         i, flow->value[1][i], i, flow->mask[1][i]);
             }*/
+        }
+        break;
+
+        case OFPACT_ADD_FIELD: {
+        	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_ADD_FIELD->type:%d, len:%d", a->type, a->len);
+        	add_field = ofpact_get_ADD_FIELD(a);
+        	pf->field_id = add_field->tag_id;
+        	pf->len = add_field->tag_len / 8;  // tag_len cut off from uint32_t to uint16_t
+        	pf->offset = add_field->tag_pos / 8;
+        	VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_MODIFY_FIELD, field_id=%d, len=%d, offset=%d",
+        	          pf->field_id, pf->len, pf->offset);  // bytes
+
+        	flow->field_id[2] = htons(pf->field_id);
+        	flow->len[2] = htons(pf->len);
+        	flow->offset[2] = htons(pf->offset);
+        	flow->flag[2] = OFPACT_ADD_FIELD;
+
+        	memset(flow->value[2], 0x00, sizeof(flow->value[2]));
+        	memset(flow->value[2], 0x00, sizeof(flow->mask[2]));
+
+        	memcpy(flow->value[2], add_field->tag_value, pf->len);
+        	memset(flow->mask[2], 0xff, pf->len);
         }
         break;
 

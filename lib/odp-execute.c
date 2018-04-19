@@ -95,6 +95,21 @@ odp_pof_modify_field(struct dp_packet *packet, const struct ovs_key_modify_field
 }
 
 static void
+odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
+                    const struct ovs_key_add_field *mask)
+{
+	VLOG_INFO("++++++tsf odp_pof_add_field:key->fieldid= %d, offset = %d, len= %d, value=%lx / %lx",
+			  key->field_id, key->offset, key->len, (uint64_t *)(key->value), (uint64_t *)key->value + 8);
+
+	char * header;
+
+	header = dp_packet_pof_resize_field(packet, key->len);
+	memmove(header, header + key->len, key->offset);
+	memcpy(header + key->offset, key->value, key->len);
+
+}
+
+static void
 odp_eth_set_addrs(struct dp_packet *packet, const struct ovs_key_ethernet *key,
                   const struct ovs_key_ethernet *mask)
 {
@@ -414,6 +429,11 @@ odp_execute_masked_set_action(struct dp_packet *packet,
     	odp_pof_modify_field(packet, nl_attr_get(a),
     						get_mask(a, struct ovs_key_modify_field));
     	/*VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: after OVS_KEY_ATTR_MODIFY_FIELD");*/
+    	break;
+    case OVS_KEY_ATTR_ADD_FIELD:
+    	VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: before OVS_KEY_ATTR_ADD_FIELD");
+    	odp_pof_add_field(packet, nl_attr_get(a),
+    						get_mask(a, struct ovs_key_add_field));
     	break;
     case OVS_KEY_ATTR_PRIORITY:
         md->skb_priority = nl_attr_get_u32(a)

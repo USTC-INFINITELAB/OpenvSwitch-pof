@@ -918,9 +918,9 @@ parse_ADD_FIELD(char *arg, struct ofpbuf *ofpacts,
         if (!strcmp(key, "tag_id")) {
             error = str_to_u16(value, "tag_id", &add_field->tag_id);
         } else if (!strcmp(key, "tag_pos")) {
-            error = str_to_u16(value, "offset", &add_field->tag_pos);
+            error = str_to_u16(value, "tag_pos", &add_field->tag_pos);
         } else if (!strcmp(key, "tag_len")) {
-            error = str_to_u16(value, "len_field", &add_field->tag_len);
+            error = str_to_u16(value, "tag_len", (uint16_t *) &add_field->tag_len);
         } else if (!strcmp(key, "tag_value")) {
             error = str_to_u64(value, &add_field->tag_value);
         } else {
