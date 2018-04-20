@@ -1501,11 +1501,11 @@ pof_match_format(const struct match_x *match, struct ds *s, int priority)
         }
         format_be16_masked(s, field_idname, f->field_id[i], wc->masks.field_id[i]);*/
 
-        ds_put_format(s, "%sfield_id=%s0x%04"PRIx16",",
+        ds_put_format(s, "%sfield_id=%s%"PRIu16",",
                       colors.param, colors.end, ntohs( f->field_id[i]));
-        ds_put_format(s, "%soffset=%s0x%04"PRIx16",",
+        ds_put_format(s, "%soffset=%s%"PRIu16",",
                       colors.param, colors.end, ntohs( f->offset[i]));
-        ds_put_format(s, "%slength=%s0x%04"PRIx16",",
+        ds_put_format(s, "%slength=%s%"PRIu16",",
                       colors.param, colors.end, ntohs( f->len[i]));
         format_ipv6_netmask(s, "value", (const struct in6_addr *)f->value[i],
                             (const struct in6_addr *)wc->masks.value[i]);
