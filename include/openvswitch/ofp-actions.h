@@ -64,8 +64,9 @@
                                                                         \
     /* Header changes. */                                               \
     OFPACT(SET_FIELD,       ofpact_set_field,   ofpact, "set_field")    \
-    OFPACT(MODIFY_FIELD,    ofpact_modify_field,  ofpact, "modify_field") \
-    OFPACT(ADD_FIELD,       ofpact_add_field, ofpact, "add_field") \
+    OFPACT(MODIFY_FIELD,    ofpact_modify_field,ofpact, "modify_field") \
+    OFPACT(ADD_FIELD,       ofpact_add_field,   ofpact, "add_field")    \
+    OFPACT(DELETE_FIELD,    ofpact_delete_field,ofpact, "delete_field") \
     OFPACT(SET_VLAN_VID,    ofpact_vlan_vid,    ofpact, "set_vlan_vid") \
     OFPACT(SET_VLAN_PCP,    ofpact_vlan_pcp,    ofpact, "set_vlan_pcp") \
     OFPACT(STRIP_VLAN,      ofpact_null,        ofpact, "strip_vlan")   \
@@ -302,6 +303,20 @@ struct ofpact_add_field {
 	uint8_t tag_value[POF_MAX_FIELD_LENGTH_IN_BYTE];
 };
 
+/* tsf: OFPACT_DELETE_FIELD.
+ *
+ * Used for OFPAT10_DELETE_FIELD.
+ * */
+struct ofpact_delete_field {
+	struct ofpact ofpact;
+
+	uint16_t tag_pos;
+	uint8_t len_type;
+	union {
+		uint32_t value;
+		struct pof_match field;
+	} tag_len;
+};
 
 /* OFPACT_CONTROLLER.
  *
