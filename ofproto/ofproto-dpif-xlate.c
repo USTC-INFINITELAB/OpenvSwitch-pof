@@ -4840,7 +4840,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         	flow->offset[3] = htons(delete_field->tag_pos);
         	flow->len[3] = delete_field->len_type;
         	flow->flag[3] = OFPACT_DELETE_FIELD;
-            VLOG_INFO("++++++tsf pof_do_xlate_actions delete_field->len_type=%d", flow->len[3]);
+            /*VLOG_INFO("++++++tsf pof_do_xlate_actions delete_field->len_type=%d", flow->len[3]);*/
 
             struct pof_match *pm;
             memset(flow->value[3], 0x00, sizeof(flow->value[3]));
@@ -4848,12 +4848,12 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             if (flow->len[3] == 0) { // POFVT_IMMEDIATE_NUM
                 flow->value[3][0] = delete_field->tag_len.value;
                 flow->mask[3][0] = 0xff;
-                VLOG_INFO("++++++tsf pof_do_xlate_actions flow->value[3][0]=%d", flow->value[3][0]);
+                /*VLOG_INFO("++++++tsf pof_do_xlate_actions flow->value[3][0]=%d", flow->value[3][0]);*/
             } else {  // // POFVT_FIELD
             	memcpy(flow->value[3], &delete_field->tag_len, sizeof(delete_field->tag_len));  // tsf: copy all union
             	memset(flow->mask[3], 0xff, sizeof(delete_field->tag_len));
-            	pm = (struct pof_match *) flow->value[3];
-            	VLOG_INFO("++++++tsf pof_do_xlate_actions offset=%d, len=%d", pm->offset/8, pm->len/8);
+            	/*pm = (struct pof_match *) flow->value[3];
+            	VLOG_INFO("++++++tsf pof_do_xlate_actions offset=%d, len=%d", pm->offset/8, pm->len/8);*/
             }
         }
         	break;

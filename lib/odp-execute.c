@@ -98,8 +98,8 @@ static void
 odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
                     const struct ovs_key_add_field *mask)
 {
-	VLOG_INFO("++++++tsf odp_pof_add_field:key->fieldid= %d, offset = %d, len= %d, value=%lx / %lx",
-			  key->field_id, key->offset, key->len, (uint64_t *)(key->value), (uint64_t *)key->value + 8);
+	/*VLOG_INFO("++++++tsf odp_pof_add_field:key->fieldid= %d, offset = %d, len= %d, value=%lx / %lx",
+			  key->field_id, key->offset, key->len, (uint64_t *)(key->value), (uint64_t *)key->value + 8);*/
 
 	char * header;
 
@@ -113,16 +113,16 @@ static void
 odp_pof_delete_field(struct dp_packet *packet, const struct ovs_key_delete_field *key,
                     const struct ovs_key_delete_field *mask)
 {
-	VLOG_INFO("++++++tsf odp_pof_delete_field: offset=%d, len=%d.", key->offset, key->len);
+	/*VLOG_INFO("++++++tsf odp_pof_delete_field: offset=%d, len=%d.", key->offset, key->len);*/
 
 	char * header;
 
-	VLOG_INFO("++++++tsf odp_pof_delete_field: before delete field, pkt_len=%d.", dp_packet_size(packet));
+	/*VLOG_INFO("++++++tsf odp_pof_delete_field: before delete field, pkt_len=%d.", dp_packet_size(packet));*/
 	header = dp_packet_data(packet);  // tsf: start of the header
 	/* shift the packet's length=key->offset backward key-<len bytes */
 	memmove(header + key->len, header, key->offset);
 	dp_packet_pof_resize_field(packet, -key->len);
-	VLOG_INFO("++++++tsf odp_pof_delete_field: after delete field, pkt_len=%d.", dp_packet_size(packet));
+	/*VLOG_INFO("++++++tsf odp_pof_delete_field: after delete field, pkt_len=%d.", dp_packet_size(packet));*/
 }
 
 static void

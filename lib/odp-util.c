@@ -5628,12 +5628,12 @@ get_add_field_key(const struct pof_flow *flow, struct ovs_key_add_field *eth)
 	eth->field_id = ntohs(flow->field_id[2]);
 	eth->len = ntohs(flow->len[2]);
 	eth->offset = ntohs(flow->offset[2]);
-	VLOG_INFO("++++++tsf get_add_field_key: eth->field_id=%d, eth->len=%d, eth->offset=%d",
-					eth->field_id, eth->len, eth->offset);
+	/*VLOG_INFO("++++++tsf get_add_field_key: eth->field_id=%d, eth->len=%d, eth->offset=%d",
+					eth->field_id, eth->len, eth->offset);*/
 
 	for (int i = 0; i < 16; i++) {
 		eth->value[i] = flow->value[2][i];  // tsf: add 16 bytes most
-		VLOG_INFO("++++++tsf get_add_field_key:  eth->value[%d]=%d", i, eth->value[i]);
+		/*VLOG_INFO("++++++tsf get_add_field_key:  eth->value[%d]=%d", i, eth->value[i]);*/
 	}
 }
 
@@ -5648,7 +5648,7 @@ get_add_field_mask(const struct pof_flow *flow, struct ovs_key_add_field *eth)
 
 	for (int i = 0; i < 16; i++) {
 		eth->value[i] = flow->mask[2][i];  // tsf: add 16 bytes most
-		VLOG_INFO("++++++tsf get_add_field_mask:  eth->value[%d]=%d", i, eth->value[i]);
+		/*VLOG_INFO("++++++tsf get_add_field_mask:  eth->value[%d]=%d", i, eth->value[i]);*/
 	}
 }
 
@@ -5661,7 +5661,7 @@ put_add_field_key(const struct ovs_key_add_field *eth, struct pof_flow *flow)
 
     for (int i = 0; i < 16; i++) {
         flow->value[2][i] = eth->value[i];
-        VLOG_INFO("++++++tsf put_add_field_key:eth->value[%d]=%d",i, eth->value[i]);
+        /*VLOG_INFO("++++++tsf put_add_field_key:eth->value[%d]=%d",i, eth->value[i]);*/
     }
 }
 
@@ -5681,7 +5681,7 @@ commit_pof_delete_field_action(const struct flow *flow, struct flow *base_flow,
     use_masked = true;
     get_delete_field_mask(pflow, &mask);
 
-    VLOG_INFO("+++++++++++tsf commit_pof_add_field_action: before pof_commit");
+    VLOG_INFO("+++++++++++tsf commit_pof_delete_field_action: before pof_commit");
     if (pof_commit(OVS_KEY_ATTR_DELETE_FIELD, use_masked,
                &key, &base, &mask, sizeof key, odp_actions, pflow->flag)) {     //sqy notes: commit return false, no run
         /*VLOG_INFO("+++++++++++tsf commit_pof_delete_field_action: after pof_commit");*/
@@ -5707,7 +5707,7 @@ get_delete_field_key(const struct pof_flow *flow, struct ovs_key_delete_field *e
 			eth->len = pm->len / 8;
 			break;
 	}
-	VLOG_INFO("++++++tsf get_delete_field_key eth->offset=%d, eth->len=%d", eth->offset, eth->len);
+	/*VLOG_INFO("++++++tsf get_delete_field_key eth->offset=%d, eth->len=%d", eth->offset, eth->len);*/
 }
 
 static void
@@ -5729,7 +5729,7 @@ get_delete_field_mask(const struct pof_flow *flow, struct ovs_key_delete_field *
 			eth->len = pm->len / 8;
 			break;
 	}
-	VLOG_INFO("++++++tsf get_delete_field_mask eth->offset=%d, eth->len=%d", eth->offset, eth->len);
+	/*VLOG_INFO("++++++tsf get_delete_field_mask eth->offset=%d, eth->len=%d", eth->offset, eth->len);*/
 }
 
 static void
@@ -5750,7 +5750,7 @@ put_delete_field_key(const struct ovs_key_delete_field *eth, struct pof_flow *fl
 			pm->len = eth->len * 8;
 			break;
 	}
-	VLOG_INFO("++++++tsf put_delete_field_key eth->offset=%d, eth->len=%d", eth->offset, eth->len);
+	/*VLOG_INFO("++++++tsf put_delete_field_key eth->offset=%d, eth->len=%d", eth->offset, eth->len);*/
 }
 
 
