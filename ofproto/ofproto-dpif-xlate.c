@@ -4400,6 +4400,7 @@ freeze_unroll_actions(const struct ofpact *a, const struct ofpact *end,
         case OFPACT_SET_FIELD:
         case OFPACT_MODIFY_FIELD: /* tsf */
         case OFPACT_ADD_FIELD:  /* tsf */
+        case OFPACT_DELETE_FIELD:  /* tsf */
         case OFPACT_STACK_PUSH:
         case OFPACT_STACK_POP:
         case OFPACT_LEARN:
@@ -4722,6 +4723,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         const struct ofpact_add_field *add_field;
         const struct ofpact_drop *drop;
         const struct ofpact_modify_field *modify_field;
+        const struct ofpact_delete_field *delete_field;
         struct pof_match_u *pf = (struct pof_match_u *) malloc(sizeof(struct pof_match_u));
         const struct mf_field *mf;
 
@@ -4815,7 +4817,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         	pf->field_id = add_field->tag_id;
         	pf->len = add_field->tag_len / 8;  // tag_len cut off from uint32_t to uint16_t
         	pf->offset = add_field->tag_pos / 8;
-        	VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_MODIFY_FIELD, field_id=%d, len=%d, offset=%d",
+        	VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_ADD_FIELD, field_id=%d, len=%d, offset=%d",
         	          pf->field_id, pf->len, pf->offset);  // bytes
 
         	flow->field_id[2] = htons(pf->field_id);
@@ -4830,6 +4832,31 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         	memset(flow->mask[2], 0xff, pf->len);
         }
         break;
+
+        case OFPACT_DELETE_FIELD: {
+        	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_DELETE_FIELD->type:%d, len:%d", a->type, a->len);
+        	delete_field = ofpact_get_DELETE_FIELD(a);
+
+        	flow->offset[3] = htons(delete_field->tag_pos);
+        	flow->len[3] = delete_field->len_type;
+        	flow->flag[3] = OFPACT_DELETE_FIELD;
+            VLOG_INFO("++++++tsf pof_do_xlate_actions delete_field->len_type=%d", flow->len[3]);
+
+            struct pof_match *pm;
+            memset(flow->value[3], 0x00, sizeof(flow->value[3]));
+            memset(flow->mask[3], 0x00, sizeof(flow->mask[3]));
+            if (flow->len[3] == 0) { // POFVT_IMMEDIATE_NUM
+                flow->value[3][0] = delete_field->tag_len.value;
+                flow->mask[3][0] = 0xff;
+                VLOG_INFO("++++++tsf pof_do_xlate_actions flow->value[3][0]=%d", flow->value[3][0]);
+            } else {  // // POFVT_FIELD
+            	memcpy(flow->value[3], &delete_field->tag_len, sizeof(delete_field->tag_len));  // tsf: copy all union
+            	memset(flow->mask[3], 0xff, sizeof(delete_field->tag_len));
+            	pm = (struct pof_match *) flow->value[3];
+            	VLOG_INFO("++++++tsf pof_do_xlate_actions offset=%d, len=%d", pm->offset/8, pm->len/8);
+            }
+        }
+        	break;
 
         case OFPACT_EXIT:
             ctx->exit = true;
