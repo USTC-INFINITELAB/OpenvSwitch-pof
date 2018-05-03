@@ -116,6 +116,7 @@ EXTRA_DIST = \
 	.idea/misc.xml \
 	.idea/modules.xml \
 	.idea/workspace.xml \
+	include/README.md \
 	OVS206.config \
 	OVS206.creator \
         OVS206.creator.user \
