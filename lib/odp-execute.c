@@ -34,6 +34,7 @@
 #include "unaligned.h"
 #include "util.h"
 #include "openvswitch/vlog.h"
+#include "timeval.h"
 VLOG_DEFINE_THIS_MODULE(odp_execute);
 
 /* Masked copy of an ethernet address. 'src' is already properly masked. */
@@ -627,6 +628,13 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
     const struct nlattr *a;
     unsigned int left;
     int i;
+    struct dp_netdev_execute_aux {
+        struct dp_netdev_pmd_thread *pmd;
+        long long now;
+        const struct flow *flow;
+    };
+    struct dp_netdev_execute_aux *aux = dp;
+    long long pre_time = aux->now;
 
     NL_ATTR_FOR_EACH_UNSAFE (a, left, actions, actions_len) {
         int type = nl_attr_type(a);
@@ -715,6 +723,10 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
         case OVS_ACTION_ATTR_SET_MASKED:
             /*VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_masked_set_action");*/
             for (i = 0; i < cnt; i++) {
+            	long long now_time = time_usec();
+            	long long diff_time = now_time - pre_time;
+            	VLOG_INFO("++++++tsf odp_execute_masked_set_action: pre_time=%lld, now_time=%lld, diff_time=%lldus",
+            			pre_time, now_time, diff_time);
                 odp_execute_masked_set_action(packets[i], nl_attr_get(a));
             }
             break;
