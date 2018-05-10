@@ -6732,6 +6732,38 @@ ofputil_decode_role_message(const struct ofp_header *oh,
     return 0;
 }
 
+/* Decodes the OpenFlow "role request" or "role reply" message in '*oh' into
+ * an abstract form in '*rr'.  Returns 0 if successful, otherwise an
+ * OFPERR_* value. */
+enum ofperr
+ofputil_decode_pof_role_message(const struct ofp_header *oh,
+                            struct ofputil_role_request *rr)
+{
+    struct ofpbuf b = ofpbuf_const_initializer(oh, ntohs(oh->length));
+    VLOG_INFO("++++++tsf ofputil_decode_pof_role_message: oh->legth=%u", ntohs(oh->length));
+    enum ofpraw raw = ofpraw_pull_assert(&b);
+    if (raw == OFPRAW_OFPT12_ROLE_REQUEST ||
+        raw == OFPRAW_OFPT12_ROLE_REPLY) {
+        const struct ofp12_pof_role_request *orr = b.msg;
+
+        if (orr->role != OFPCR12_ROLE_NOCHANGE &&
+            orr->role != OFPCR12_ROLE_EQUAL &&
+            orr->role != OFPCR12_ROLE_MASTER &&
+            orr->role != OFPCR12_ROLE_SLAVE) {
+            return OFPERR_OFPRRFC_BAD_ROLE;
+        }
+
+        rr->role = orr->role;     /* tsf: 1B. */
+        rr->have_generation_id = false;
+        rr->generation_id = 0;
+
+    } else {
+        OVS_NOT_REACHED();
+    }
+
+    return 0;
+}
+
 /* Returns an encoded form of a role reply suitable for the "request" in a
  * buffer owned by the caller. */
 struct ofpbuf *
@@ -6768,6 +6800,33 @@ ofputil_encode_role_reply(const struct ofp_header *request,
 
     return buf;
 }
+
+/* tsf: Returns an encoded form of a role reply suitable for the "request" in a
+ * buffer owned by the caller. */
+struct ofpbuf *
+ofputil_encode_pof_role_reply(const struct ofp_header *request,
+                          const struct ofputil_role_request *rr)
+{
+    struct ofpbuf *buf;
+    enum ofpraw raw;
+
+    raw = ofpraw_decode_assert(request);
+    if (raw == OFPRAW_OFPT12_ROLE_REQUEST) {
+        struct ofp12_pof_role_request *orr;
+
+        VLOG_INFO("+++++tsf ofputil_encode_pof_role_reply: before ofpraw_alloc_reply.");
+        buf = ofpraw_alloc_reply(OFPRAW_OFPT12_ROLE_REPLY, request, 0);
+        orr = ofpbuf_put_zeros(buf, sizeof *orr);
+
+        orr->role = 0xff & rr->role;  /* tsf: 1B */
+
+    } else {
+        OVS_NOT_REACHED();
+    }
+
+    return buf;
+}
+
 
 /* Encodes "role status" message 'status' for sending in the given
  * 'protocol'.  Returns the role status message, if 'protocol' supports them,

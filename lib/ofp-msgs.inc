@@ -1255,11 +1255,11 @@ static struct raw_instance ofpraw_ofpt11_queue_get_config_reply_instances[] = {
     { {0, NULL}, {4, 23, 0, 0x0, 0}, OFPRAW_OFPT11_QUEUE_GET_CONFIG_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpt12_role_request_instances[] = {
-    { {0, NULL}, {3, 24, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REQUEST, 0 },
-    { {0, NULL}, {4, 24, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REQUEST, 0 },
-    { {0, NULL}, {5, 24, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REQUEST, 0 },
-    { {0, NULL}, {6, 24, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REQUEST, 0 },
-    { {0, NULL}, {7, 24, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REQUEST, 0 },
+    { {0, NULL}, {3, 25, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REQUEST, 0 },
+    { {0, NULL}, {4, 25, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REQUEST, 0 },
+    { {0, NULL}, {5, 25, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REQUEST, 0 },
+    { {0, NULL}, {6, 25, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REQUEST, 0 },
+    { {0, NULL}, {7, 25, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_nxt_role_request_instances[] = {
     { {0, NULL}, {1, 4, 0, 0x2320, 10}, OFPRAW_NXT_ROLE_REQUEST, 0 },
@@ -1271,11 +1271,11 @@ static struct raw_instance ofpraw_nxt_role_request_instances[] = {
     { {0, NULL}, {7, 4, 0, 0x2320, 10}, OFPRAW_NXT_ROLE_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpt12_role_reply_instances[] = {
-    { {0, NULL}, {3, 25, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REPLY, 0 },
-    { {0, NULL}, {4, 25, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REPLY, 0 },
-    { {0, NULL}, {5, 25, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REPLY, 0 },
-    { {0, NULL}, {6, 25, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REPLY, 0 },
-    { {0, NULL}, {7, 25, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REPLY, 0 },
+    { {0, NULL}, {3, 26, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REPLY, 0 },
+    { {0, NULL}, {4, 26, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REPLY, 0 },
+    { {0, NULL}, {5, 26, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REPLY, 0 },
+    { {0, NULL}, {6, 26, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REPLY, 0 },
+    { {0, NULL}, {7, 26, 0, 0x0, 0}, OFPRAW_OFPT12_ROLE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_nxt_role_reply_instances[] = {
     { {0, NULL}, {1, 4, 0, 0x2320, 11}, OFPRAW_NXT_ROLE_REPLY, 0 },
@@ -1287,12 +1287,12 @@ static struct raw_instance ofpraw_nxt_role_reply_instances[] = {
     { {0, NULL}, {7, 4, 0, 0x2320, 11}, OFPRAW_NXT_ROLE_REPLY, 0 },
 };
 static struct raw_instance ofpraw_ofpt13_get_async_request_instances[] = {
-    { {0, NULL}, {4, 26, 0, 0x0, 0}, OFPRAW_OFPT13_GET_ASYNC_REQUEST, 0 },
+    { {0, NULL}, {4, 37, 0, 0x0, 0}, OFPRAW_OFPT13_GET_ASYNC_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpt14_get_async_request_instances[] = {
-    { {0, NULL}, {5, 26, 0, 0x0, 0}, OFPRAW_OFPT14_GET_ASYNC_REQUEST, 0 },
-    { {0, NULL}, {6, 26, 0, 0x0, 0}, OFPRAW_OFPT14_GET_ASYNC_REQUEST, 0 },
-    { {0, NULL}, {7, 26, 0, 0x0, 0}, OFPRAW_OFPT14_GET_ASYNC_REQUEST, 0 },
+    { {0, NULL}, {5, 37, 0, 0x0, 0}, OFPRAW_OFPT14_GET_ASYNC_REQUEST, 0 },
+    { {0, NULL}, {6, 37, 0, 0x0, 0}, OFPRAW_OFPT14_GET_ASYNC_REQUEST, 0 },
+    { {0, NULL}, {7, 37, 0, 0x0, 0}, OFPRAW_OFPT14_GET_ASYNC_REQUEST, 0 },
 };
 static struct raw_instance ofpraw_ofpt13_get_async_reply_instances[] = {
     { {0, NULL}, {4, 27, 0, 0x0, 0}, OFPRAW_OFPT13_GET_ASYNC_REPLY, 0 },
@@ -2307,7 +2307,7 @@ static struct raw_info raw_infos[] = {
         ofpraw_ofpt12_role_request_instances,
         3, 7,
 #line 229 "./include/openvswitch/ofp-msgs.h"
-        sizeof(struct ofp12_role_request),
+        sizeof(struct ofp12_pof_role_request),
 #line 229 "./include/openvswitch/ofp-msgs.h"
         0,
 #line 2314 "lib/ofp-msgs.inc"
@@ -2329,7 +2329,7 @@ static struct raw_info raw_infos[] = {
         ofpraw_ofpt12_role_reply_instances,
         3, 7,
 #line 234 "./include/openvswitch/ofp-msgs.h"
-        sizeof(struct ofp12_role_request),
+        sizeof(struct ofp12_pof_role_request),
 #line 234 "./include/openvswitch/ofp-msgs.h"
         0,
 #line 2336 "lib/ofp-msgs.inc"

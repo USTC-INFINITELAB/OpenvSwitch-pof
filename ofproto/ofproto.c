@@ -6024,6 +6024,38 @@ handle_role_request(struct ofconn *ofconn, const struct ofp_header *oh)
 }
 
 static enum ofperr
+handle_pof_role_request(struct ofconn *ofconn, const struct ofp_header *oh)
+{
+    struct ofputil_role_request request;
+    struct ofputil_role_request reply;
+    struct ofpbuf *buf;
+    enum ofperr error;
+
+    error = ofputil_decode_pof_role_message(oh, &request);
+    if (error) {
+        return error;
+    }
+
+    if (request.role != OFPCR12_ROLE_NOCHANGE) {
+        if (request.role != OFPCR12_ROLE_EQUAL
+            && request.have_generation_id
+            && !ofconn_set_master_election_id(ofconn, request.generation_id)) {  /* tsf: false, no run. */
+                return OFPERR_OFPRRFC_STALE;
+        }
+
+        ofconn_set_role(ofconn, request.role);
+    }
+
+    reply.role = ofconn_get_role(ofconn);
+    reply.have_generation_id = ofconn_get_master_election_id(
+        ofconn, &reply.generation_id);  /* tsf: no use. */
+    buf = ofputil_encode_pof_role_reply(oh, &reply);
+    ofconn_send_reply(ofconn, buf);
+
+    return 0;
+}
+
+static enum ofperr
 handle_nxt_flow_mod_table_id(struct ofconn *ofconn,
                              const struct ofp_header *oh)
 {
@@ -8116,7 +8148,8 @@ handle_openflow__(struct ofconn *ofconn, const struct ofpbuf *msg)
         return handle_set_config(ofconn, oh);
 
     case OFPTYPE_PACKET_OUT:
-        return handle_packet_out(ofconn, oh);
+        /*return handle_packet_out(ofconn, oh);*/
+    	return 0; /* tsf: TODO port range and struct_packet_out, not compatible yet. */
 
     case OFPTYPE_PORT_MOD:
         return handle_port_mod(ofconn, oh);
@@ -8137,7 +8170,9 @@ handle_openflow__(struct ofconn *ofconn, const struct ofpbuf *msg)
         return handle_barrier_request(ofconn, oh);
 
     case OFPTYPE_ROLE_REQUEST:
-        return handle_role_request(ofconn, oh);
+        /*return handle_role_request(ofconn, oh);*/
+    	VLOG_INFO("+++++tsf handle_openflow__: handle_pof_role_msg");
+        return handle_pof_role_request(ofconn, oh); /* tsf: adapt to onos 1.11. */
 
         /* OpenFlow replies. */
     case OFPTYPE_ECHO_REPLY:
@@ -8280,6 +8315,7 @@ handle_openflow__(struct ofconn *ofconn, const struct ofpbuf *msg)
     case OFPTYPE_IPFIX_BRIDGE_STATS_REPLY:
     case OFPTYPE_IPFIX_FLOW_STATS_REPLY:
     default:
+    	VLOG_INFO("++++++tsf handle_openflow__: default case");
         if (ofpmsg_is_stat_request(oh)) {
             return OFPERR_OFPBRC_BAD_STAT;
         } else {

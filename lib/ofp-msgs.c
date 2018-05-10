@@ -482,10 +482,11 @@ ofpraw_pull(enum ofpraw *rawp, struct ofpbuf *msg)
     msg->msg = msg->data;
 
     min_len = instance->hdrs_len + info->min_body;
+    VLOG_INFO("++++++tsf ofpraw_pull : raw=%u, instance->hdrs_len=%u, info->min_body=%u",raw, instance->hdrs_len, info->min_body);
     switch (info->extra_multiple) {
     case 0:
         if (len != min_len) {
-            VLOG_WARN_RL(&rl, "received %s with incorrect length %u (expected "
+            VLOG_WARN_RL(&rl, "(!=) received %s with incorrect length %u (expected "
                          "length %u)", info->name, len, min_len);
             return OFPERR_OFPBRC_BAD_LEN;
         }
@@ -493,7 +494,7 @@ ofpraw_pull(enum ofpraw *rawp, struct ofpbuf *msg)
 
     case 1:
         if (len < min_len) {
-            VLOG_WARN_RL(&rl, "received %s with incorrect length %u (expected "
+            VLOG_WARN_RL(&rl, "(<) received %s with incorrect length %u (expected "
                          "length at least %u bytes)",
                          info->name, len, min_len);
             return OFPERR_OFPBRC_BAD_LEN;

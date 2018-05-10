@@ -174,11 +174,18 @@ enum ofp12_group_capabilities {
 
 /* Role request and reply message. */
 struct ofp12_role_request {
-    ovs_be32 role;            /* One of OFPCR12_ROLE_*. */
-    uint8_t pad[4];           /* Align to 64 bits. */
-    ovs_be64 generation_id;   /* Master Election Generation Id */
+    ovs_be32 role;             /*One of OFPCR12_ROLE_*.*/
+    uint8_t pad[4];            /*Align to 64 bits.*/
+    ovs_be64 generation_id;    /*Master Election Generation Id*/
 };
 OFP_ASSERT(sizeof(struct ofp12_role_request) == 16);
+
+/* tsf: pof role request and reply message, adapt to onos 1.11. */
+struct ofp12_pof_role_request {
+    uint8_t role;            /* One of OFPCR12_ROLE_*. */
+    uint8_t pad[7];           /* Align to 64 bits. */
+};
+OFP_ASSERT(sizeof(struct ofp12_pof_role_request) == 8);
 
 /* Controller roles. */
 enum ofp12_controller_role {

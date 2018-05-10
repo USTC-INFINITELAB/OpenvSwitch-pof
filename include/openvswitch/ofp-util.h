@@ -1100,7 +1100,11 @@ struct ofputil_role_status {
 
 enum ofperr ofputil_decode_role_message(const struct ofp_header *,
                                         struct ofputil_role_request *);
+enum ofperr ofputil_decode_pof_role_message(const struct ofp_header *,
+                                        struct ofputil_role_request *);
 struct ofpbuf *ofputil_encode_role_reply(const struct ofp_header *,
+                                         const struct ofputil_role_request *);
+struct ofpbuf *ofputil_encode_pof_role_reply(const struct ofp_header *,
                                          const struct ofputil_role_request *);
 
 struct ofpbuf *ofputil_encode_role_status(

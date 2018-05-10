@@ -226,19 +226,19 @@ enum ofpraw {
     /* OFPT 1.1-1.3 (23): struct ofp11_queue_get_config_reply, uint8_t[8][]. */
     OFPRAW_OFPT11_QUEUE_GET_CONFIG_REPLY,
 
-    /* OFPT 1.2+ (24): struct ofp12_role_request. */
+    /* OFPT 1.2+ (25): struct ofp12_pof_role_request. */
     OFPRAW_OFPT12_ROLE_REQUEST,
     /* NXT 1.0+ (10): struct nx_role_request. */
     OFPRAW_NXT_ROLE_REQUEST,
 
-    /* OFPT 1.2+ (25): struct ofp12_role_request. */
+    /* OFPT 1.2+ (26): struct ofp12_pof_role_request. */
     OFPRAW_OFPT12_ROLE_REPLY,
     /* NXT 1.0+ (11): struct nx_role_request. */
     OFPRAW_NXT_ROLE_REPLY,
 
-    /* OFPT 1.3 (26): void. */
+    /* OFPT 1.3 (37): void. */
     OFPRAW_OFPT13_GET_ASYNC_REQUEST,
-    /* OFPT 1.4+ (26): void. */
+    /* OFPT 1.4+ (37): void. */
     OFPRAW_OFPT14_GET_ASYNC_REQUEST,
     /* OFPT 1.3 (27): struct ofp13_async_config. */
     OFPRAW_OFPT13_GET_ASYNC_REPLY,
