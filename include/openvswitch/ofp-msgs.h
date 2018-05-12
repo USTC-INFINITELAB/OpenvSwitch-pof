@@ -179,7 +179,7 @@ enum ofpraw {
 
     /* OFPT 1.0 (14): struct ofp10_packet_out, uint8_t[]. */
     OFPRAW_OFPT10_PACKET_OUT,
-    /* OFPT 1.1+ (14): struct ofp11_packet_out, uint8_t[]. */
+    /* OFPT 1.1+ (14): struct ofp11_pof_packet_out, uint8_t[]. */
     OFPRAW_OFPT11_PACKET_OUT,
 
     /* OFPT 1.0 (15): struct ofp10_flow_mod, uint8_t[8][]. */

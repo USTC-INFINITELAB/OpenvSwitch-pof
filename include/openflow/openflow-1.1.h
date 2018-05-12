@@ -638,6 +638,19 @@ struct ofp11_packet_out {
 };
 OFP_ASSERT(sizeof(struct ofp11_packet_out) == 16);
 
+/* Send packet (controller -> datapath). */
+struct ofp11_pof_packet_out {
+    ovs_be32 buffer_id;       /* ID assigned by datapath (-1 if none). */
+    ovs_be32 in_port;         /* Packet's input port or OFPP_CONTROLLER. */
+    uint8_t actions_len;     /* Size of action array in bytes. */
+    uint8_t pad[7];
+    /* struct ofp_action_header actions[0];  Action list. */
+    /* uint8_t data[0]; */    /* Packet data. The length is inferred
+                                 from the length field in the header.
+                                 (Only meaningful if buffer_id == -1.) */
+};
+OFP_ASSERT(sizeof(struct ofp11_pof_packet_out) == 16);
+
 /* Packet received on port (datapath -> controller). */
 struct ofp11_packet_in {
     ovs_be32 buffer_id;     /* ID assigned by datapath. */

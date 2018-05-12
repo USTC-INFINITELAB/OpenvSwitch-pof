@@ -4942,6 +4942,68 @@ ofputil_decode_packet_out(struct ofputil_packet_out *po,
 
     return 0;
 }
+
+/* Converts an OFPT_PACKET_OUT in 'opo' into an abstract ofputil_packet_out in
+ * 'po'.
+ *
+ * Uses 'ofpacts' to store the abstract OFPACT_* version of the packet out
+ * message's actions.  The caller must initialize 'ofpacts' and retains
+ * ownership of it.  'po->ofpacts' will point into the 'ofpacts' buffer.
+ *
+ * 'po->packet' refers to the packet data in 'oh', so the buffer containing
+ * 'oh' must not be destroyed while 'po' is being used.
+ *
+ * Returns 0 if successful, otherwise an OFPERR_* value. */
+enum ofperr
+ofputil_decode_pof_packet_out(struct ofputil_packet_out *po,
+                          const struct ofp_header *oh,
+                          struct ofpbuf *ofpacts)
+{
+    struct ofpbuf b = ofpbuf_const_initializer(oh, ntohs(oh->length));
+    enum ofpraw raw = ofpraw_pull_assert(&b);
+
+    ofpbuf_clear(ofpacts);
+    if (raw == OFPRAW_OFPT11_PACKET_OUT) {
+        enum ofperr error;
+        const struct ofp11_pof_packet_out *opo = ofpbuf_pull(&b, sizeof *opo);
+
+        po->buffer_id = ntohl(opo->buffer_id);
+        error = ofputil_port_from_ofp11(opo->in_port, &po->in_port);
+        if (error) {
+            return error;
+        }
+
+        error = ofpacts_pull_openflow_actions(&b, ntohs(opo->actions_len),
+                                              oh->version, ofpacts);
+        if (error) {
+            return error;
+        }
+    } else {
+        OVS_NOT_REACHED();
+    }
+
+    if (ofp_to_u16(po->in_port) >= ofp_to_u16(OFPP_MAX)
+        && po->in_port != OFPP_LOCAL
+        && po->in_port != OFPP_NONE && po->in_port != OFPP_CONTROLLER) {
+        VLOG_WARN_RL(&bad_ofmsg_rl, "packet-out has bad input port %#"PRIx16,
+                     po->in_port);
+        return OFPERR_OFPBRC_BAD_PORT;
+    }
+
+    po->ofpacts = ofpacts->data;
+    po->ofpacts_len = ofpacts->size;
+
+    if (po->buffer_id == UINT32_MAX) {
+        po->packet = b.data;
+        po->packet_len = b.size;
+    } else {
+        po->packet = NULL;
+        po->packet_len = 0;
+    }
+
+    return 0;
+}
+
 
 /* ofputil_phy_port */
 

@@ -3617,6 +3617,58 @@ handle_packet_out(struct ofconn *ofconn, const struct ofp_header *oh)
     return error;
 }
 
+/* tsf: Not implemented yet. packet_out message is used in ONOS to discovery link.
+ *      However, we often set the stale topology graph. So it's not so hurry to
+ *      support packet_out.
+ * Note: The packet_out in POF stack has fixed length, while packet_out in OpenFlow
+ *       has variable length, especially in parsing actions[]. */
+static enum ofperr
+handle_pof_packet_out(struct ofconn *ofconn, const struct ofp_header *oh)
+    OVS_EXCLUDED(ofproto_mutex)
+{
+	return 0;  /* tsf: not implemented yet.*/
+
+    struct ofproto *p = ofconn_get_ofproto(ofconn);
+    struct ofputil_packet_out po;
+    struct ofproto_packet_out opo;
+    uint64_t ofpacts_stub[1024 / 8];
+    struct ofpbuf ofpacts;
+    enum ofperr error;
+
+    COVERAGE_INC(ofproto_packet_out);
+
+    error = reject_slave_controller(ofconn);
+    if (error) {
+        return error;
+    }
+
+    /* Decode message. */
+    ofpbuf_use_stub(&ofpacts, ofpacts_stub, sizeof ofpacts_stub);
+    error = ofputil_decode_pof_packet_out(&po, oh, &ofpacts);
+    if (error) {
+        ofpbuf_uninit(&ofpacts);
+        return error;
+    }
+
+    po.ofpacts = ofpbuf_steal_data(&ofpacts);   /* Move to heap. */
+    error = ofproto_packet_out_init(p, ofconn, &opo, &po);
+    if (error) {
+        free(po.ofpacts);
+        return error;
+    }
+
+    ovs_mutex_lock(&ofproto_mutex);
+    opo.version = p->tables_version;
+    error = ofproto_packet_out_start(p, &opo);
+    if (!error) {
+        ofproto_packet_out_finish(p, &opo);
+    }
+    ovs_mutex_unlock(&ofproto_mutex);
+
+    ofproto_packet_out_uninit(&opo);
+    return error;
+}
+
 static enum ofperr
 handle_nxt_resume(struct ofconn *ofconn, const struct ofp_header *oh)
 {
@@ -8149,7 +8201,7 @@ handle_openflow__(struct ofconn *ofconn, const struct ofpbuf *msg)
 
     case OFPTYPE_PACKET_OUT:
         /*return handle_packet_out(ofconn, oh);*/
-    	return 0; /* tsf: TODO port range and struct_packet_out, not compatible yet. */
+    	return handle_pof_packet_out(ofconn, oh); /* tsf: TODO port range and struct_packet_out, not compatible yet. */
 
     case OFPTYPE_PORT_MOD:
         return handle_port_mod(ofconn, oh);

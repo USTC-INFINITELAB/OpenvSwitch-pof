@@ -634,6 +634,9 @@ struct ofputil_packet_out {
 enum ofperr ofputil_decode_packet_out(struct ofputil_packet_out *,
                                       const struct ofp_header *,
                                       struct ofpbuf *ofpacts);
+enum ofperr ofputil_decode_pof_packet_out(struct ofputil_packet_out *,
+                                      const struct ofp_header *,
+                                      struct ofpbuf *ofpacts);
 struct ofpbuf *ofputil_encode_packet_out(const struct ofputil_packet_out *,
                                          enum ofputil_protocol protocol);
 

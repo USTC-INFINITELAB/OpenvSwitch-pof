@@ -2098,7 +2098,7 @@ static struct raw_info raw_infos[] = {
         ofpraw_ofpt11_packet_out_instances,
         2, 7,
 #line 182 "./include/openvswitch/ofp-msgs.h"
-        sizeof(struct ofp11_packet_out),
+        sizeof(struct ofp11_pof_packet_out),
 #line 182 "./include/openvswitch/ofp-msgs.h"
         sizeof(uint8_t),
 #line 2105 "lib/ofp-msgs.inc"
