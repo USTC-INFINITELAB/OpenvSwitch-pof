@@ -547,9 +547,14 @@ decode_OFPAT_RAW11_OUTPUT(const struct ofp11_action_output *oao,
     enum ofperr error;
     VLOG_INFO("+++++++++++sqy decode_OFPAT_RAW11_OUTPUT:start");
     output = ofpact_put_OUTPUT(out);
-    output->max_len = 0;/*ntohs(OVS_BE16_MAX);ntohs(oao->max_len);*/
+    // output->max_len = 0;/*ntohs(OVS_BE16_MAX);ntohs(oao->max_len);*/
 
     error = ofputil_port_from_ofp11(oao->outputPortId, &output->port);
+
+    output->max_len = output->port == OFPP_CONTROLLER ? UINT16_MAX : 0;
+    VLOG_INFO("+++++++++++tsf decode_OFPAT_RAW11_OUTPUT:port=%"PRIu16", max_len=%"PRIu16,
+    		output->port, output->max_len);
+
     if (error) {
         return error;
     }
