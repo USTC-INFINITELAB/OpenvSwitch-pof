@@ -3619,7 +3619,7 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
      * explicit table miss.  OpenFlow before 1.3 doesn't have that concept so
      * it will get translated back to OFPR_ACTION for those versions. */
     if (reason == OFPR_ACTION
-        && ctx->rule && rule_dpif_is_table_miss(ctx->rule)) {
+        && ctx->rule && rule_dpif_is_table_miss(ctx->rule)) { // tsf: no run
         reason = OFPR_EXPLICIT_MISS;
     }
 
@@ -3650,7 +3650,7 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
 
     /* Async messages are only sent once, so if we send one now, no
      * xlate cache entry is created.  */
-    if (ctx->xin->allow_side_effects) {
+    if (ctx->xin->allow_side_effects) {  /* tsf: run here */
         ofproto_dpif_send_async_msg(ctx->xbridge->ofproto, am);
     } else /* xcache */ {
         struct xc_entry *entry;
