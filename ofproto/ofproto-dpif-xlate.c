@@ -3600,6 +3600,8 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
     struct dp_packet_batch batch;
     struct dp_packet *packet;
 
+    VLOG_INFO("++++++tsf execute_controller_action: begin");
+
     ctx->xout->slow |= SLOW_CONTROLLER;
     xlate_commit_actions(ctx);
     if (!ctx->xin->packet) {
@@ -3618,12 +3620,15 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
     /* A packet sent by an action in a table-miss rule is considered an
      * explicit table miss.  OpenFlow before 1.3 doesn't have that concept so
      * it will get translated back to OFPR_ACTION for those versions. */
+    VLOG_INFO("++++++tsf execute_controller_action: reason1=%d", reason);
     if (reason == OFPR_ACTION
         && ctx->rule && rule_dpif_is_table_miss(ctx->rule)) { // tsf: no run
         reason = OFPR_EXPLICIT_MISS;
     }
+    VLOG_INFO("++++++tsf execute_controller_action: reason2=%d", reason);
 
     size_t packet_len = dp_packet_size(packet);
+    VLOG_INFO("++++++tsf execute_controller_action: packet_len=%d", packet_len);
 
     struct ofproto_async_msg *am = xmalloc(sizeof *am);
     *am = (struct ofproto_async_msg) {
@@ -3646,10 +3651,14 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
             .max_len = len,
         },
     };
-    flow_get_metadata(&ctx->xin->flow, &am->pin.up.public.flow_metadata);
+    flow_get_metadata(&ctx->xin->flow, &am->pin.up.public.flow_metadata);   // tsf: no run for ipv4, we use metadata to store inport
+    VLOG_INFO("++++++tsf execute_controller_action: metadata_inport=%"PRIu32,
+    		am->pin.up.public.flow_metadata.flow.in_port.ofp_port);
 
     /* Async messages are only sent once, so if we send one now, no
      * xlate cache entry is created.  */
+    VLOG_INFO("++++++tsf execute_controller_action: ctx->xin->allow_side_effects=%d",
+              ctx->xin->allow_side_effects);
     if (ctx->xin->allow_side_effects) {  /* tsf: run here */
         ofproto_dpif_send_async_msg(ctx->xbridge->ofproto, am);
     } else /* xcache */ {
@@ -3937,6 +3946,8 @@ xlate_output_action(struct xlate_ctx *ctx,
         flood_packets(ctx, true);
         break;
     case OFPP_CONTROLLER:
+    	VLOG_INFO("++++++tsf xlate_output_action: execute_controller_action, inport=%"PRIu32,
+    			ctx->xin->flow.in_port.ofp_port);
         execute_controller_action(ctx, max_len,
                                   (ctx->in_group ? OFPR_GROUP
                                    : ctx->in_action_set ? OFPR_ACTION_SET

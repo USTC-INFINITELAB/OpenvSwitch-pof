@@ -610,6 +610,12 @@ struct ofpbuf *ofputil_encode_packet_in_private(
     enum ofputil_protocol protocol,
     enum nx_packet_in_format);
 
+struct ofpbuf *ofputil_encode_pof_packet_in_private(
+    const struct ofputil_packet_in_private *,
+    enum ofputil_protocol protocol,
+    enum nx_packet_in_format,
+    uint64_t dpid);
+
 enum ofperr ofputil_decode_packet_in_private(
     const struct ofp_header *, bool loose,
     const struct tun_table *,

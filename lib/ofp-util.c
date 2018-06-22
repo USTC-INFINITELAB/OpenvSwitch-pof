@@ -4590,6 +4590,37 @@ ofputil_encode_ofp12_packet_in(const struct ofputil_packet_in *pin,
     return msg;
 }
 
+/**
+ * tsf: encode ofp12_pof_packet_in
+ */
+static struct ofpbuf *
+ofputil_encode_ofp12_pof_packet_in(const struct ofputil_packet_in *pin,
+                               enum ofp_version version,
+                               uint64_t dpid)
+{
+    enum ofpraw raw = (version >= OFP13_VERSION
+                       ? OFPRAW_OFPT13_PACKET_IN
+                       : OFPRAW_OFPT12_PACKET_IN);
+    struct ofpbuf *msg;
+
+     // The final argument is just an estimate of the space required.
+    msg = ofpraw_alloc_xid(raw, version,
+                           htonl(0), NXM_TYPICAL_LEN + 2 + pin->packet_len);
+
+    struct ofp12_pof_packet_in *opi = ofpbuf_put_zeros(msg, sizeof *opi);
+    opi->buffer_id = htonl(UINT32_MAX);
+    opi->total_len = htons(pin->packet_len);
+    opi->reason = encode_packet_in_reason(pin->reason, version);
+    opi->table_id = pin->table_id;
+
+    opi->cookie = pin->cookie;
+    opi->device_id = dpid;
+    opi->slot_id = 0;
+    opi->port_id = htons(pin->flow_metadata.flow.in_port.ofp_port);
+
+    return msg;
+}
+
 /* Converts abstract ofputil_packet_in_private 'pin' into a PACKET_IN message
  * for 'protocol', using the packet-in format specified by 'packet_in_format'.
  *
@@ -4628,7 +4659,73 @@ ofputil_encode_packet_in_private(const struct ofputil_packet_in_private *pin,
         case OFPUTIL_P_OF14_OXM:
         case OFPUTIL_P_OF15_OXM:
         case OFPUTIL_P_OF16_OXM:
+            VLOG_INFO("++++++tsf ofputil_encode_packet_in_private: ofp12");
             msg = ofputil_encode_ofp12_packet_in(&pin->public, version);
+            break;
+
+        default:
+            OVS_NOT_REACHED();
+        }
+        break;
+
+    case NXPIF_NXT_PACKET_IN:
+        msg = ofputil_encode_nx_packet_in(&pin->public, version);
+        break;
+
+    case NXPIF_NXT_PACKET_IN2:
+        return ofputil_encode_nx_packet_in2(pin, version,
+                                            pin->public.packet_len);
+
+    default:
+        OVS_NOT_REACHED();
+    }
+
+    ofpbuf_put(msg, pin->public.packet, pin->public.packet_len);
+    ofpmsg_update_length(msg);
+    return msg;
+}
+
+/* Converts abstract ofputil_packet_in_private 'pin' into a PACKET_IN message
+ * for 'protocol', using the packet-in format specified by 'packet_in_format'.
+ *
+ * This function is really meant only for use by ovs-vswitchd.  To any other
+ * code, the "continuation" data, i.e. the data that is in struct
+ * ofputil_packet_in_private but not in struct ofputil_packet_in, is supposed
+ * to be opaque (and it might change from one OVS version to another).  Thus,
+ * if any other code wants to encode a packet-in, it should use a non-"private"
+ * version of this function.  (Such a version doesn't currently exist because
+ * only ovs-vswitchd currently wants to encode packet-ins.  If you need one,
+ * write it...) */
+struct ofpbuf *
+ofputil_encode_pof_packet_in_private(const struct ofputil_packet_in_private *pin,
+                                 enum ofputil_protocol protocol,
+                                 enum nx_packet_in_format packet_in_format,
+                                 uint64_t dpid)
+{
+    enum ofp_version version = ofputil_protocol_to_ofp_version(protocol);
+
+    struct ofpbuf *msg;
+    switch (packet_in_format) {
+    case NXPIF_STANDARD:
+        switch (protocol) {
+        case OFPUTIL_P_OF10_STD:
+        case OFPUTIL_P_OF10_STD_TID:
+        case OFPUTIL_P_OF10_NXM:
+        case OFPUTIL_P_OF10_NXM_TID:
+            msg = ofputil_encode_ofp10_packet_in(&pin->public);
+            break;
+
+        case OFPUTIL_P_OF11_STD:
+            msg = ofputil_encode_ofp11_packet_in(&pin->public);
+            break;
+
+        case OFPUTIL_P_OF12_OXM:
+        case OFPUTIL_P_OF13_OXM:
+        case OFPUTIL_P_OF14_OXM:
+        case OFPUTIL_P_OF15_OXM:
+        case OFPUTIL_P_OF16_OXM:
+            VLOG_INFO("++++++tsf ofputil_encode_pof_packet_in_private: ofp12");
+            msg = ofputil_encode_ofp12_pof_packet_in(&pin->public, version, dpid);
             break;
 
         default:

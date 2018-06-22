@@ -634,7 +634,7 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
         const struct flow *flow;
     };
     struct dp_netdev_execute_aux *aux = dp;
-    long long pre_time = aux->now;
+    long long pre_time = aux != NULL ? aux->now : 0;
 
     NL_ATTR_FOR_EACH_UNSAFE (a, left, actions, actions_len) {
         int type = nl_attr_type(a);

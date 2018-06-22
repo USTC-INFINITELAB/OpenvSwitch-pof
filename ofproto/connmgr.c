@@ -1516,6 +1516,7 @@ ofconn_receives_async_msg(const struct ofconn *ofconn,
                           enum ofputil_async_msg_type type,
                           unsigned int reason)
 {
+    VLOG_INFO("+++++tsf ofconn_receives_async_msg");
     ovs_assert(reason < 32);
     ovs_assert((unsigned int) type < OAM_N_TYPES);
 
@@ -1724,6 +1725,7 @@ connmgr_send_async_msg(struct connmgr *mgr,
                        const struct ofproto_async_msg *am)
 {
     struct ofconn *ofconn;
+    /*VLOG_INFO("++++++tsf connmgr_send_async_msg: am.controller_id=%016"PRIx16, am->controller_id);*/
 
     LIST_FOR_EACH (ofconn, node, &mgr->all_conns) {
         enum ofputil_protocol protocol = ofconn_get_protocol(ofconn);
@@ -1734,8 +1736,15 @@ connmgr_send_async_msg(struct connmgr *mgr,
             continue;
         }
 
-        struct ofpbuf *msg = ofputil_encode_packet_in_private(
-            &am->pin.up, protocol, ofconn->packet_in_format);
+        /* tsf: get dapath_id */
+        struct ofproto *ofproto = ofconn_get_ofproto(ofconn);
+        uint64_t dpid = ofproto->datapath_id;
+        /*VLOG_INFO("++++++tsf connmgr_send_async_msg: dpid=%016"PRIx64, dpid);*/
+        struct ofpbuf *msg = ofputil_encode_pof_packet_in_private(
+            &am->pin.up, protocol, ofconn->packet_in_format, dpid);
+
+        /*struct ofpbuf *msg = ofputil_encode_packet_in_private(
+            &am->pin.up, protocol, ofconn->packet_in_format);*/
 
         struct ovs_list txq;
         bool is_miss = (am->pin.up.public.reason == OFPR_NO_MATCH ||
@@ -1744,6 +1753,7 @@ connmgr_send_async_msg(struct connmgr *mgr,
         pinsched_send(ofconn->schedulers[is_miss],
                       am->pin.up.public.flow_metadata.flow.in_port.ofp_port,
                       msg, &txq);
+        VLOG_INFO("++++++tsf connmgr_send_async_msg: do_send_packet_ins");
         do_send_packet_ins(ofconn, &txq);
     }
 }

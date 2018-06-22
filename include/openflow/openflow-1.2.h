@@ -214,6 +214,31 @@ struct ofp12_packet_in {
 };
 OFP_ASSERT(sizeof(struct ofp12_packet_in) == 8);
 
+/* tsf: Packet received on port (datapath -> controller).
+ *
+ * adjust to pof_packet_in
+ * */
+struct ofp12_pof_packet_in {
+	ovs_be32 buffer_id;    /*Buffer ID assigned by datapath. 0xffffffff means invalid buffer id*/
+    ovs_be16 total_len;    /* Full length of the packet. */
+    uint8_t  reason;       /*Reason that packet is sent.*/
+    uint8_t  table_id;     /*ID of the table that was looked up*/
+
+    ovs_be64 cookie;       /*Cookie of the flow entry that was looked up*/
+
+    ovs_be32 device_id;
+    ovs_be16 slot_id;
+    ovs_be16 port_id;
+
+    /* Followed by:
+     *   - An Ethernet frame whose length is inferred from header.length.
+     * The padding bytes preceding the Ethernet frame ensure that the IP
+     * header (if any) following the Ethernet header is 32-bit aligned.
+     */
+    /* uint8_t data[0];        Ethernet frame */
+};
+OFP_ASSERT(sizeof(struct ofp12_pof_packet_in) == 24);
+
 /* Flow removed (datapath -> controller). */
 struct ofp12_flow_removed {
     ovs_be64 cookie;          /* Opaque controller-issued identifier. */
