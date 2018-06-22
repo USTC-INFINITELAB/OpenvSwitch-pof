@@ -482,7 +482,7 @@ ofpraw_pull(enum ofpraw *rawp, struct ofpbuf *msg)
     msg->msg = msg->data;
 
     min_len = instance->hdrs_len + info->min_body;
-    VLOG_INFO("++++++tsf ofpraw_pull : raw=%u, instance->hdrs_len=%u, info->min_body=%u",raw, instance->hdrs_len, info->min_body);
+    /*VLOG_INFO("++++++tsf ofpraw_pull : raw=%u, instance->hdrs_len=%u, info->min_body=%u",raw, instance->hdrs_len, info->min_body);*/
     switch (info->extra_multiple) {
     case 0:
         if (len != min_len) {

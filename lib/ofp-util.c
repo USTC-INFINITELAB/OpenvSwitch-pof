@@ -4724,7 +4724,7 @@ ofputil_encode_pof_packet_in_private(const struct ofputil_packet_in_private *pin
         case OFPUTIL_P_OF14_OXM:
         case OFPUTIL_P_OF15_OXM:
         case OFPUTIL_P_OF16_OXM:
-            VLOG_INFO("++++++tsf ofputil_encode_pof_packet_in_private: ofp12");
+            /*VLOG_INFO("++++++tsf ofputil_encode_pof_packet_in_private: ofp12");*/
             msg = ofputil_encode_ofp12_pof_packet_in(&pin->public, version, dpid);
             break;
 

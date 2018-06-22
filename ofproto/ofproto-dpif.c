@@ -389,7 +389,7 @@ ofproto_dpif_send_async_msg(struct ofproto_dpif *ofproto,
 
     /* Wakes up main thread for packet-in I/O. */
     seq_change(ofproto->ams_seq);
-    VLOG_INFO("++++++tsf ofproto_dpif_send_async_msg: ofproto->ams_seq=%d", ofproto->ams_seq);
+    /*VLOG_INFO("++++++tsf ofproto_dpif_send_async_msg: ofproto->ams_seq=%d", ofproto->ams_seq);*/
 }
 
 /* Factory functions. */

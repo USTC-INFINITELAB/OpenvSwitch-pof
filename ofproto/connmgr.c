@@ -1516,7 +1516,7 @@ ofconn_receives_async_msg(const struct ofconn *ofconn,
                           enum ofputil_async_msg_type type,
                           unsigned int reason)
 {
-    VLOG_INFO("+++++tsf ofconn_receives_async_msg");
+    /*VLOG_INFO("+++++tsf ofconn_receives_async_msg");*/
     ovs_assert(reason < 32);
     ovs_assert((unsigned int) type < OAM_N_TYPES);
 
@@ -1753,7 +1753,7 @@ connmgr_send_async_msg(struct connmgr *mgr,
         pinsched_send(ofconn->schedulers[is_miss],
                       am->pin.up.public.flow_metadata.flow.in_port.ofp_port,
                       msg, &txq);
-        VLOG_INFO("++++++tsf connmgr_send_async_msg: do_send_packet_ins");
+        /*VLOG_INFO("++++++tsf connmgr_send_async_msg: do_send_packet_ins");*/
         do_send_packet_ins(ofconn, &txq);
     }
 }
