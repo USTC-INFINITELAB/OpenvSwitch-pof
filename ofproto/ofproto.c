@@ -7524,6 +7524,43 @@ handle_group_mod(struct ofconn *ofconn, const struct ofp_header *oh)
     return error;
 }
 
+/* @tsf: handle pof group mod. */
+static enum ofperr
+handle_pof_group_mod(struct ofconn *ofconn, const struct ofp_header *oh)
+    OVS_EXCLUDED(ofproto_mutex)
+{
+    struct ofproto *ofproto = ofconn_get_ofproto(ofconn);
+    struct ofproto_pof_group_mod ogm;
+    enum ofperr error;
+
+    error = reject_slave_controller(ofconn);
+    if (error) {
+        return error;
+    }
+
+    VLOG_INFO("++++++tsf handle_pof_group_mod: ofputil_decode_pof_group_mod");
+    error = ofputil_decode_pof_group_mod(oh, &ogm.gm);
+    if (error) {
+        return error;
+    }
+
+    ovs_mutex_lock(&ofproto_mutex);
+    ogm.version = ofproto->tables_version + 1;
+    error = ofproto_group_mod_start(ofproto, &ogm);
+    if (!error) {
+        struct openflow_mod_requester req = { ofconn, oh };
+
+        ofproto_bump_tables_version(ofproto);
+        ofproto_group_mod_finish(ofproto, &ogm, &req);
+        ofmonitor_flush(ofproto->connmgr);
+    }
+    ovs_mutex_unlock(&ofproto_mutex);
+
+    ofputil_uninit_group_mod(&ogm.gm);
+
+    return error;
+}
+
 enum ofputil_table_miss
 ofproto_table_get_miss_config(const struct ofproto *ofproto, uint8_t table_id)
 {
@@ -8211,7 +8248,8 @@ handle_openflow__(struct ofconn *ofconn, const struct ofpbuf *msg)
         return handle_flow_mod(ofconn, oh);
 
     case OFPTYPE_GROUP_MOD:
-        return handle_group_mod(ofconn, oh);
+        /*return handle_group_mod(ofconn, oh);*/
+    	return handle_pof_group_mod(ofconn, oh);
 
     case OFPTYPE_TABLE_MOD:
         return handle_table_mod(ofconn, oh);

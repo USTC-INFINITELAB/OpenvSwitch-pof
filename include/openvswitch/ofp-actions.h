@@ -986,6 +986,10 @@ enum ofperr ofpacts_pull_openflow_actions(struct ofpbuf *openflow,
                                           unsigned int actions_len,
                                           enum ofp_version version,
                                           struct ofpbuf *ofpacts);
+enum ofperr ofpacts_pull_pof_actions(struct ofpbuf *openflow,
+                                          unsigned int actions_len,
+                                          enum ofp_version version,
+                                          struct ofpbuf *ofpacts);
 enum ofperr ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
                                                unsigned int instructions_len,
                                                enum ofp_version version,

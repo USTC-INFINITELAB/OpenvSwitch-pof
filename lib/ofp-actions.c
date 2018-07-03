@@ -385,6 +385,10 @@ static enum ofperr ofpacts_pull_openflow_actions__(
     struct ofpbuf *openflow, unsigned int actions_len,
     enum ofp_version version, uint32_t allowed_ovsinsts,
     struct ofpbuf *ofpacts, enum ofpact_type outer_action);
+static enum ofperr ofpacts_pull_pof_actions__(
+    struct ofpbuf *openflow, unsigned int actions_len,
+    enum ofp_version version, uint32_t allowed_ovsinsts,
+    struct ofpbuf *ofpacts, enum ofpact_type outer_action);
 static char * OVS_WARN_UNUSED_RESULT ofpacts_parse_copy(
     const char *s_, struct ofpbuf *ofpacts,
     enum ofputil_protocol *usable_protocols,
@@ -6838,6 +6842,49 @@ ofpacts_pull_openflow_actions__(struct ofpbuf *openflow,
     return error;
 }
 
+/* be called by ofputil_pull_ofp11_group_mod(). */
+static enum ofperr
+ofpacts_pull_pof_actions__(struct ofpbuf *openflow,
+                                unsigned int actions_len,
+                                enum ofp_version version,
+                                uint32_t allowed_ovsinsts,
+                                struct ofpbuf *ofpacts,
+                                enum ofpact_type outer_action)
+{
+    const struct ofp_action_header *actions;
+    size_t orig_size = ofpacts->size;
+    enum ofperr error;
+
+    if (actions_len % OFP_ACTION_ALIGN != 0) {
+        VLOG_WARN_RL(&rl, "OpenFlow message actions length %u is not a "
+                     "multiple of %d", actions_len, OFP_ACTION_ALIGN);
+        return OFPERR_OFPBRC_BAD_LEN;
+    }
+
+    actions = ofpbuf_try_pull(openflow, actions_len);
+    if (actions == NULL) {
+        VLOG_WARN_RL(&rl, "OpenFlow message actions length %u exceeds "
+                     "remaining message length (%"PRIu32")",
+                     actions_len, openflow->size);
+        return OFPERR_OFPBRC_BAD_LEN;
+    }
+
+    VLOG_INFO("++++++tsf ofpacts_pull_pof_actions__, before ofpacts_decode in POF");
+    error = ofpacts_decode_pof1(actions, actions_len, version, ofpacts);
+    /*error = ofpacts_decode_pof1(actions, actions_len, version, ofpacts);*/  /* tsf */
+    if (error) {
+        ofpacts->size = orig_size;
+        return error;
+    }
+
+    error = ofpacts_verify(ofpacts->data, ofpacts->size, allowed_ovsinsts,
+                           outer_action);
+    if (error) {
+        ofpacts->size = orig_size;
+    }
+    return error;
+}
+
 /* Attempts to convert 'actions_len' bytes of OpenFlow actions from the front
  * of 'openflow' into ofpacts.  On success, appends the converted actions to
  * 'ofpacts'; on failure, 'ofpacts' is unchanged (but might be reallocated) .
@@ -6865,6 +6912,18 @@ ofpacts_pull_openflow_actions(struct ofpbuf *openflow,
                                            1u << OVSINST_OFPIT11_APPLY_ACTIONS,
                                            ofpacts, 0);
 }
+
+enum ofperr
+ofpacts_pull_pof_actions(struct ofpbuf *openflow,
+                              unsigned int actions_len,
+                              enum ofp_version version,
+                              struct ofpbuf *ofpacts)
+{
+    return ofpacts_pull_pof_actions__(openflow, actions_len, version,
+                                           1u << OVSINST_OFPIT11_APPLY_ACTIONS,
+                                           ofpacts, 0);
+}
+
 
 /* OpenFlow 1.1 actions. */
 

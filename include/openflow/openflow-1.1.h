@@ -150,6 +150,30 @@ struct ofp11_port_mod {
 };
 OFP_ASSERT(sizeof(struct ofp11_port_mod) == 32);
 
+
+/* @tsf: Bucket for use in groups. Note that, every ofp11_pof_bucket follows `struct
+ * 		 pof_action[6]`, but we don't make it as a part of ofp11_pof_bucket. We will
+ * 		 decode and store action in ofputil_bucket.ofpact.
+ **/
+struct ofp11_pof_bucket {
+	ovs_be16 action_number;
+    ovs_be16 weight;                 /* Relative weight of bucket. Only
+                                        defined for select groups. */
+    ovs_be16 watch_slot_id;
+    uint8_t watch_port;              /* Port whose state affects whether this
+                                        bucket is live. Only required for fast
+                                        failover groups. */
+    uint8_t pad1;
+    ovs_be32 watch_group;            /* Group whose state affects whether this
+                                        bucket is live. Only required for fast
+                                        failover groups. */
+    uint8_t pad2[4];
+    /* struct pof_action
+     * action[POF_MAX_ACTION_NUMBER_PER_BUCKET]; */  /* @tsf: it always follows 6 actions in action_list, and
+                                                      * we will store the action in ofputil_bucket.ofpacts */
+};
+OFP_ASSERT(sizeof(struct ofp11_pof_bucket) == 16);
+
 /* Group setup and teardown (controller -> datapath). */
 struct ofp11_group_mod {
     ovs_be16 command;             /* One of OFPGC11_*. */
@@ -160,6 +184,22 @@ struct ofp11_group_mod {
                                        length field in the header. */
 };
 OFP_ASSERT(sizeof(struct ofp11_group_mod) == 8);
+
+/* Group setup and teardown (controller -> datapath).
+ * modified by tsf.
+ * */
+struct ofp11_pof_group_mod {
+    uint8_t command;              /* One of OFPGC11_*. */
+    uint8_t type;                 /* One of OFPGT11_*. */
+    uint8_t bucket_num;
+    uint8_t pad1;                 /* Pad to 64 bits. */
+    ovs_be32 group_id;            /* Group identifier. */
+    ovs_be32 counter_id;          /* packet counter, driver need add a ActionCount in action[] */
+    ovs_be16 slot_id;             /* for multiple slots */
+    uint8_t pad2[2];
+    /*struct ofp11_pof_bucket bucket[POF_MAX_BUCKET_NUMBER_PER_GROUP];*/ /* @tsf: it always follows 6 buckets. */
+};
+OFP_ASSERT(sizeof(struct ofp11_pof_group_mod) == 16);
 
 /* Query for port queue configuration. */
 struct ofp11_queue_get_config_request {

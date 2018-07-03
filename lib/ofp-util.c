@@ -9696,6 +9696,7 @@ ofputil_pull_ofp11_buckets(struct ofpbuf *msg, size_t buckets_length,
         enum ofperr error;
         size_t ob_len;
 
+
         ob = (buckets_length >= sizeof *ob
               ? ofpbuf_try_pull(msg, sizeof *ob)
               : NULL);
@@ -9742,6 +9743,84 @@ ofputil_pull_ofp11_buckets(struct ofpbuf *msg, size_t buckets_length,
         bucket->ofpacts_len = ofpacts.size;
         ovs_list_push_back(buckets, &bucket->list_node);
     }
+
+    return 0;
+}
+
+static enum ofperr
+ofputil_pull_ofp11_pof_buckets(struct ofpbuf *msg, size_t buckets_num,
+                           enum ofp_version version, struct ovs_list *buckets)
+{
+    struct ofp11_pof_bucket *ob;
+    uint32_t bucket_id = 0;
+    size_t buckets_length = msg->size;
+
+    ovs_list_init(buckets);
+    while (buckets_num > 0) {
+        struct ofputil_bucket *bucket;
+        struct ofpbuf ofpacts;
+        enum ofperr error;
+        size_t ob_len = sizeof *ob + 48 * 6;  // 304 bytes, action_len * action_num = 48 * 6
+        bucket = xzalloc(sizeof *bucket);
+
+        /* @tsf: try to pull pof_bucket header only, not including pof_action[6]
+         *       will pull pof_action in ofpacts_pull_openflow_actions().
+         * */
+        ob = (buckets_length >= sizeof *ob
+              ? ofpbuf_try_pull(msg, sizeof *ob)
+              : NULL);
+        if (!ob) {
+            VLOG_WARN_RL(&bad_ofmsg_rl, "buckets end with %"PRIuSIZE" leftover bytes",
+                         buckets_length);
+            return OFPERR_OFPGMFC_BAD_BUCKET;
+        }
+
+        /* @tsf: pull pof_action[6], ofpacts_pull_pof_action is almost same as ofpacts_pull_openflow_actions
+         *       except ofpacts_decode_pof1()
+         * */
+        ofpbuf_init(&ofpacts, 0);
+        uint16_t actions_num = ntohs(ob->action_number);
+        size_t actions_len = POF_MAX_ACTION_LENGTH * actions_num;
+        error = ofpacts_pull_pof_actions(msg, actions_len, version, &ofpacts);
+
+        /*@tsf: have read one bucket, so update the remained buckets_length and buckets_num. */
+        buckets_length -= ob_len;
+        --buckets_num;
+
+        if (error) {
+            ofpbuf_uninit(&ofpacts);
+            ofputil_bucket_list_destroy(buckets);
+            return error;
+        }
+        /* @tsf: if actions_num < POF_MAX_ACTION_NUMBER_PER_BUCKET(6), pull remaining buffer so
+         *       that pointer forwards. No processing for pulled data.
+         * */
+        if (actions_num < 6) {
+        	size_t remained_actions_len = (6 - actions_num) * POF_MAX_ACTION_LENGTH;
+        	ofpbuf_try_pull(msg, remained_actions_len);
+        }
+
+        bucket->weight = ntohs(ob->weight);
+        bucket->watch_port = ob->watch_port;
+
+        bucket->watch_group = ntohl(ob->watch_group);
+        bucket->bucket_id = bucket_id++;
+
+        bucket->ofpacts = ofpbuf_steal_data(&ofpacts);
+        bucket->ofpacts_len = ofpacts.size;
+        ovs_list_push_back(buckets, &bucket->list_node);
+    }
+
+    /* @tsf: one bucket always have the max(six) buckets in pof.
+     *       however, the buckets_num is real available buckets,
+     *       the remaining buckets are padding zeros. We use the
+     *       ofpbuf_try_pull() to move buffer pointer to skip those
+     *       padding buckets.
+     * Note: we have pull ofp11_pof_group_mod already in caller.
+     * */
+    /*if (buckets_length > 0) {
+    	ofpbuf_try_pull(msg, buckets_length);
+    }*/
 
     return 0;
 }
@@ -10348,6 +10427,39 @@ ofputil_pull_ofp11_group_mod(struct ofpbuf *msg, enum ofp_version ofp_version,
     return error;
 }
 
+/* @tsf: convert ofp11_pof_group_mod into ofputil_pof_group_mod. */
+static enum ofperr
+ofputil_pull_ofp11_pof_group_mod(struct ofpbuf *msg, enum ofp_version ofp_version,
+                             struct ofputil_pof_group_mod *gm)
+{
+    const struct ofp11_pof_group_mod *ogm;
+    enum ofperr error;
+
+    /* tsf: decode group_mod */
+    ogm = ofpbuf_pull(msg, sizeof *ogm); // @tsf: pull group_mod header, it follows buckets
+    gm->command = ogm->command;
+    gm->type = ogm->type;
+    gm->bucket_num = ogm->bucket_num;
+    gm->group_id = ntohl(ogm->group_id);
+    gm->counter_id = ntohl(ogm->counter_id);
+    gm->slot_id = ntohs(ogm->slot_id);
+    gm->command_bucket_id = OFPG15_BUCKET_ALL;
+
+    /* tsf: parse 6 buckets here. */
+    error = ofputil_pull_ofp11_pof_buckets(msg, gm->bucket_num, ofp_version,
+                                       &gm->buckets);
+
+    /* OF1.3.5+ prescribes an error when an OFPGC_DELETE includes buckets. */
+    if (!error
+        && ofp_version >= OFP13_VERSION
+        && gm->command == OFPGC11_DELETE
+        && !ovs_list_is_empty(&gm->buckets)) {
+        error = OFPERR_OFPGMFC_INVALID_GROUP;
+    }
+
+    return error;
+}
+
 static enum ofperr
 ofputil_pull_ofp15_group_mod(struct ofpbuf *msg, enum ofp_version ofp_version,
                              struct ofputil_group_mod *gm)
@@ -10499,6 +10611,104 @@ ofputil_decode_group_mod(const struct ofp_header *oh,
 
     return 0;
 }
+
+/* Converts OpenFlow group mod message 'oh' into an abstract group mod in
+ * 'gm'.  Returns 0 if successful, otherwise an OpenFlow error code. */
+enum ofperr
+ofputil_decode_pof_group_mod(const struct ofp_header *oh,
+                         struct ofputil_pof_group_mod *gm)
+{
+    ofputil_init_group_properties(&gm->props);
+
+    enum ofp_version ofp_version = oh->version;
+    struct ofpbuf msg = ofpbuf_const_initializer(oh, ntohs(oh->length));
+    ofpraw_pull_assert(&msg);
+
+    enum ofperr err;
+    switch (ofp_version)
+    {
+    case OFP11_VERSION:
+    case OFP12_VERSION:
+    case OFP13_VERSION:
+    case OFP14_VERSION:
+    	VLOG_INFO("ofputil_decode_pof_group_mod: ofputil_pull_ofp11_pof_group_mod");
+        err = ofputil_pull_ofp11_pof_group_mod(&msg, ofp_version, gm);  /* tsf: run here, support OF1.3 */
+        break;
+
+    case OFP15_VERSION:
+    case OFP16_VERSION:
+        err = ofputil_pull_ofp15_group_mod(&msg, ofp_version, gm);
+        break;
+
+    case OFP10_VERSION:
+    default:
+        OVS_NOT_REACHED();
+    }
+    if (err) {
+        return err;
+    }
+
+    switch (gm->type) {
+    case OFPGT11_INDIRECT:
+        if (gm->command != OFPGC11_DELETE
+            && !ovs_list_is_singleton(&gm->buckets) ) {
+            return OFPERR_OFPGMFC_INVALID_GROUP;
+        }
+        break;
+    case OFPGT11_ALL:
+    case OFPGT11_SELECT:
+    case OFPGT11_FF:
+        break;
+    default:
+        return OFPERR_OFPGMFC_BAD_TYPE;
+    }
+
+    switch (gm->command) {
+    case OFPGC11_ADD:
+    case OFPGC11_MODIFY:
+    case OFPGC11_ADD_OR_MOD:
+    case OFPGC11_DELETE:
+    case OFPGC15_INSERT_BUCKET:
+        break;
+    case OFPGC15_REMOVE_BUCKET:
+        if (!ovs_list_is_empty(&gm->buckets)) {
+            return OFPERR_OFPGMFC_BAD_BUCKET;
+        }
+        break;
+    default:
+        return OFPERR_OFPGMFC_BAD_COMMAND;
+    }
+
+    struct ofputil_bucket *bucket;
+    LIST_FOR_EACH (bucket, list_node, &gm->buckets) {
+        if (bucket->weight && gm->type != OFPGT11_SELECT) {
+            return OFPERR_OFPGMFC_INVALID_GROUP;
+        }
+
+        switch (gm->type) {
+        case OFPGT11_ALL:
+        case OFPGT11_INDIRECT:
+            if (ofputil_bucket_has_liveness(bucket)) {
+                return OFPERR_OFPGMFC_WATCH_UNSUPPORTED;
+            }
+            break;
+        case OFPGT11_SELECT:
+            break;
+        case OFPGT11_FF:
+            if (!ofputil_bucket_has_liveness(bucket)) {
+                return OFPERR_OFPGMFC_INVALID_GROUP;
+            }
+            break;
+        default:
+            /* Returning BAD TYPE to be consistent
+             * though gm->type has been checked already. */
+            return OFPERR_OFPGMFC_BAD_TYPE;
+        }
+    }
+
+    return 0;
+}
+
 
 /* Destroys 'bms'. */
 void

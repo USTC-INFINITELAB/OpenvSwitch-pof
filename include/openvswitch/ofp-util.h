@@ -1358,6 +1358,22 @@ struct ofputil_group_mod {
     struct ofputil_group_props props; /* Group properties. */
 };
 
+/* @tsf: Protocol-independent group_mod. */
+struct ofputil_pof_group_mod {
+    uint16_t command;             /* One of OFPGC15_*. */
+    uint8_t type;                 /* One of OFPGT11_*. */
+    uint8_t bucket_num;
+    uint32_t group_id;            /* Group identifier. */
+    uint32_t command_bucket_id;   /* Bucket Id used as part of
+                                   * OFPGC15_INSERT_BUCKET and
+                                   * OFPGC15_REMOVE_BUCKET commands
+                                   * execution.*/
+    uint32_t counter_id;
+    uint16_t slot_id;
+    struct ovs_list buckets;      /* Contains "struct ofputil_bucket"s. */
+    struct ofputil_group_props props; /* Group properties. */
+};
+
 /* Group stats reply, independent of protocol. */
 struct ofputil_group_stats {
     uint32_t group_id;    /* Group identifier. */
@@ -1425,6 +1441,8 @@ struct ofpbuf *ofputil_encode_group_mod(enum ofp_version ofp_version,
 
 enum ofperr ofputil_decode_group_mod(const struct ofp_header *,
                                      struct ofputil_group_mod *);
+enum ofperr ofputil_decode_pof_group_mod(const struct ofp_header *,
+                                     struct ofputil_pof_group_mod *);
 
 int ofputil_decode_group_stats_reply(struct ofpbuf *,
                                      struct ofputil_group_stats *);
