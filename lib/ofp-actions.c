@@ -158,11 +158,11 @@ enum ofp_raw_action_type {
      * ovs_be32. */
     OFPAT_RAW_SET_NW_SRC,
 
-    /* OF1.0(7), OF1.1(6), OF1.2+(6) is deprecated (use Set-Field):
+    /* OF1.0(77), OF1.1(6), OF1.2+(6) is deprecated (use Set-Field):
      * ovs_be32. */
     OFPAT_RAW_SET_NW_DST,
 
-    /* OF1.0(38), OF1.1(7), OF1.2+(7) is deprecated (use Set-Field): uint8_t. */
+    /* OF1.0(38), OF1.1(77), OF1.2+(77) is deprecated (use Set-Field): uint8_t. */
     OFPAT_RAW_SET_NW_TOS,
 
     /* OF1.1(38), OF1.2+(38) is deprecated (use Set-Field): uint8_t. */
@@ -208,7 +208,7 @@ enum ofp_raw_action_type {
     /* NX1.0(4), OF1.1+(21): uint32_t. */
     OFPAT_RAW_SET_QUEUE,
 
-    /* NX1.0(40), OF1.1+(22): uint32_t. */
+    /* NX1.0(40), OF1.0+(7): uint32_t. */
     OFPAT_RAW_GROUP,
 
     /* OF1.1+(23): uint8_t. */
@@ -402,7 +402,7 @@ ofpact_next_flattened(const struct ofpact *ofpact)
     switch (ofpact->type) {
     case OFPACT_OUTPUT:
     case OFPACT_DROP:  /* tsf: add OFPACT_DROP */
-    case OFPACT_GROUP:
+    case OFPACT_GROUP: /* tsf: use it. */
     case OFPACT_CONTROLLER:
     case OFPACT_ENQUEUE:
     case OFPACT_OUTPUT_REG:
@@ -1124,6 +1124,7 @@ decode_OFPAT_RAW_GROUP(uint32_t group_id,
                          enum ofp_version ofp_version OVS_UNUSED,
                          struct ofpbuf *out)
 {
+	VLOG_INFO("++++++tsf decode_OFPAT_RAW_GROUP: start, group_id=%"PRIu32, group_id);
     ofpact_put_GROUP(out)->group_id = group_id;
     return 0;
 }
@@ -1132,6 +1133,7 @@ static void
 encode_GROUP(const struct ofpact_group *group,
              enum ofp_version ofp_version, struct ofpbuf *out)
 {
+	VLOG_INFO("++++++tsf encode_GROUP: start");
     put_OFPAT_GROUP(out, ofp_version, group->group_id);
 }
 
@@ -1145,6 +1147,7 @@ parse_GROUP(char *arg, struct ofpbuf *ofpacts,
 static void
 format_GROUP(const struct ofpact_group *a, struct ds *s)
 {
+	VLOG_INFO("++++++tsf format_GROUP: start");
     ds_put_format(s, "%sgroup:%s%"PRIu32,
                   colors.special, colors.end, a->group_id);
 }
@@ -6972,7 +6975,7 @@ ofpact_is_set_or_move_action(const struct ofpact *a)
     case OFPACT_UNROLL_XLATE:
     case OFPACT_FIN_TIMEOUT:
     case OFPACT_GOTO_TABLE:
-    case OFPACT_GROUP:
+    case OFPACT_GROUP: /* tsf */
     case OFPACT_LEARN:
     case OFPACT_CONJUNCTION:
     case OFPACT_METER:
@@ -7010,7 +7013,7 @@ ofpact_is_allowed_in_actions_set(const struct ofpact *a)
     case OFPACT_MODIFY_FIELD: /* tsf */
     case OFPACT_ADD_FIELD:  /* tsf */
     case OFPACT_DELETE_FIELD:  /* tsf */
-    case OFPACT_GROUP:
+    case OFPACT_GROUP: /* tsf */
     case OFPACT_OUTPUT:
     case OFPACT_OUTPUT_TRUNC:
     case OFPACT_POP_MPLS:
@@ -7238,7 +7241,7 @@ ovs_instruction_type_from_ofpact_type(enum ofpact_type type)
     case OFPACT_MODIFY_FIELD: /* tsf */
     case OFPACT_ADD_FIELD:    /* tsf */
     case OFPACT_DELETE_FIELD:  /* tsf */
-    case OFPACT_GROUP:
+    case OFPACT_GROUP:			/* tsf */
     case OFPACT_CONTROLLER:
     case OFPACT_ENQUEUE:
     case OFPACT_OUTPUT_REG:
@@ -8016,7 +8019,7 @@ ofpact_check__(enum ofputil_protocol *usable_protocols, struct ofpact *a,
         return 0;
     }
 
-    case OFPACT_GROUP:
+    case OFPACT_GROUP:  /* tsf */
         return 0;
 
     case OFPACT_UNROLL_XLATE:
@@ -8330,7 +8333,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_SET_ETH_SRC, 44 },
         { OFPACT_SET_ETH_DST, 55 },
         { OFPACT_SET_IPV4_SRC, 6 },
-        { OFPACT_SET_IPV4_DST, 7 },
+        { OFPACT_SET_IPV4_DST, 77 },
         { OFPACT_SET_IP_DSCP, 38 }, /* tsf: change 8 to 38 */
         { OFPACT_SET_L4_SRC_PORT, 9 },
         { OFPACT_SET_L4_DST_PORT, 10 },
@@ -8340,6 +8343,7 @@ get_ofpact_map(enum ofp_version version)
         {OFPACT_MODIFY_FIELD, 3}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         {OFPACT_ADD_FIELD, 4}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         {OFPACT_DELETE_FIELD, 5}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
+        { OFPACT_GROUP, 7 },  /* tsf: add in OF1.0, to support dump-flows. */
         { 0, -1 },
     };
 
@@ -8352,7 +8356,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_SET_ETH_DST, 44 },
         { OFPACT_SET_IPV4_SRC, 55 },
         { OFPACT_SET_IPV4_DST, 6 },
-        { OFPACT_SET_IP_DSCP, 7 },
+        { OFPACT_SET_IP_DSCP, 77 },
         { OFPACT_SET_IP_ECN, 38 }, /* tsf: change 8 to 38 */
         { OFPACT_SET_L4_SRC_PORT, 9 },
         { OFPACT_SET_L4_DST_PORT, 10 },
@@ -8367,7 +8371,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_PUSH_MPLS, 19 },
         { OFPACT_POP_MPLS, 20 },
         { OFPACT_SET_QUEUE, 21 },
-        { OFPACT_GROUP, 22 },
+        { OFPACT_GROUP, 7 },  /* tsf: change 22 to 7, to support pof. */
         { OFPACT_SET_IP_TTL, 23 },
         { OFPACT_DEC_TTL, 24 },
         {OFPACT_DROP, 8},  /* tsf: according to enum ofp_raw_action_type (of1.1+) */
@@ -8391,7 +8395,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_PUSH_MPLS, 19 },
         { OFPACT_POP_MPLS, 20 },
         { OFPACT_SET_QUEUE, 21 },
-        { OFPACT_GROUP, 22 },
+        { OFPACT_GROUP, 7 }, /* tsf: change 22 to 7, to support pof. */
         { OFPACT_SET_IP_TTL, 23 },
         { OFPACT_DEC_TTL, 24 },
         { OFPACT_SET_FIELD, 1 },  /* tsf: change 25 to 1*/
@@ -8531,7 +8535,7 @@ ofpact_outputs_to_port(const struct ofpact *ofpact, ofp_port_t port)
     case OFPACT_WRITE_ACTIONS:
     case OFPACT_GOTO_TABLE:
     case OFPACT_METER:
-    case OFPACT_GROUP:
+    case OFPACT_GROUP:    /* tsf */
     case OFPACT_DEBUG_RECIRC:
     case OFPACT_CT:
     case OFPACT_NAT:
