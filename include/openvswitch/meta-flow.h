@@ -2319,7 +2319,7 @@ void pof_mf_set_flow_value_masked(const struct pof_match_u *,
 void pof_mf_set_flow_value_v1(const struct pof_match_u *,
                               const union mf_value *value,
                               const union mf_value *mask,
-                              struct pof_flow *);
+                              struct pof_flow *, int);
 void pof_mf_modify_field_value(struct pof_match_u *pf,
 							   uint32_t increment,
 							   struct pof_fp_flow *base_flow);

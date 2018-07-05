@@ -4721,9 +4721,14 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
     struct pof_fp_flow *base_flow = &ctx->xin->flow;
     const struct ofpact *a;
 
-    /* tsf: memset pof_flow.flag[8], try to support multiple action. */
+    /* tsf: memset pof_flow.flag[8], try to support multiple action.
+     *      the `flow->flag` indicates that which type of action will be stored. And
+     *      I use `action_num` as action_field array index, so that action_field can
+     *      be stored in unfixed place. Every loop only parse one action, then the
+     *      `action_num` increments 1.
+     * */
     memset(flow->flag, 0x00, sizeof (flow->flag));
-    int action_num = 0;      // tsf: used for flow->flag[action_num], every loop only parse one action, so increment 1
+    int action_num = 0;
 
     if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
         tnl_neigh_snoop(flow, wc, ctx->xbridge->name);
@@ -4772,15 +4777,16 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 
         case OFPACT_SET_FIELD:  {
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_SET_FIELD->type:%d, len:%d", a->type, a->len);
+        	action_num++;
             set_field = ofpact_get_SET_FIELD(a);
             pf->field_id = set_field->field_id;
             pf->len = set_field->len;
             pf->offset = set_field->offset;
 
-            flow->field_id[0] = htons(pf->field_id);
-            flow->len[0] = htons(pf->len);
-            flow->offset[0] = htons(pf->offset);
-            flow->flag[action_num++] = OFPACT_SET_FIELD;
+            flow->field_id[action_num] = htons(pf->field_id);
+            flow->len[action_num] = htons(pf->len);
+            flow->offset[action_num] = htons(pf->offset);
+            flow->flag[action_num] = OFPACT_SET_FIELD;
 
            /*VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: OFPACT_SET_FIELD, fieldid=%d, len=%d, offset=%d",
                       pf->field_id, pf->len, pf->offset);*/
@@ -4790,7 +4796,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
                                      flow);*/
             pof_mf_set_flow_value_v1(pf, set_field->value,
                                      ofpact_pof_set_field_mask(set_field),
-                                     flow);
+                                     flow, action_num);
             free(pf);
             /*for(int i=0; i<14; i++) {
                 VLOG_INFO("+++++++++++tsf pof_do_xlate_actions base_flow->value[0][%d]=0x%lx / 0x%lx",

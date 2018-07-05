@@ -1662,14 +1662,14 @@ void
 pof_mf_set_flow_value_v1(const struct pof_match_u *field,
                          const union mf_value *value,
                          const union mf_value *mask,
-                         struct pof_flow *flow)
+                         struct pof_flow *flow, int index)
 {
     union mf_value tmp;
 
     for(int i=0; i<POF_MAX_FIELD_LENGTH_IN_BYTE; i++){
     	/*VLOG_INFO("+++++++++++tsf pof_mf_set_flow_value_masked value->b[i]= %d, flow->value[0][i]=%d", value->b[i], flow->value[0][i]);*/
-        flow->value[0][i] = value->b[i];
-        flow->mask[0][i] = mask->b[i];
+        flow->value[index][i] = value->b[i];
+        flow->mask[index][i] = mask->b[i];
         /*VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked value->b[i]= %d, flow->value[0][i]=%d", value->b[i], flow->value[0][i]);
         VLOG_INFO("+++++++++++sqy pof_mf_set_flow_value_masked mask->b[i]= %d, flow->mask[0][i]=%d", mask->b[i], flow->mask[0][i]);*/
     }
