@@ -89,7 +89,6 @@ struct pof_flow {
       which is 584 bytes. */
     uint8_t mask[POF_MAX_MATCH_FIELD_NUM][POF_MAX_FIELD_LENGTH_IN_BYTE];
     uint8_t flag[POF_MAX_MATCH_FIELD_NUM];
-//    uint8_t pad7[7];
     uint8_t pad_to_flow[POF_MAX_MATCH_FIELD_NUM][32];
 };
 struct pof_fp_flow {

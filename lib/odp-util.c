@@ -5763,25 +5763,58 @@ commit_pof_action(const struct flow *flow, struct flow *base_flow,
 	struct pof_flow *pflow = flow;
 	/*VLOG_INFO("++++++tsf commit_pof_action: before siwtch/case flow->flag=%d", pflow->flag);*/
 
-	if (pflow->flag[0] == OFPACT_SET_FIELD) {
-		VLOG_INFO("++++++tsf commit_pof_action: commit_pof_set_field_action.");
-		commit_pof_set_field_action(flow, base_flow, odp_actions, wc, use_masked);
+	uint8_t action_flag = 0;
+	int i = 0;     // tsf: pflow->flag[8], so i=[0,8)
+
+	while (i < 8) {
+		action_flag = pflow->flag[i++];
+
+		switch (action_flag) {
+
+			case OFPACT_SET_FIELD:
+				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_set_field_action.");
+				commit_pof_set_field_action(flow, base_flow, odp_actions, wc, use_masked);
+				break;
+
+			case OFPACT_MODIFY_FIELD:
+				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_modify_field_action.");
+				commit_pof_modify_field_action(flow, base_flow, odp_actions, wc, use_masked);
+				break;
+
+			case OFPACT_ADD_FIELD:
+				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_add_field_action.");
+				commit_pof_add_field_action(flow, base_flow, odp_actions, wc, use_masked);
+				break;
+
+			case OFPACT_DELETE_FIELD:
+				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_delete_field_action.");
+				commit_pof_delete_field_action(flow, base_flow, odp_actions, wc, use_masked);
+				break;
+		}
 	}
 
-	if (pflow->flag[1] == OFPACT_MODIFY_FIELD) {
-		VLOG_INFO("++++++tsf commit_pof_action: commit_pof_modify_field_action.");
-		commit_pof_modify_field_action(flow, base_flow, odp_actions, wc, use_masked);
-	}
 
-	if (pflow->flag[2] == OFPACT_ADD_FIELD) {
-		VLOG_INFO("++++++tsf commit_pof_action: commit_pof_add_field_action.");
-		commit_pof_add_field_action(flow, base_flow, odp_actions, wc, use_masked);
-	}
+//	if (pflow->flag[0] == OFPACT_SET_FIELD) {
+//		VLOG_INFO("++++++tsf commit_pof_action: commit_pof_set_field_action.");
+//		commit_pof_set_field_action(flow, base_flow, odp_actions, wc, use_masked);
+//	}
+//
+//	if (pflow->flag[1] == OFPACT_MODIFY_FIELD) {
+//		VLOG_INFO("++++++tsf commit_pof_action: commit_pof_modify_field_action.");
+//		commit_pof_modify_field_action(flow, base_flow, odp_actions, wc, use_masked);
+//	}
+//
+//	if (pflow->flag[2] == OFPACT_ADD_FIELD) {
+//		VLOG_INFO("++++++tsf commit_pof_action: commit_pof_add_field_action.");
+//		commit_pof_add_field_action(flow, base_flow, odp_actions, wc, use_masked);
+//	}
+//
+//	if (pflow->flag[3] == OFPACT_DELETE_FIELD) {
+//		VLOG_INFO("++++++tsf commit_pof_action: commit_pof_delete_field_action.");
+//		commit_pof_delete_field_action(flow, base_flow, odp_actions, wc, use_masked);
+//	}
 
-	if (pflow->flag[3] == OFPACT_DELETE_FIELD) {
-		VLOG_INFO("++++++tsf commit_pof_action: commit_pof_delete_field_action.");
-		commit_pof_delete_field_action(flow, base_flow, odp_actions, wc, use_masked);
-	}
+
 }
 
 static void

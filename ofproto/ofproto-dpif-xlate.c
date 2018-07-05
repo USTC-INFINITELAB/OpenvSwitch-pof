@@ -4721,6 +4721,10 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
     struct pof_fp_flow *base_flow = &ctx->xin->flow;
     const struct ofpact *a;
 
+    /* tsf: memset pof_flow.flag[8], try to support multiple action. */
+    memset(flow->flag, 0x00, sizeof (flow->flag));
+    int action_num = 0;      // tsf: used for flow->flag[action_num], every loop only parse one action, so increment 1
+
     if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
         tnl_neigh_snoop(flow, wc, ctx->xbridge->name);
     }
@@ -4776,7 +4780,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             flow->field_id[0] = htons(pf->field_id);
             flow->len[0] = htons(pf->len);
             flow->offset[0] = htons(pf->offset);
-            flow->flag[0] = OFPACT_SET_FIELD;
+            flow->flag[action_num++] = OFPACT_SET_FIELD;
 
            /*VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: OFPACT_SET_FIELD, fieldid=%d, len=%d, offset=%d",
                       pf->field_id, pf->len, pf->offset);*/
@@ -4808,7 +4812,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             flow->field_id[1] = htons(pf->field_id);
             flow->len[1] = htons(pf->len);
             flow->offset[1] = htons(pf->offset);
-            flow->flag[1] = OFPACT_MODIFY_FIELD;
+            flow->flag[action_num++] = OFPACT_MODIFY_FIELD;
 
             /*tsf: cut off increment from uint32_t into uint8_t*/
             memset(flow->value[1], 0x00, sizeof(flow->value[1]));
@@ -4834,7 +4838,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         	flow->field_id[2] = htons(pf->field_id);
         	flow->len[2] = htons(pf->len);
         	flow->offset[2] = htons(pf->offset);
-        	flow->flag[2] = OFPACT_ADD_FIELD;
+        	flow->flag[action_num++] = OFPACT_ADD_FIELD;
 
         	memset(flow->value[2], 0x00, sizeof(flow->value[2]));
         	memset(flow->value[2], 0x00, sizeof(flow->mask[2]));
@@ -4850,7 +4854,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 
         	flow->offset[3] = htons(delete_field->tag_pos);
         	flow->len[3] = delete_field->len_type;
-        	flow->flag[3] = OFPACT_DELETE_FIELD;
+        	flow->flag[action_num++] = OFPACT_DELETE_FIELD;
             /*VLOG_INFO("++++++tsf pof_do_xlate_actions delete_field->len_type=%d", flow->len[3]);*/
 
             struct pof_match *pm;
