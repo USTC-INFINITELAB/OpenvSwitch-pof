@@ -4808,6 +4808,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 
         case OFPACT_MODIFY_FIELD: {
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_MODIFY_FIELD->type:%d, len:%d", a->type, a->len);
+        	action_num++;
             modify_field = ofpact_get_MODIFY_FIELD(a);
             pf->field_id = modify_field->field_id;
             pf->len = modify_field->len_field / 8;
@@ -4815,16 +4816,16 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             /*VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_MODIFY_FIELD, field_id=%d, len=%d, offset=%d",
                       pf->field_id, pf->len, pf->offset);  // bytes*/
 
-            flow->field_id[1] = htons(pf->field_id);
-            flow->len[1] = htons(pf->len);
-            flow->offset[1] = htons(pf->offset);
-            flow->flag[action_num++] = OFPACT_MODIFY_FIELD;
+            flow->field_id[action_num] = htons(pf->field_id);
+            flow->len[action_num] = htons(pf->len);
+            flow->offset[action_num] = htons(pf->offset);
+            flow->flag[action_num] = OFPACT_MODIFY_FIELD;
 
             /*tsf: cut off increment from uint32_t into uint8_t*/
-            memset(flow->value[1], 0x00, sizeof(flow->value[1]));
-            memset(flow->mask[1], 0x00, sizeof(flow->mask[1]));
-            flow->value[1][0] = modify_field->increment;
-            flow->mask[1][0] = 0xff;
+            memset(flow->value[action_num], 0x00, sizeof(flow->value[action_num]));
+            memset(flow->mask[action_num], 0x00, sizeof(flow->mask[action_num]));
+            flow->value[action_num][0] = modify_field->increment;
+            flow->mask[action_num][0] = 0xff;
             /*for (int i = 0; i < 16; i++) {  // tsf: display the whole packet
                 VLOG_INFO("+++++++++++tsf pof_do_xlate_actions:MODIFY_FIELD: flow->value[1][%d]=%d, flow->mask[1][%d]=%d",
                         i, flow->value[1][i], i, flow->mask[1][i]);
