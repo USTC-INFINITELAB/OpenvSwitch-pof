@@ -4828,6 +4828,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 
         case OFPACT_ADD_FIELD: {
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_ADD_FIELD->type:%d, len:%d", a->type, a->len);
+        	action_num++;
         	add_field = ofpact_get_ADD_FIELD(a);
         	pf->field_id = add_field->tag_id;
         	pf->len = add_field->tag_len / 8;  // tag_len cut off from uint32_t to uint16_t
@@ -4835,16 +4836,16 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         	VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_ADD_FIELD, field_id=%d, len=%d, offset=%d",
         	          pf->field_id, pf->len, pf->offset);  // bytes
 
-        	flow->field_id[2] = htons(pf->field_id);
-        	flow->len[2] = htons(pf->len);
-        	flow->offset[2] = htons(pf->offset);
-        	flow->flag[action_num++] = OFPACT_ADD_FIELD;
+        	flow->field_id[action_num] = htons(pf->field_id);
+        	flow->len[action_num] = htons(pf->len);
+        	flow->offset[action_num] = htons(pf->offset);
+        	flow->flag[action_num] = OFPACT_ADD_FIELD;
 
-        	memset(flow->value[2], 0x00, sizeof(flow->value[2]));
-        	memset(flow->value[2], 0x00, sizeof(flow->mask[2]));
+        	memset(flow->value[action_num], 0x00, sizeof(flow->value[2]));
+        	memset(flow->value[action_num], 0x00, sizeof(flow->mask[2]));
 
-        	memcpy(flow->value[2], add_field->tag_value, pf->len);
-        	memset(flow->mask[2], 0xff, pf->len);
+        	memcpy(flow->value[action_num], add_field->tag_value, pf->len);
+        	memset(flow->mask[action_num], 0xff, pf->len);
         }
         break;
 
