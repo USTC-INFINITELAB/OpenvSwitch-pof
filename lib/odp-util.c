@@ -5767,6 +5767,7 @@ commit_pof_action(const struct flow *flow, struct flow *base_flow,
 
 	while (i < 8) {
 		action_flag = pflow->flag[i];
+		VLOG_INFO("++++++tsf commit_pof_action: action_flag[%d]=%d", i, action_flag);
 
 		switch (action_flag) {
 

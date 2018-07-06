@@ -4777,7 +4777,6 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 
         case OFPACT_SET_FIELD:  {
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_SET_FIELD->type:%d, len:%d", a->type, a->len);
-        	action_num++;
             set_field = ofpact_get_SET_FIELD(a);
             pf->field_id = set_field->field_id;
             pf->len = set_field->len;
@@ -4803,12 +4802,13 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
                           i, ntohll(base_flow->pof_normal[i]), base_flow->pof_normal[i]);
             }*/
             /*VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_set_flow_value_masked");*/
+
+            action_num++;
         }
         break;
 
         case OFPACT_MODIFY_FIELD: {
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_MODIFY_FIELD->type:%d, len:%d", a->type, a->len);
-        	action_num++;
             modify_field = ofpact_get_MODIFY_FIELD(a);
             pf->field_id = modify_field->field_id;
             pf->len = modify_field->len_field / 8;
@@ -4830,12 +4830,13 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
                 VLOG_INFO("+++++++++++tsf pof_do_xlate_actions:MODIFY_FIELD: flow->value[1][%d]=%d, flow->mask[1][%d]=%d",
                         i, flow->value[1][i], i, flow->mask[1][i]);
             }*/
+
+            action_num++;
         }
         break;
 
         case OFPACT_ADD_FIELD: {
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_ADD_FIELD->type:%d, len:%d", a->type, a->len);
-        	action_num++;
         	add_field = ofpact_get_ADD_FIELD(a);
         	pf->field_id = add_field->tag_id;
         	pf->len = add_field->tag_len / 8;  // tag_len cut off from uint32_t to uint16_t
@@ -4853,12 +4854,13 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 
         	memcpy(flow->value[action_num], add_field->tag_value, pf->len);
         	memset(flow->mask[action_num], 0xff, pf->len);
+
+        	action_num++;
         }
         break;
 
         case OFPACT_DELETE_FIELD: {
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_DELETE_FIELD->type:%d, len:%d", a->type, a->len);
-        	action_num++;
         	delete_field = ofpact_get_DELETE_FIELD(a);
 
         	flow->offset[action_num] = htons(delete_field->tag_pos);
@@ -4879,6 +4881,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             	/*pm = (struct pof_match *) flow->value[3];
             	VLOG_INFO("++++++tsf pof_do_xlate_actions offset=%d, len=%d", pm->offset/8, pm->len/8);*/
             }
+            action_num++;
         }
         	break;
 
