@@ -5771,28 +5771,35 @@ commit_pof_action(const struct flow *flow, struct flow *base_flow,
 
 		switch (action_flag) {
 
-			case OFPACT_SET_FIELD:
+			case OFPACT_SET_FIELD:      // flag == 7
 				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_set_field_action.");
 				commit_pof_set_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 
-			case OFPACT_MODIFY_FIELD:
+			case OFPACT_MODIFY_FIELD:    // flag == 8
 				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_modify_field_action.");
 				commit_pof_modify_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 
-			case OFPACT_ADD_FIELD:
+			case OFPACT_ADD_FIELD:       // flag == 9
 				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_add_field_action.");
 				commit_pof_add_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 
-			case OFPACT_DELETE_FIELD:
+			case OFPACT_DELETE_FIELD:    // flag == 10
 				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_delete_field_action.");
 				commit_pof_delete_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 		}
 
 		i++;
+
+		/** tsf: skip unnecessary loops
+		 * */
+		if (pflow->flag[i] == 0x00) {
+			return;
+		}
+
 	}
 
 
