@@ -4858,23 +4858,24 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 
         case OFPACT_DELETE_FIELD: {
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_DELETE_FIELD->type:%d, len:%d", a->type, a->len);
+        	action_num++;
         	delete_field = ofpact_get_DELETE_FIELD(a);
 
-        	flow->offset[3] = htons(delete_field->tag_pos);
-        	flow->len[3] = delete_field->len_type;
-        	flow->flag[action_num++] = OFPACT_DELETE_FIELD;
+        	flow->offset[action_num] = htons(delete_field->tag_pos);
+        	flow->len[action_num] = delete_field->len_type;
+        	flow->flag[action_num] = OFPACT_DELETE_FIELD;
             /*VLOG_INFO("++++++tsf pof_do_xlate_actions delete_field->len_type=%d", flow->len[3]);*/
 
             struct pof_match *pm;
-            memset(flow->value[3], 0x00, sizeof(flow->value[3]));
-            memset(flow->mask[3], 0x00, sizeof(flow->mask[3]));
-            if (flow->len[3] == 0) { // POFVT_IMMEDIATE_NUM
-                flow->value[3][0] = delete_field->tag_len.value;
-                flow->mask[3][0] = 0xff;
+            memset(flow->value[action_num], 0x00, sizeof(flow->value[3]));
+            memset(flow->mask[action_num], 0x00, sizeof(flow->mask[3]));
+            if (flow->len[action_num] == 0) { // POFVT_IMMEDIATE_NUM
+                flow->value[action_num][0] = delete_field->tag_len.value;
+                flow->mask[action_num][0] = 0xff;
                 /*VLOG_INFO("++++++tsf pof_do_xlate_actions flow->value[3][0]=%d", flow->value[3][0]);*/
             } else {  // // POFVT_FIELD
-            	memcpy(flow->value[3], &delete_field->tag_len, sizeof(delete_field->tag_len));  // tsf: copy all union
-            	memset(flow->mask[3], 0xff, sizeof(delete_field->tag_len));
+            	memcpy(flow->value[action_num], &delete_field->tag_len, sizeof(delete_field->tag_len));  // tsf: copy all union
+            	memset(flow->mask[action_num], 0xff, sizeof(delete_field->tag_len));
             	/*pm = (struct pof_match *) flow->value[3];
             	VLOG_INFO("++++++tsf pof_do_xlate_actions offset=%d, len=%d", pm->offset/8, pm->len/8);*/
             }

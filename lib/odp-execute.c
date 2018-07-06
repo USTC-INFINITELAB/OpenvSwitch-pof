@@ -120,7 +120,8 @@ odp_pof_delete_field(struct dp_packet *packet, const struct ovs_key_delete_field
 
 	/*VLOG_INFO("++++++tsf odp_pof_delete_field: before delete field, pkt_len=%d.", dp_packet_size(packet));*/
 	header = dp_packet_data(packet);  // tsf: start of the header
-	/* shift the packet's length=key->offset backward key-<len bytes */
+
+	/* shift the packet's length=key->offset backward key->len bytes */
 	memmove(header + key->len, header, key->offset);
 	dp_packet_pof_resize_field(packet, -key->len);
 	/*VLOG_INFO("++++++tsf odp_pof_delete_field: after delete field, pkt_len=%d.", dp_packet_size(packet));*/
