@@ -1512,9 +1512,13 @@ group_best_live_bucket(const struct xlate_ctx *ctx,
         if (bucket_is_alive(ctx, bucket, 0)) {
             uint32_t score =
                 (hash_int(bucket->bucket_id, basis) & 0xffff) * bucket->weight;
+            VLOG_INFO("++++++tsf group_best_live_bucket: bucket_id=%d, hash_basis=%d, weight=%d, score=%d",
+            		bucket->bucket_id, (hash_int(bucket->bucket_id, basis) & 0xffff), bucket->weight, score);
             if (score >= best_score) {
                 best_bucket = bucket;
                 best_score = score;
+                VLOG_INFO("++++++tsf group_best_live_bucket in if: best_bucket_id=%d, best_score=%d",
+                		best_bucket->bucket_id, best_score);
             }
         }
     }
@@ -3306,7 +3310,7 @@ xlate_group_bucket(struct xlate_ctx *ctx, struct ofputil_bucket *bucket)
     ofpacts_execute_action_set(&action_list, &action_set);
     ctx->indentation++;
     ctx->depth++;
-    do_xlate_actions(action_list.data, action_list.size, ctx);
+    pof_do_xlate_actions(action_list.data, action_list.size, ctx);
     ctx->depth--;
     ctx->indentation--;
 
@@ -3331,7 +3335,7 @@ xlate_group_bucket(struct xlate_ctx *ctx, struct ofputil_bucket *bucket)
      * break the above assumptions.  It is up to the controller to not mess up
      * with the action_set and stack in the tables resubmitted to from
      * group buckets. */
-    ctx->xin->flow = old_flow;
+    ctx->xin->flow = old_flow;    // tsf: equals to packets clone, mainly used for all_group
 
     /* The group bucket popping MPLS should have no effect after bucket
      * execution. */
@@ -3352,6 +3356,7 @@ xlate_all_group(struct xlate_ctx *ctx, struct group_dpif *group)
 
     buckets = group_dpif_get_buckets(group, NULL);
     LIST_FOR_EACH (bucket, list_node, buckets) {
+    	VLOG_INFO("++++++tsf xlate_all_group: before xlate_group_bucket, bucket_id=%d", bucket->bucket_id);
         xlate_group_bucket(ctx, bucket);
     }
     xlate_group_stats(ctx, group, NULL);
@@ -3378,12 +3383,16 @@ xlate_default_select_group(struct xlate_ctx *ctx, struct group_dpif *group)
     struct ofputil_bucket *bucket;
     uint32_t basis;
 
-    basis = flow_hash_symmetric_l4(&ctx->xin->flow, 0);
-    flow_mask_hash_fields(&ctx->xin->flow, wc, NX_HASH_FIELDS_SYMMETRIC_L4);
+//    basis = flow_hash_symmetric_l4(&ctx->xin->flow, 0);
+    basis = flow_hash_symmetric_l4(&ctx->base_flow, 0);
+    VLOG_INFO("++++++tsf xlate_default_select_group: basis=%d", basis);
+
+    flow_mask_hash_fields(&ctx->xin->flow, wc, NX_HASH_FIELDS_SYMMETRIC_L4);  // tsf: set mask as 0xff
     bucket = group_best_live_bucket(ctx, group, basis);
     if (bucket) {
         xlate_group_bucket(ctx, bucket);
         xlate_group_stats(ctx, group, bucket);
+        VLOG_INFO("++++++tsf xlate_default_select_group: xlate_group_bucket and xlate_group_stats");
     } else if (ctx->xin->xcache) {
         group_dpif_unref(group);
     }
@@ -3486,11 +3495,12 @@ xlate_select_group(struct xlate_ctx *ctx, struct group_dpif *group)
         ctx_trigger_freeze(ctx);
     }
 
-    if (selection_method[0] == '\0') {
+    if (selection_method[0] == '\0') {   // tsf: run here
+    	VLOG_INFO("++++++tsf xlate_select_group: xlate_default_select_group");
         xlate_default_select_group(ctx, group);
-    } else if (!strcasecmp("hash", selection_method)) {
+    } else if (!strcasecmp("hash", selection_method)) {  // tsf: not support
         xlate_hash_fields_select_group(ctx, group);
-    } else if (!strcasecmp("dp_hash", selection_method)) {
+    } else if (!strcasecmp("dp_hash", selection_method)) {  // tsf: not support
         xlate_dp_hash_select_group(ctx, group);
     } else {
         /* Parsing of groups should ensure this never happens */
@@ -3507,9 +3517,11 @@ xlate_group_action__(struct xlate_ctx *ctx, struct group_dpif *group)
     switch (group_dpif_get_type(group)) {
     case OFPGT11_ALL:
     case OFPGT11_INDIRECT:
+    	VLOG_INFO("++++++tsf xlate_group_action__: before xlate_all_group");
         xlate_all_group(ctx, group);
         break;
     case OFPGT11_SELECT:
+    	VLOG_INFO("++++++tsf xlate_group_action__: before xlate_select_group");
         xlate_select_group(ctx, group);
         break;
     case OFPGT11_FF:
@@ -4883,6 +4895,18 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             }
             action_num++;
         }
+        	break;
+
+        case OFPACT_GROUP:
+            VLOG_INFO("++++++tsf do_xlate_actions: xlate_group_action, group_id=%d",
+                      ofpact_get_GROUP(a)->group_id);
+        	if (xlate_group_action(ctx, ofpact_get_GROUP(a)->group_id)) {
+                /* Group could not be found. */
+
+                /* XXX: Terminates action list translation, but does not
+                 * terminate the pipeline. */
+        		return;
+        	}
         	break;
 
         case OFPACT_EXIT:

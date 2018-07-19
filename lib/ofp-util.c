@@ -10709,7 +10709,9 @@ ofputil_decode_pof_group_mod(const struct ofp_header *oh,
 
     struct ofputil_bucket *bucket;
     LIST_FOR_EACH (bucket, list_node, &gm->buckets) {
-        if (bucket->weight && gm->type != OFPGT11_SELECT) {
+        if ((bucket->weight != 0xffff) && gm->type != OFPGT11_SELECT) {
+        	/* tsf: should be no error if weight equals initial value (0xffff)
+        	 *      define in floodlightpof.*/
             return OFPERR_OFPGMFC_INVALID_GROUP;
         }
 
