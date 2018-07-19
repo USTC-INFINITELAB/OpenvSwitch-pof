@@ -7029,10 +7029,13 @@ handle_queue_get_config_request(struct ofconn *ofconn,
     return error;
 }
 
+/* tsf: modified to support POF. */
 static enum ofperr
-init_group(struct ofproto *ofproto, const struct ofputil_group_mod *gm,
+init_group(struct ofproto *ofproto, const struct ofputil_pof_group_mod *gm,
            ovs_version_t version, struct ofgroup **ofgroup)
 {
+	VLOG_INFO("++++++tsf init_group, to initialize ofgroup from ofputil_pof_group_mod.");
+
     enum ofperr error;
     const long long int now = time_msec();
 
@@ -7077,6 +7080,7 @@ init_group(struct ofproto *ofproto, const struct ofputil_group_mod *gm,
     /* Construct called BEFORE any locks are held. */
     error = ofproto->ofproto_class->group_construct(*ofgroup);
     if (error) {
+    	VLOG_INFO("++++++tsf init_group: before ofputil_group_properties_destroy, error=%d!", error);
         ofputil_group_properties_destroy(CONST_CAST(struct ofputil_group_props *,
                                                     &(*ofgroup)->props));
         ofputil_bucket_list_destroy(CONST_CAST(struct ovs_list *,
@@ -7104,6 +7108,8 @@ add_group_start(struct ofproto *ofproto, struct ofproto_group_mod *ogm)
         return OFPERR_OFPGMFC_OUT_OF_GROUPS;
     }
 
+    VLOG_INFO("++++++tsf add_group_start, group_id=%d", ogm->gm.group_id);
+
     /* Allocate new group and initialize it. */
     error = init_group(ofproto, &ogm->gm, ogm->version, &ogm->new_group);
     if (!error) {
@@ -7111,6 +7117,39 @@ add_group_start(struct ofproto *ofproto, struct ofproto_group_mod *ogm)
         cmap_insert(&ofproto->groups, &ogm->new_group->cmap_node,
                     hash_int(ogm->new_group->group_id, 0));
         ofproto->n_groups[ogm->new_group->type]++;
+        VLOG_INFO("++++++tsf add_group_start, new_group_type=%d", ogm->new_group->type);
+    }
+    return error;
+}
+
+/* Implements the OFPGC11_ADD operation specified by 'gm', adding a group to
+ * 'ofproto''s group table.  Returns 0 on success or an OpenFlow error code on
+ * failure. */
+static enum ofperr
+add_pof_group_start(struct ofproto *ofproto, struct ofproto_group_mod *ogm)
+    OVS_REQUIRES(ofproto_mutex)
+{
+    enum ofperr error;
+
+    if (ofproto_group_exists(ofproto, ogm->gm.group_id)) {
+        return OFPERR_OFPGMFC_GROUP_EXISTS;
+    }
+
+    if (ofproto->n_groups[ogm->gm.type]
+        >= ofproto->ogf.max_groups[ogm->gm.type]) {
+        return OFPERR_OFPGMFC_OUT_OF_GROUPS;
+    }
+
+    VLOG_INFO("++++++tsf add_pof_group_start, group_id=%d", ogm->gm.group_id);
+
+    /* Allocate new group and initialize it. */
+    error = init_group(ofproto, &ogm->gm, ogm->version, &ogm->new_group);
+    if (!error) {
+        /* Insert new group. */
+        cmap_insert(&ofproto->groups, &ogm->new_group->cmap_node,
+                    hash_int(ogm->new_group->group_id, 0));
+        ofproto->n_groups[ogm->new_group->type]++;
+        VLOG_INFO("++++++tsf add_pof_group_start, new_group_type=%d", ogm->new_group->type);
     }
     return error;
 }
@@ -7250,10 +7289,10 @@ modify_group_start(struct ofproto *ofproto, struct ofproto_group_mod *ogm)
     new_group = ogm->new_group;
 
     /* Manipulate bucket list for bucket commands */
-    if (ogm->gm.command == OFPGC15_INSERT_BUCKET) {
+    if (ogm->gm.command == OFPGC15_INSERT_BUCKET) {  // tsf: no run
         error = copy_buckets_for_insert_bucket(old_group, new_group,
                                                ogm->gm.command_bucket_id);
-    } else if (ogm->gm.command == OFPGC15_REMOVE_BUCKET) {
+    } else if (ogm->gm.command == OFPGC15_REMOVE_BUCKET) {  // tsf: no run
         error = copy_buckets_for_remove_bucket(old_group, new_group,
                                                ogm->gm.command_bucket_id);
     }
@@ -7401,6 +7440,59 @@ ofproto_group_mod_start(struct ofproto *ofproto, struct ofproto_group_mod *ogm)
     return error;
 }
 
+/* tsf: use ofproto_pof_group_mod_start() just in handle_pof_group_mod() first, if it can
+ *      be compatible, will place ofproto_group_mod_start() for all scope and callers. */
+static enum ofperr
+ofproto_pof_group_mod_start(struct ofproto *ofproto, struct ofproto_group_mod *ogm)
+    OVS_REQUIRES(ofproto_mutex)
+{
+    enum ofperr error;
+
+    ogm->new_group = NULL;
+    group_collection_init(&ogm->old_groups);
+
+    VLOG_INFO("++++++tsf ofproto_pof_group_mod_start: command=%d", ogm->gm.command);
+    switch (ogm->gm.command) {
+    case OFPGC11_ADD:
+    	VLOG_INFO("++++++tsf ofproto_group_mod_start: add_group_start, type=%d", OFPGC11_ADD);
+        error = add_group_start(ofproto, ogm);   // tsf: no change
+        break;
+
+    case OFPGC11_MODIFY:
+    	VLOG_INFO("++++++tsf ofproto_group_mod_start: modify_group_start, type=%d", OFPGC11_MODIFY);
+        error = modify_group_start(ofproto, ogm);  // tsf: no change
+        break;
+
+    case OFPGC11_ADD_OR_MOD:
+    	VLOG_INFO("++++++tsf ofproto_group_mod_start: add_or_modify_group_start, type=%d", OFPGC11_ADD_OR_MOD);
+        error = add_or_modify_group_start(ofproto, ogm);   // tsf: no change
+        break;
+
+    case OFPGC11_DELETE:
+    	VLOG_INFO("++++++tsf ofproto_group_mod_start: delete_group_start, type=%d", OFPGC11_DELETE);
+        delete_groups_start(ofproto, ogm);   // tsf: no change
+        error = 0;
+        break;
+
+    case OFPGC15_INSERT_BUCKET:   // tsf: not support in OF1.3
+        error = modify_group_start(ofproto, ogm);
+        break;
+
+    case OFPGC15_REMOVE_BUCKET:   // tsf: not support in OF1.3
+        error = modify_group_start(ofproto, ogm);
+        break;
+
+    default:
+        if (ogm->gm.command > OFPGC11_DELETE) {
+            VLOG_INFO_RL(&rl, "%s: Invalid group_mod command type %d",
+                         ofproto->name, ogm->gm.command);
+        }
+        error = OFPERR_OFPGMFC_BAD_COMMAND;
+        break;
+    }
+    return error;
+}
+
 static void
 ofproto_group_mod_revert(struct ofproto *ofproto,
                          struct ofproto_group_mod *ogm)
@@ -7530,7 +7622,7 @@ handle_pof_group_mod(struct ofconn *ofconn, const struct ofp_header *oh)
     OVS_EXCLUDED(ofproto_mutex)
 {
     struct ofproto *ofproto = ofconn_get_ofproto(ofconn);
-    struct ofproto_pof_group_mod ogm;
+    struct ofproto_group_mod ogm;     // tsf: pof_group_mod
     enum ofperr error;
 
     error = reject_slave_controller(ofconn);
@@ -7546,17 +7638,20 @@ handle_pof_group_mod(struct ofconn *ofconn, const struct ofp_header *oh)
 
     ovs_mutex_lock(&ofproto_mutex);
     ogm.version = ofproto->tables_version + 1;
-    error = ofproto_group_mod_start(ofproto, &ogm);
+    VLOG_INFO("++++++tsf handle_pof_group_mod: ofproto_pof_group_mod_start");
+    error = ofproto_pof_group_mod_start(ofproto, &ogm);
     if (!error) {
         struct openflow_mod_requester req = { ofconn, oh };
 
         ofproto_bump_tables_version(ofproto);
+        VLOG_INFO("++++++tsf handle_pof_group_mod: before ofproto_group_mod_finish.");
         ofproto_group_mod_finish(ofproto, &ogm, &req);
         ofmonitor_flush(ofproto->connmgr);
     }
     ovs_mutex_unlock(&ofproto_mutex);
 
-    ofputil_uninit_group_mod(&ogm.gm);
+    VLOG_INFO("++++++tsf handle_pof_group_mod: before ofputil_uninit_pof_group_mod.");
+    ofputil_uninit_pof_group_mod(&ogm.gm);
 
     return error;
 }

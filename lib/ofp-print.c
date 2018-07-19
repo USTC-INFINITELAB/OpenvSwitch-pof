@@ -53,7 +53,7 @@
 #include "uuid.h"
 #include "openvswitch/vlog.h"
 
-VLOG_DEFINE_THIS_MODULE(ofpprintsqy);
+VLOG_DEFINE_THIS_MODULE(ofp_print);
 static void ofp_print_queue_name(struct ds *string, uint32_t port);
 static void ofp_print_error(struct ds *, enum ofperr);
 
@@ -2582,9 +2582,10 @@ static void
 ofp_print_bucket_id(struct ds *s, const char *label, uint32_t bucket_id,
                     enum ofp_version ofp_version)
 {
-    if (ofp_version < OFP15_VERSION) {
+	// tsf: no need to check
+    /*if (ofp_version < OFP15_VERSION) {
         return;
-    }
+    }*/
 
     ds_put_cstr(s, label);
 
@@ -2598,7 +2599,7 @@ ofp_print_bucket_id(struct ds *s, const char *label, uint32_t bucket_id,
     case OFPG15_BUCKET_ALL:
         ds_put_cstr(s, "all");
         break;
-    default:
+    default:   // tsf: run here
         ds_put_format(s, "%"PRIu32, bucket_id);
         break;
     }
@@ -3456,7 +3457,7 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
         ofp_print_ofpst_group_request(string, oh);
         break;
 
-    case OFPTYPE_GROUP_STATS_REPLY:
+    case OFPTYPE_GROUP_STATS_REPLY:   // tsf: dump-group-stats
         ofp_print_group_stats(string, oh);
         break;
 
@@ -3465,7 +3466,7 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
         ofp_print_ofpst_group_desc_request(string, oh);
         break;
 
-    case OFPTYPE_GROUP_DESC_STATS_REPLY:
+    case OFPTYPE_GROUP_DESC_STATS_REPLY:  // tsf: dump-groups
         ofp_print_group_desc(string, oh);
         break;
 
@@ -3473,7 +3474,7 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
         ofp_print_stats(string, oh);
         break;
 
-    case OFPTYPE_GROUP_FEATURES_STATS_REPLY:
+    case OFPTYPE_GROUP_FEATURES_STATS_REPLY:  // tsf: dump-group-features
         ofp_print_group_features(string, oh);
         break;
 

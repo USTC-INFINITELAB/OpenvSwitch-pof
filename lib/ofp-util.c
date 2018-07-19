@@ -9755,8 +9755,13 @@ ofputil_pull_ofp11_pof_buckets(struct ofpbuf *msg, size_t buckets_num,
     uint32_t bucket_id = 0;
     size_t buckets_length = msg->size;
 
+    VLOG_INFO("++++++tsf ofputil_pull_ofp11_pof_buckets: buckets_num=%d, buckets_len=%d", buckets_num, buckets_length);
+
     ovs_list_init(buckets);
+
+    // tsf: for del group, `buckets_num` should be 0, no need to parse buckets
     while (buckets_num > 0) {
+    	VLOG_INFO("++++++tsf ofputil_pull_ofp11_pof_buckets: parse bucket(s) in %dth time", bucket_id);
         struct ofputil_bucket *bucket;
         struct ofpbuf ofpacts;
         enum ofperr error;
@@ -9781,13 +9786,17 @@ ofputil_pull_ofp11_pof_buckets(struct ofpbuf *msg, size_t buckets_num,
         ofpbuf_init(&ofpacts, 0);
         uint16_t actions_num = ntohs(ob->action_number);
         size_t actions_len = POF_MAX_ACTION_LENGTH * actions_num;
+
+        VLOG_INFO("++++++tsf ofputil_pull_ofp11_pof_buckets: ofpacts_pull_pof_actions start.");
         error = ofpacts_pull_pof_actions(msg, actions_len, version, &ofpacts);
+        VLOG_INFO("++++++tsf ofputil_pull_ofp11_pof_buckets: ofpacts_pull_pof_actions end.");
 
         /*@tsf: have read one bucket, so update the remained buckets_length and buckets_num. */
         buckets_length -= ob_len;
         --buckets_num;
 
         if (error) {
+        	VLOG_INFO("++++++tsf ofputil_pull_ofp11_pof_buckets: error, before ofputil_bucket_list_destroy");
             ofpbuf_uninit(&ofpacts);
             ofputil_bucket_list_destroy(buckets);
             return error;
@@ -9795,13 +9804,18 @@ ofputil_pull_ofp11_pof_buckets(struct ofpbuf *msg, size_t buckets_num,
         /* @tsf: if actions_num < POF_MAX_ACTION_NUMBER_PER_BUCKET(6), pull remaining buffer so
          *       that pointer forwards. No processing for pulled data.
          * */
-        if (actions_num < 6) {
+        if (actions_num <= 6) {
         	size_t remained_actions_len = (6 - actions_num) * POF_MAX_ACTION_LENGTH;
         	ofpbuf_try_pull(msg, remained_actions_len);
         }
 
         bucket->weight = ntohs(ob->weight);
-        bucket->watch_port = ob->watch_port;
+
+        if (ob->watch_port == 0xff) {
+        	bucket->watch_port = OFPP_NONE;
+        } else {
+        	bucket->watch_port = ob->watch_port;
+        }
 
         bucket->watch_group = ntohl(ob->watch_group);
         bucket->bucket_id = bucket_id++;
@@ -10229,6 +10243,13 @@ ofputil_uninit_group_mod(struct ofputil_group_mod *gm)
     ofputil_group_properties_destroy(&gm->props);
 }
 
+void
+ofputil_uninit_pof_group_mod(struct ofputil_pof_group_mod *gm)
+{
+    ofputil_bucket_list_destroy(&gm->buckets);
+    ofputil_group_properties_destroy(&gm->props);
+}
+
 static struct ofpbuf *
 ofputil_encode_ofp11_group_mod(enum ofp_version ofp_version,
                                const struct ofputil_group_mod *gm)
@@ -10436,7 +10457,9 @@ ofputil_pull_ofp11_pof_group_mod(struct ofpbuf *msg, enum ofp_version ofp_versio
     enum ofperr error;
 
     /* tsf: decode group_mod */
-    ogm = ofpbuf_pull(msg, sizeof *ogm); // @tsf: pull group_mod header, it follows buckets
+    ogm = ofpbuf_pull(msg, sizeof *ogm); // @tsf: pull group_mod header, it follows 6 buckets
+    VLOG_INFO("++++++tsf ofputil_pull_ofp11_pof_group_mod: ofp11_pof_group_mod's size=%d", sizeof *ogm);
+
     gm->command = ogm->command;
     gm->type = ogm->type;
     gm->bucket_num = ogm->bucket_num;
@@ -10444,11 +10467,15 @@ ofputil_pull_ofp11_pof_group_mod(struct ofpbuf *msg, enum ofp_version ofp_versio
     gm->counter_id = ntohl(ogm->counter_id);
     gm->slot_id = ntohs(ogm->slot_id);
     gm->command_bucket_id = OFPG15_BUCKET_ALL;
+    VLOG_INFO("++++++tsf ofputil_pull_ofp11_pof_group_mod: command=%d, type=%d, bucket_num=%d, group_id=%d, counter_id=%d, slot_id=%d",
+    		gm->command, gm->type, gm->bucket_num, gm->group_id, gm->counter_id, gm->slot_id);
 
-    /* tsf: parse 6 buckets here. */
-    error = ofputil_pull_ofp11_pof_buckets(msg, gm->bucket_num, ofp_version,
-                                       &gm->buckets);
+    /* tsf: parse 6 buckets here. if command equals delete, just skip to parse buckets. */
+    VLOG_INFO("++++++tsf ofputil_pull_ofp11_pof_group_mod: ofputil_pull_ofp11_pof_buckets start, msg->size=%d.", msg->size); // tsf: size = 1848 - 24 = 1828
+    error = ofputil_pull_ofp11_pof_buckets(msg, gm->bucket_num, ofp_version, &gm->buckets);
 
+    VLOG_INFO("++++++tsf ofputil_pull_ofp11_group_mod: command=%d, error=%d, ofp_version(%d)=%d, !ovs_list_is_empty=%d",
+            gm->command, error, OFP13_VERSION, ofp_version, !ovs_list_is_empty(&gm->buckets));
     /* OF1.3.5+ prescribes an error when an OFPGC_DELETE includes buckets. */
     if (!error
         && ofp_version >= OFP13_VERSION
@@ -10622,6 +10649,7 @@ ofputil_decode_pof_group_mod(const struct ofp_header *oh,
 
     enum ofp_version ofp_version = oh->version;
     struct ofpbuf msg = ofpbuf_const_initializer(oh, ntohs(oh->length));
+    VLOG_INFO("++++++tsf ofputil_decode_pof_group_mod: oh->version=%d, oh->length=%d", oh->version, ntohs(oh->length));
     ofpraw_pull_assert(&msg);
 
     enum ofperr err;

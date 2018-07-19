@@ -1345,7 +1345,7 @@ struct ofputil_group_props {
     struct field_array fields;
 };
 
-/* Protocol-independent group_mod. */
+/* tsf: Protocol-independent group_mod. use OF.*/
 struct ofputil_group_mod {
     uint16_t command;             /* One of OFPGC15_*. */
     uint8_t type;                 /* One of OFPGT11_*. */
@@ -1358,7 +1358,7 @@ struct ofputil_group_mod {
     struct ofputil_group_props props; /* Group properties. */
 };
 
-/* @tsf: Protocol-independent group_mod. */
+/* @tsf: Protocol-independent group_mod. use POF. */
 struct ofputil_pof_group_mod {
     uint16_t command;             /* One of OFPGC15_*. */
     uint8_t type;                 /* One of OFPGT11_*. */
@@ -1436,6 +1436,7 @@ struct ofpbuf *ofputil_encode_group_features_reply(
 void ofputil_decode_group_features_reply(const struct ofp_header *,
                                          struct ofputil_group_features *);
 void ofputil_uninit_group_mod(struct ofputil_group_mod *gm);
+void ofputil_uninit_pof_group_mod(struct ofputil_pof_group_mod *gm);
 struct ofpbuf *ofputil_encode_group_mod(enum ofp_version ofp_version,
                                         const struct ofputil_group_mod *gm);
 

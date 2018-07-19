@@ -1890,17 +1890,17 @@ struct ofproto_port_mod {
 };
 
 /* flow_mod with execution context. */
+//struct ofproto_group_mod {
+//    struct ofputil_group_mod gm;
+//
+//    ovs_version_t version;              /* Version in which changes take
+//                                         * effect. */
+//    struct ofgroup *new_group;          /* New group. */
+//    struct group_collection old_groups; /* Affected groups. */
+//};
+
+/* @tsf: flow_mod with execution context, to place struct ofproto_group_mod */
 struct ofproto_group_mod {
-    struct ofputil_group_mod gm;
-
-    ovs_version_t version;              /* Version in which changes take
-                                         * effect. */
-    struct ofgroup *new_group;          /* New group. */
-    struct group_collection old_groups; /* Affected groups. */
-};
-
-/* @tsf: flow_mod with execution context. */
-struct ofproto_pof_group_mod {
     struct ofputil_pof_group_mod gm;
 
     ovs_version_t version;              /* Version in which changes take
