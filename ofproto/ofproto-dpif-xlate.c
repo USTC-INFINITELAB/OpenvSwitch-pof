@@ -1530,7 +1530,7 @@ group_best_live_bucket(const struct xlate_ctx *ctx,
  *       work for two buckets with weight 1:n
  * */
 static struct ofputil_bucket *
-pof_group_default_best_live_bucket_1(const struct xlate_ctx *ctx,
+pof_group_default_best_live_bucket_v1(const struct xlate_ctx *ctx,
                        const struct group_dpif *group,
                        uint32_t basis)
 {
@@ -1583,6 +1583,65 @@ pof_group_default_best_live_bucket_1(const struct xlate_ctx *ctx,
         }
     }
     temp_score[best_bucket->bucket_id]--;
+
+    return best_bucket;
+}
+
+/** tsf: TODO use token bucket way for now, should consider more reasonable approach.
+ *       can work for more than two bucket with weight m:n
+ * */
+static struct ofputil_bucket *
+pof_group_default_best_live_bucket_v2(const struct xlate_ctx *ctx,
+                                     const struct group_dpif *group,
+                                     uint32_t basis)
+{
+    struct ofputil_bucket *best_bucket = NULL;
+    uint32_t best_score = 0;
+    uint32_t score = 0;
+
+    uint32_t static temp_score[6];              // OFP_MAX_BUCKET_PER_GROUP = 6, store every bucket's score
+    uint32_t static sum_score = 0;              // sum scores of all buckets'weight
+
+    uint32_t packets_interval = 1;    // process how many packet uints to switch buckets
+    bool static init_flag = true;
+
+    struct ofputil_bucket *bucket;
+    const struct ovs_list *buckets;
+
+    buckets = group_dpif_get_buckets(group, NULL);
+
+    // tsf: init stage, reset when sum_score = 0
+    if (init_flag) {
+        LIST_FOR_EACH(bucket, list_node, buckets) {
+            temp_score[bucket->bucket_id] = bucket->weight * packets_interval;
+            sum_score += temp_score[bucket->bucket_id];
+        }
+
+        init_flag = false;
+//        VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_2: init stage, sum_score=%d", sum_score);
+    }
+
+    // tsf: loop recursively to run each buckets, return the bucket with token exsited
+    LIST_FOR_EACH (bucket, list_node, buckets) {
+        if (bucket_is_alive(ctx, bucket, 0)) {
+
+            // tsf: run like as token bucket
+            if (temp_score[bucket->bucket_id] > 0) {
+                --temp_score[bucket->bucket_id];
+                --sum_score;
+                best_bucket = bucket;
+//                VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_2: run stage, bucket_id=%d, temp_score=%d, sum_score=%d",
+//                          bucket->bucket_id, temp_score[bucket->bucket_id], sum_score);
+
+                // tsf: pretend to reset temp_score and sum_score
+                if (sum_score == 0) {
+                    init_flag = true;
+                }
+
+                break;
+            }
+        }
+    }
 
     return best_bucket;
 }
@@ -3444,13 +3503,25 @@ xlate_default_select_group(struct xlate_ctx *ctx, struct group_dpif *group)
     struct ofputil_bucket *bucket;
     uint32_t basis;
 
-//    basis = flow_hash_symmetric_l4(&ctx->xin->flow, 0);
-    basis = flow_hash_symmetric_l4(&ctx->base_flow, 0);
-    VLOG_INFO("++++++tsf xlate_default_select_group: basis=%d", basis);
+    basis = flow_hash_symmetric_l4(&ctx->xin->flow, 0);
+    flow_mask_hash_fields(&ctx->xin->flow, wc, NX_HASH_FIELDS_SYMMETRIC_L4);
+    bucket = group_best_live_bucket(ctx, group, basis);
+    if (bucket) {
+        xlate_group_bucket(ctx, bucket);
+        xlate_group_stats(ctx, group, bucket);
+    } else if (ctx->xin->xcache) {
+        group_dpif_unref(group);
+    }
+}
 
-    flow_mask_hash_fields(&ctx->xin->flow, wc, NX_HASH_FIELDS_SYMMETRIC_L4);  // tsf: set mask as 0xff
-//    bucket = group_best_live_bucket(ctx, group, basis);
-    bucket = pof_group_default_best_live_bucket_1(ctx, group, basis);
+static void
+xlate_default_pof_select_group(struct xlate_ctx *ctx, struct group_dpif *group)
+{
+    struct flow_wildcards *wc = ctx->wc;
+    struct ofputil_bucket *bucket;
+    uint32_t basis = 0;      // tsf: no use here
+
+    bucket = pof_group_default_best_live_bucket_v2(ctx, group, basis);      // tsf: now have v1 and v2 two methods
     if (bucket) {
         xlate_group_bucket(ctx, bucket);
         xlate_group_stats(ctx, group, bucket);
@@ -3559,7 +3630,7 @@ xlate_select_group(struct xlate_ctx *ctx, struct group_dpif *group)
 
     if (selection_method[0] == '\0') {   // tsf: run here
     	VLOG_INFO("++++++tsf xlate_select_group: xlate_default_select_group");
-        xlate_default_select_group(ctx, group);
+        xlate_default_pof_select_group(ctx, group);
     } else if (!strcasecmp("hash", selection_method)) {  // tsf: not support
         xlate_hash_fields_select_group(ctx, group);
     } else if (!strcasecmp("dp_hash", selection_method)) {  // tsf: not support
