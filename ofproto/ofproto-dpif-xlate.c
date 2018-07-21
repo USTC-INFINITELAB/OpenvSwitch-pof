@@ -1526,6 +1526,67 @@ group_best_live_bucket(const struct xlate_ctx *ctx,
     return best_bucket;
 }
 
+/** tsf: TODO use polling way for now, should consider more reasonable approach.
+ *       work for two buckets with weight 1:n
+ * */
+static struct ofputil_bucket *
+pof_group_default_best_live_bucket_1(const struct xlate_ctx *ctx,
+                       const struct group_dpif *group,
+                       uint32_t basis)
+{
+    struct ofputil_bucket *best_bucket = NULL;
+    uint32_t best_score = 0;
+    uint32_t score = 0;
+
+    uint32_t static temp_score[6];              // OFP_MAX_BUCKET_PER_GROUP = 6, store every bucket's score
+    uint32_t static sum_weight = 0;                 // sum of all buckets'weight
+    uint32_t static max_weight = 0;
+    uint32_t packets_interval = 1;    // process how many packet uints to switch buckets
+    bool static init_flag[6] = {true, true, true, true, true, true};
+
+    struct ofputil_bucket *bucket;
+    const struct ovs_list *buckets;
+
+    buckets = group_dpif_get_buckets(group, NULL);
+    LIST_FOR_EACH (bucket, list_node, buckets) {
+        if (bucket_is_alive(ctx, bucket, 0)) {
+
+        	// tsf: initialize all alive buckets only once, reset when bucket's weight = 0
+        	if (init_flag[bucket->bucket_id]) {
+        		temp_score[bucket->bucket_id] = bucket->weight * packets_interval;
+                sum_weight += bucket->weight;
+                init_flag[bucket->bucket_id] = false;
+                VLOG_INFO("++++++tsf pof_group_default_best_live_bucket: init stage, bucket_id=%d, temp_score=%d"
+                        , bucket->bucket_id, temp_score[bucket->bucket_id]);
+        	}
+
+            // tsf: calculate score
+        	score = temp_score[bucket->bucket_id];
+
+            VLOG_INFO("++++++tsf group_best_live_bucket in if: bucket_id=%d, score=%d, sum_weight=%d",
+                      bucket->bucket_id, score, sum_weight);
+
+            // tsf: get best_score bucket
+            if (score >= best_score) {
+                best_bucket = bucket;
+                best_score = score;
+                VLOG_INFO("++++++tsf group_best_live_bucket in if: best_bucket_id=%d, best_score=%d",
+                		best_bucket->bucket_id, best_score);
+            }
+
+            // tsf: reset if all buckets's score = 0
+            if (score == 0) {
+                memset(&init_flag, 0x01, sizeof(init_flag));
+                sum_weight = 0;
+            }
+
+        }
+    }
+    temp_score[best_bucket->bucket_id]--;
+
+    return best_bucket;
+}
+
 static bool
 xbundle_trunks_vlan(const struct xbundle *bundle, uint16_t vlan)
 {
@@ -3388,7 +3449,8 @@ xlate_default_select_group(struct xlate_ctx *ctx, struct group_dpif *group)
     VLOG_INFO("++++++tsf xlate_default_select_group: basis=%d", basis);
 
     flow_mask_hash_fields(&ctx->xin->flow, wc, NX_HASH_FIELDS_SYMMETRIC_L4);  // tsf: set mask as 0xff
-    bucket = group_best_live_bucket(ctx, group, basis);
+//    bucket = group_best_live_bucket(ctx, group, basis);
+    bucket = pof_group_default_best_live_bucket_1(ctx, group, basis);
     if (bucket) {
         xlate_group_bucket(ctx, bucket);
         xlate_group_stats(ctx, group, bucket);
