@@ -1527,7 +1527,7 @@ group_best_live_bucket(const struct xlate_ctx *ctx,
 }
 
 /** tsf: TODO use polling way for now, should consider more reasonable approach.
- *       work for two buckets with weight 1:n
+ *       can work for more than two buckets with weight m:n
  * */
 static struct ofputil_bucket *
 pof_group_default_best_live_bucket_v1(const struct xlate_ctx *ctx,
@@ -1539,50 +1539,53 @@ pof_group_default_best_live_bucket_v1(const struct xlate_ctx *ctx,
     uint32_t score = 0;
 
     uint32_t static temp_score[6];              // OFP_MAX_BUCKET_PER_GROUP = 6, store every bucket's score
-    uint32_t static sum_weight = 0;                 // sum of all buckets'weight
-    uint32_t static max_weight = 0;
-    uint32_t packets_interval = 1;    // process how many packet uints to switch buckets
-    bool static init_flag[6] = {true, true, true, true, true, true};
+    uint32_t static sum_score = 0;              // sum scores of all buckets'weight
+
+    uint32_t packets_interval = 1;              // process how many packet uints to switch buckets
+    bool static init_flag = true;
 
     struct ofputil_bucket *bucket;
     const struct ovs_list *buckets;
 
     buckets = group_dpif_get_buckets(group, NULL);
+
+    // tsf init stage, reset when sum_score = 0
+    if (init_flag) {
+        LIST_FOR_EACH (bucket, list_node, buckets) {
+            temp_score[bucket->bucket_id] = bucket->weight * packets_interval;
+            sum_score += temp_score[bucket->bucket_id];
+        }
+        init_flag = false;
+        VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_v1: init stage, sum_score=%d", sum_score);
+    }
+
+    // tsf: run stage, compare all buckets' temp_score to choose one with best_score
     LIST_FOR_EACH (bucket, list_node, buckets) {
         if (bucket_is_alive(ctx, bucket, 0)) {
 
-        	// tsf: initialize all alive buckets only once, reset when bucket's weight = 0
-        	if (init_flag[bucket->bucket_id]) {
-        		temp_score[bucket->bucket_id] = bucket->weight * packets_interval;
-                sum_weight += bucket->weight;
-                init_flag[bucket->bucket_id] = false;
-                VLOG_INFO("++++++tsf pof_group_default_best_live_bucket: init stage, bucket_id=%d, temp_score=%d"
-                        , bucket->bucket_id, temp_score[bucket->bucket_id]);
-        	}
-
             // tsf: calculate score
         	score = temp_score[bucket->bucket_id];
-
-            VLOG_INFO("++++++tsf group_best_live_bucket in if: bucket_id=%d, score=%d, sum_weight=%d",
-                      bucket->bucket_id, score, sum_weight);
+            VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_v1 in if: bucket_id=%d, score=%d, sum_score=%d",
+                      bucket->bucket_id, score, sum_score);
 
             // tsf: get best_score bucket
             if (score >= best_score) {
                 best_bucket = bucket;
                 best_score = score;
-                VLOG_INFO("++++++tsf group_best_live_bucket in if: best_bucket_id=%d, best_score=%d",
+                VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_v1 in if: best_bucket_id=%d, best_score=%d",
                 		best_bucket->bucket_id, best_score);
             }
-
-            // tsf: reset if all buckets's score = 0
-            if (score == 0) {
-                memset(&init_flag, 0x01, sizeof(init_flag));
-                sum_weight = 0;
-            }
-
         }
     }
-    temp_score[best_bucket->bucket_id]--;
+
+    // tsf: only decrement the best_bucket's score
+    --temp_score[best_bucket->bucket_id];
+    --sum_score;
+
+    // tsf: pretend to reset temp_score and sum_score, run back to init stage
+    if (sum_score == 0) {
+        init_flag = true;
+    }
 
     return best_bucket;
 }
