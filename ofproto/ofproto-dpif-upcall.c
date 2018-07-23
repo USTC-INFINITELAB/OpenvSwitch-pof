@@ -1195,7 +1195,9 @@ should_install_flow(struct udpif *udpif, struct upcall *upcall)
         return false;
     }
 
-    return true;/*sqy*/
+    /* tsf: if we should install emc rule, then return true. */
+     return true;
+//    return false;
 }
 
 static int

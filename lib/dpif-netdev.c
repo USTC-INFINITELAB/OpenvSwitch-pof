@@ -3777,6 +3777,7 @@ dp_netdev_flow_used(struct dp_netdev_flow *netdev_flow, int cnt, int size,
     atomic_read_relaxed(&netdev_flow->stats.tcp_flags, &flags);
     flags |= tcp_flags;
     atomic_store_relaxed(&netdev_flow->stats.tcp_flags, flags);
+    VLOG_INFO("+++++tsf dp_netdev_flow_used: n_packets=%d, n_bytes=%d", netdev_flow->stats.packet_count, netdev_flow->stats.byte_count);
 }
 
 static void
@@ -3914,6 +3915,8 @@ dp_netdev_queue_batches(struct dp_packet *pkt,
     }
 
     packet_batch_per_flow_update(batch, pkt, mf);
+    VLOG_INFO("++++++tsf dp_netdev_queue_batches: batch[%d].n_packets=%d, n_bytes=%d", (*n_batches),
+    		batch->array.count, batch->byte_count);
 }
 
 /* Try to process all ('cnt') the 'packets' using only the exact match cache
@@ -3961,9 +3964,15 @@ emc_processing(struct dp_netdev_pmd_thread *pmd, struct dp_packet_batch *packets
         pof_miniflow_extract(packet, &key->mf);
         key->len = 0; /* Not computed yet. */
         key->hash = dpif_netdev_packet_get_rss_hash(packet, &key->mf);
+        VLOG_INFO("++++++tsf emc_processing: key->hash=%d", key->hash);
 
         flow = emc_lookup(flow_cache, key);
+        if (flow != NULL) {
+            VLOG_INFO("+++++tsf emc_processing: flow.stats->n_packets=%d, n_bytes=%d", flow->stats.packet_count,
+                      flow->stats.byte_count);
+        }
         if (OVS_LIKELY(flow)) {
+        	VLOG_INFO("+++++++tsf emc_processing: dp_netdev_queue_batches 111");
             dp_netdev_queue_batches(packet, flow, &key->mf, batches,
                                     n_batches);
         } else {
@@ -4113,6 +4122,7 @@ fast_path_processing(struct dp_netdev_pmd_thread *pmd,
             }
 
             miss_cnt++;
+            VLOG_INFO("++++++tsf fast_path_processing: handle_packet_upcall");
             handle_packet_upcall(pmd, packets[i], &keys[i], &actions,
                                  &put_actions, &lost_cnt, now);
         }
@@ -4142,6 +4152,7 @@ fast_path_processing(struct dp_netdev_pmd_thread *pmd,
         flow = dp_netdev_flow_cast(rules[i]);
 
         emc_insert(flow_cache, &keys[i], flow);
+        VLOG_INFO("+++++++tsf fast_path_processing: dp_netdev_queue_batches 222");
         dp_netdev_queue_batches(packet, flow, &keys[i].mf, batches, n_batches);
     }
 
@@ -4186,7 +4197,8 @@ dp_netdev_input__(struct dp_netdev_pmd_thread *pmd,
         /* Get ingress port from first packet's metadata. */
         in_port = packets->packets[0]->md.in_port.odp_port;
         if (NULL != pmd){
-        fast_path_processing(pmd, packets, keys, batches, &n_batches, in_port, now);}
+        	fast_path_processing(pmd, packets, keys, batches, &n_batches, in_port, now);
+        }
         /*VLOG_INFO("+++++++++++sqy dp_netdev_input__: after fast_path_processing");*/
     }
 
@@ -4195,6 +4207,7 @@ dp_netdev_input__(struct dp_netdev_pmd_thread *pmd,
         batches[i].flow->batch = NULL;
     }
     for (i = 0; i < n_batches; i++) {
+    	VLOG_INFO("+++++++tsf dp_netdev_input__: dp_netdev_queue_batches 333");
         packet_batch_per_flow_execute(&batches[i], pmd, now);
     }
 }

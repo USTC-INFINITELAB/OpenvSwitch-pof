@@ -4415,6 +4415,7 @@ rule_get_stats(struct rule *rule_, uint64_t *packets, uint64_t *bytes,
         *used = rule->stats.used;
     }
     ovs_mutex_unlock(&rule->stats_mutex);
+    VLOG_INFO("++++++tsf rule_get_stats: n_packets=%d, n_bytes=%d, used=%d", *packets, *bytes, *used);
 }
 
 struct ofproto_dpif_packet_out {
