@@ -1816,12 +1816,15 @@ should_revalidate(const struct udpif *udpif, uint64_t packets,
 
     if (!used) {
         /* Always revalidate the first time a flow is dumped. */
+    	VLOG_INFO("++++++++tsf should_revalidate: revalidate !used");
         return true;
     }
 
     if (udpif->dump_duration < 200) {
         /* We are likely to handle full revalidation for the flows. */
-        return true;
+    	VLOG_INFO("++++++++tsf should_revalidate: revalidate udpif->dump_duration");
+        /*return true;*/    // tsf: original
+    	return false;
     }
 
     /* Calculate the mean time between seeing these packets. If this
@@ -1835,14 +1838,18 @@ should_revalidate(const struct udpif *udpif, uint64_t packets,
      * This tends to result in deletion of low-throughput flows anyway, so
      * skip the revalidation and just delete those flows. */
     packets = MAX(packets, 1);
-    now = MAX(used, time_msec());
+    now = time_msec();
+    now = MAX(used, now);
     duration = now - used;
     metric = duration / packets;
+    VLOG_INFO("++++++tsf should_revalidate: revalidate metric, now=%lld, used=%lld", now, used);
 
     if (metric < 200) {
         /* The flow is receiving more than ~5pps, so keep it. */
+    	VLOG_INFO("++++++++tsf should_revalidate: revalidate metric < 200");
         return true;
     }
+    VLOG_INFO("++++++++tsf should_revalidate: return false");
     return false;
 }
 
@@ -1950,6 +1957,7 @@ revalidate_ukey__(struct udpif *udpif, const struct udpif_key *ukey,
     netflow = NULL;
 
     if (xlate_ukey(udpif, ukey, tcp_flags, &ctx)) {
+    	VLOG_INFO("++++++tsf revalidate_ukey__: result = UKEY_DELETE, xlate_ukey");
         goto exit;
     }
     xoutp = &ctx.xout;
@@ -1958,10 +1966,12 @@ revalidate_ukey__(struct udpif *udpif, const struct udpif_key *ukey,
         ofpbuf_clear(odp_actions);
         compose_slow_path(udpif, xoutp, &ctx.flow, ctx.flow.in_port.odp_port,
                           odp_actions);
+        VLOG_INFO("++++++tsf revalidate_ukey__: compose_slow_path");
     }
 
     if (odp_flow_key_to_mask(ukey->mask, ukey->mask_len, &dp_mask, &ctx.flow)
         == ODP_FIT_ERROR) {
+    	VLOG_INFO("++++++tsf revalidate_ukey__: result = UKEY_DELETE, odp_flow_key_to_mask");
         goto exit;
     }
 
@@ -1971,6 +1981,7 @@ revalidate_ukey__(struct udpif *udpif, const struct udpif_key *ukey,
      * down.  Note that we do not know if the datapath has ignored any of the
      * wildcarded bits, so we may be overtly conservative here. */
     if (flow_wildcards_has_extra(&dp_mask, ctx.wc)) {
+    	VLOG_INFO("++++++tsf revalidate_ukey__: result = UKEY_DELETE, odp_flow_key_to_mask, flow_wildcards_has_extra");
         goto exit;
     }
 
@@ -1989,8 +2000,10 @@ revalidate_ukey__(struct udpif *udpif, const struct udpif_key *ukey,
 exit:
     if (netflow && result == UKEY_DELETE) {
         netflow_flow_clear(netflow, &ctx.flow);
+        VLOG_INFO("++++++++tsf revalidate_ukey__: netflow_flow_clear");
     }
     xlate_out_uninit(xoutp);
+    VLOG_INFO("++++++tsf revalidate_ukey__ result=DELETE(1?)=%d", result);
     return result;
 }
 
@@ -2023,6 +2036,8 @@ revalidate_ukey(struct udpif *udpif, struct udpif_key *ukey,
     enum reval_result result = UKEY_DELETE;
     struct dpif_flow_stats push;
 
+    VLOG_INFO("+++++tsf revalidate_ukey: ukey->reval_seq=%d, reval_seq=%d", ukey->reval_seq, reval_seq);
+
     ofpbuf_clear(odp_actions);
 
     push.used = stats->used;
@@ -2033,21 +2048,31 @@ revalidate_ukey(struct udpif *udpif, struct udpif_key *ukey,
     push.n_bytes = (stats->n_bytes > ukey->stats.n_bytes
                     ? stats->n_bytes - ukey->stats.n_bytes
                     : 0);
+    VLOG_INFO("++++++ tsf revalidate_ukey: used(ms)=%lld, n_packets=%d, n_bytes=%d", push.used, push.n_packets , push.n_bytes);
 
     if (need_revalidate) {
+    	VLOG_INFO("++++++++tsf revalidate_ukey: need_revalidate");
         if (should_revalidate(udpif, push.n_packets, ukey->stats.used)) {
             if (!ukey->xcache) {
                 ukey->xcache = xlate_cache_new();
             } else {
                 xlate_cache_clear(ukey->xcache);
             }
+            VLOG_INFO("++++++tsf revalidate_ukey: revalidate_ukey__");
             result = revalidate_ukey__(udpif, ukey, push.tcp_flags,
                                        odp_actions, recircs, ukey->xcache);
+            VLOG_INFO("++++++++tsf revalidate_ukey: result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d", result);
         } /* else delete; too expensive to revalidate */
     } else if (!push.n_packets || ukey->xcache
                || !populate_xcache(udpif, ukey, push.tcp_flags)) {
+    	VLOG_INFO("++++++++tsf revalidate_ukey: result = UKEY_KEEP");
         result = UKEY_KEEP;
+    } else {
+    	/* tsf: I wonder why reval_seq no change, but I'm sure it's no time to  remove emc_entry now */
+    	result = UKEY_KEEP;
     }
+
+    VLOG_INFO("++++++++tsf revalidate_ukey: result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d", result);
 
     /* Stats for deleted flows will be attributed upon flow deletion. Skip. */
     if (result != UKEY_DELETE) {
@@ -2304,6 +2329,7 @@ revalidate(struct revalidator *revalidator)
                     log_unexpected_flow(f, error);
                     if (error != ENOENT) {
                         delete_op_init__(udpif, &ops[n_ops++], f);
+                        VLOG_INFO("+++++++tsf revalidate: delete_op_init__");
                     }
                 }
                 continue;
@@ -2327,10 +2353,17 @@ revalidate(struct revalidator *revalidator)
 
             if (!used) {
                 used = ukey->created;
+            	VLOG_INFO("++++++tsf revalidate: flow no used, so used=created=%lld(ms?), now=%lld", used, now);
             }
-            if (kill_them_all || (used && used < now - max_idle)) {
+            /* tsf: the `used` seems no change in ovs-pof, no skip it for now. */
+//            if (kill_them_all || (used && used < now - max_idle)) {
+            if (kill_them_all) {
                 result = UKEY_DELETE;
+                VLOG_INFO("++++++tsf revalidate: result=DELETE, kill_them_all?%d, used=%d, now-max_idle=%d"
+                		, kill_them_all, used, now - max_idle);
             } else {
+            	VLOG_INFO("++++++tsf revalidate: result=revalidate_ukey, n_packets=%d, n_bytes=%d, used=%lld, now=%lld",
+            				f->stats.n_packets, f->stats.n_bytes, f->stats.used, now);
                 result = revalidate_ukey(udpif, ukey, &f->stats, &odp_actions,
                                          reval_seq, &recircs);
             }
@@ -2338,6 +2371,7 @@ revalidate(struct revalidator *revalidator)
 
             if (result != UKEY_KEEP) {
                 /* Takes ownership of 'recircs'. */
+            	VLOG_INFO("++++++tsf revalidate: reval_op_init, result=result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d", result);
                 reval_op_init(&ops[n_ops++], result, udpif, ukey, &recircs,
                               &odp_actions);
             }
