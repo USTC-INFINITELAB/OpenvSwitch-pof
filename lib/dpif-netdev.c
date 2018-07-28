@@ -636,9 +636,9 @@ emc_cache_slow_sweep(struct emc_cache *flow_cache)
 
     if (!emc_entry_alive(entry)) {
         emc_clear_entry(entry);
-    } else {
+    } /*else {
     	VLOG_INFO("+++++tsf emc_cache_slow_sweep: emc_entry_alive, sweep_id=%d", flow_cache->sweep_idx);
-    }
+    }*/
     flow_cache->sweep_idx = (flow_cache->sweep_idx + 1) & EM_FLOW_HASH_MASK;
 }
 
@@ -1655,7 +1655,7 @@ dp_netdev_pmd_remove_flow(struct dp_netdev_pmd_thread *pmd,
     ovs_assert(cls != NULL);
     dpcls_remove(cls, &flow->cr);
     cmap_remove(&pmd->flow_table, node, dp_netdev_flow_hash(&flow->ufid));
-	VLOG_INFO("++++++tsf dp_netdev_pmd_remove_flow: flow->dead = true");
+	/*VLOG_INFO("++++++tsf dp_netdev_pmd_remove_flow: flow->dead = true");*/
     flow->dead = true;
 
     dp_netdev_flow_unref(flow);
@@ -1668,7 +1668,7 @@ dp_netdev_pmd_flow_flush(struct dp_netdev_pmd_thread *pmd)
 
     ovs_mutex_lock(&pmd->flow_mutex);
     CMAP_FOR_EACH (netdev_flow, node, &pmd->flow_table) {
-    	VLOG_INFO("++++++tsf dp_netdev_pmd_flow_flush: dp_netdev_pmd_remove_flow");
+    	/*VLOG_INFO("++++++tsf dp_netdev_pmd_flow_flush: dp_netdev_pmd_remove_flow");*/
         dp_netdev_pmd_remove_flow(pmd, netdev_flow);
     }
     ovs_mutex_unlock(&pmd->flow_mutex);
@@ -1939,7 +1939,7 @@ static inline void
 emc_change_entry(struct emc_entry *ce, struct dp_netdev_flow *flow,
                  const struct netdev_flow_key *key)
 {
-	VLOG_INFO("+++++++tsf in emc_change_entry");
+	/*VLOG_INFO("+++++++tsf in emc_change_entry");*/
     if (ce->flow != flow) {
         if (ce->flow) {
             dp_netdev_flow_unref(ce->flow);
@@ -1964,11 +1964,11 @@ emc_insert(struct emc_cache *cache, const struct netdev_flow_key *key,
     struct emc_entry *current_entry;
 
     EMC_FOR_EACH_POS_WITH_HASH(cache, current_entry, key->hash) {
-    	 VLOG_INFO("+++++++tsf emc_insert: netdev_flow_key_equal=%d", netdev_flow_key_equal(&current_entry->key, key));
+    	 /*VLOG_INFO("+++++++tsf emc_insert: netdev_flow_key_equal=%d", netdev_flow_key_equal(&current_entry->key, key));*/
         if (netdev_flow_key_equal(&current_entry->key, key)) {
             /* We found the entry with the 'mf' miniflow */
             emc_change_entry(current_entry, flow, NULL);
-            VLOG_INFO("+++++++tsf emc_insert: emc_change_entry.cur_entry=NULL?(%d)", current_entry->flow == NULL ? 1:0);
+            /*VLOG_INFO("+++++++tsf emc_insert: emc_change_entry.cur_entry=NULL?(%d)", current_entry->flow == NULL ? 1:0);*/
             return;
         }
 
@@ -1993,14 +1993,11 @@ emc_lookup(struct emc_cache *cache, const struct netdev_flow_key *key)
     struct emc_entry *current_entry;
 
     EMC_FOR_EACH_POS_WITH_HASH(cache, current_entry, key->hash) {
-    	VLOG_INFO("++++++tsf emc_lookup: emc_entry_alive=%d, emc_cache_idx=%d", emc_entry_alive(current_entry), cache->sweep_idx);
+    	/*VLOG_INFO("++++++tsf emc_lookup: emc_entry_alive=%d, emc_cache_idx=%d", emc_entry_alive(current_entry), cache->sweep_idx);
+    	VLOG_INFO("+++++++tsf emc_entry_alive: !ce->flow->dead?=%d", current_entry->flow==NULL? 2: !(current_entry->flow->dead));*/
 
-//    	VLOG_INFO("+++++++tsf emc_entry_alive: ce->flow?=%d, !ce->flow->dead?=%d", current_entry->flow==NULL?0:1, !(current_entry->flow->dead));
-    	VLOG_INFO("+++++++tsf emc_entry_alive: !ce->flow->dead?=%d", current_entry->flow==NULL? 2: !(current_entry->flow->dead));
-
-
-    	VLOG_INFO("++++++tsf emc_lookup: cur_hash=%d, key_hash=%d", current_entry->key.hash, key->hash);
-    	VLOG_INFO("++++++tsf emc_lookup: netdev_flow_key_equal_mf=%d", netdev_flow_key_equal_mf(&current_entry->key, &key->mf));
+    	/*VLOG_INFO("++++++tsf emc_lookup: cur_hash=%d, key_hash=%d", current_entry->key.hash, key->hash);
+    	VLOG_INFO("++++++tsf emc_lookup: netdev_flow_key_equal_mf=%d", netdev_flow_key_equal_mf(&current_entry->key, &key->mf));*/
 
     	if (current_entry->key.hash == key->hash
             && emc_entry_alive(current_entry)
@@ -2443,7 +2440,7 @@ dpif_netdev_flow_del(struct dpif *dpif, const struct dpif_flow_del *del)
         if (del->stats) {
             get_dpif_flow_stats(netdev_flow, del->stats);
         }
-        VLOG_INFO("+++++++tsf dpif_netdev_flow_del: dp_netdev_pmd_remove_flow");
+        /*VLOG_INFO("+++++++tsf dpif_netdev_flow_del: dp_netdev_pmd_remove_flow");*/
         dp_netdev_pmd_remove_flow(pmd, netdev_flow);
     } else {
         error = ENOENT;
@@ -3936,10 +3933,10 @@ dp_netdev_queue_batches(struct dp_packet *pkt,
         packet_batch_per_flow_init(batch, flow);
     }
 
-    VLOG_INFO("++++++ tsf dp_netdev_queue_batches: OVS_UNLIKELY(!batch)=%d", OVS_UNLIKELY(!batch));
+    /*VLOG_INFO("++++++ tsf dp_netdev_queue_batches: OVS_UNLIKELY(!batch)=%d", OVS_UNLIKELY(!batch));*/
     packet_batch_per_flow_update(batch, pkt, mf);
-    VLOG_INFO("++++++tsf dp_netdev_queue_batches: batch[%d].n_packets=%d, n_bytes=%d", (*n_batches),
-    		batch->array.count, batch->byte_count);
+    /*VLOG_INFO("++++++tsf dp_netdev_queue_batches: batch[%d].n_packets=%d, n_bytes=%d", (*n_batches),
+    		batch->array.count, batch->byte_count);*/
 }
 
 /* Try to process all ('cnt') the 'packets' using only the exact match cache
@@ -3987,17 +3984,18 @@ emc_processing(struct dp_netdev_pmd_thread *pmd, struct dp_packet_batch *packets
         pof_miniflow_extract(packet, &key->mf);
         key->len = 0; /* Not computed yet. */
         key->hash = dpif_netdev_packet_get_rss_hash(packet, &key->mf);
-        VLOG_INFO("++++++tsf emc_processing: key->hash=%d", key->hash);
+        /*VLOG_INFO("++++++tsf emc_processing: key->hash=%d", key->hash);*/
 
         flow = emc_lookup(flow_cache, key);
         if (flow != NULL) {
-            VLOG_INFO("+++++tsf emc_processing: flow.stats->n_packets=%d, n_bytes=%d", flow->stats.packet_count,
-                      flow->stats.byte_count);
+            /*VLOG_INFO("+++++tsf emc_processing: flow.stats->n_packets=%d, n_bytes=%d", flow->stats.packet_count,
+                      flow->stats.byte_count);*/
         } else {
         	VLOG_WARN("+++++tsf emc_processing: no finding emc_rule!!!");
         }
+
         if (OVS_LIKELY(flow)) {
-        	VLOG_INFO("+++++++tsf emc_processing: dp_netdev_queue_batches 111");
+        	/*VLOG_INFO("+++++++tsf emc_processing: dp_netdev_queue_batches 111");*/
             dp_netdev_queue_batches(packet, flow, &key->mf, batches,
                                     n_batches);
         } else {
@@ -4177,7 +4175,7 @@ fast_path_processing(struct dp_netdev_pmd_thread *pmd,
         flow = dp_netdev_flow_cast(rules[i]);
 
         emc_insert(flow_cache, &keys[i], flow);
-        VLOG_INFO("+++++++tsf fast_path_processing: dp_netdev_queue_batches 222");
+        /*VLOG_INFO("+++++++tsf fast_path_processing: dp_netdev_queue_batches 222");*/
         dp_netdev_queue_batches(packet, flow, &keys[i].mf, batches, n_batches);
     }
 
@@ -4232,7 +4230,7 @@ dp_netdev_input__(struct dp_netdev_pmd_thread *pmd,
         batches[i].flow->batch = NULL;
     }
 
-   	VLOG_INFO("+++++++tsf dp_netdev_input__: dp_netdev_queue_batches 333");
+   	/*VLOG_INFO("+++++++tsf dp_netdev_input__: dp_netdev_queue_batches 333");*/
     for (i = 0; i < n_batches; i++) {
         packet_batch_per_flow_execute(&batches[i], pmd, now);
     }
