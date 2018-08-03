@@ -5061,9 +5061,12 @@ parse_8021q_onward(const struct nlattr *attrs[OVS_KEY_ATTR_MAX + 1],
             }
             return fitness;
         } else if (!(flow->vlan_tci & htons(VLAN_CFI))) {
-            VLOG_ERR_RL(&rl, "OVS_KEY_ATTR_VLAN 0x%04"PRIx16" is nonzero "
+        	/* tsf: because we cast type from `struct flow` to `struct pof_flow` in pof_do_xlate_actions(),
+        	 *      the flow header may be changed, so here we decide not to check vlan_tci, comment here. */
+
+        	/*VLOG_ERR_RL(&rl, "OVS_KEY_ATTR_VLAN 0x%04"PRIx16" is nonzero "
                         "but CFI bit is not set", ntohs(flow->vlan_tci));
-            return ODP_FIT_ERROR;
+            return ODP_FIT_ERROR;*/
         }
     } else {
         if (!(present_attrs & (UINT64_C(1) << OVS_KEY_ATTR_ENCAP))) {
@@ -5199,12 +5202,16 @@ odp_flow_key_to_flow__(const struct nlattr *key, size_t key_len,
                                   expected_attrs, flow, key, key_len, src_flow);
     }
     if (is_mask) {
-        /* A missing VLAN mask means exact match on vlan_tci 0 (== no VLAN). */
-        flow->vlan_tci = htons(0xffff);
+        /* A missing VLAN mask means exact match on vlan_tci 0 (== no VLAN).
+         *
+         * tsf: no check for vlan
+         * */
+
+        /*flow->vlan_tci = htons(0xffff);
         if (present_attrs & (UINT64_C(1) << OVS_KEY_ATTR_VLAN)) {
             flow->vlan_tci = nl_attr_get_be16(attrs[OVS_KEY_ATTR_VLAN]);
             expected_attrs |= (UINT64_C(1) << OVS_KEY_ATTR_VLAN);
-        }
+        }*/
     }
     return parse_l2_5_onward(attrs, present_attrs, out_of_range_attr,
                              expected_attrs, flow, key, key_len, src_flow);

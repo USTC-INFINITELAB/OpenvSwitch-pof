@@ -3796,6 +3796,7 @@ dp_netdev_flow_used(struct dp_netdev_flow *netdev_flow, int cnt, int size,
     atomic_read_relaxed(&netdev_flow->stats.tcp_flags, &flags);
     flags |= tcp_flags;
     atomic_store_relaxed(&netdev_flow->stats.tcp_flags, flags);
+
     VLOG_INFO("+++++tsf dp_netdev_flow_used: n_packets=%d, n_bytes=%d", netdev_flow->stats.packet_count, netdev_flow->stats.byte_count);
 }
 

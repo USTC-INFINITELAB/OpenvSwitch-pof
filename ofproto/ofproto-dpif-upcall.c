@@ -1816,15 +1816,15 @@ should_revalidate(const struct udpif *udpif, uint64_t packets,
 
     if (!used) {
         /* Always revalidate the first time a flow is dumped. */
-    	/*VLOG_INFO("++++++++tsf should_revalidate: revalidate !used");*/
+    	/*VLOG_INFO("++++++++tsf should_revalidate 1111: revalidate !used");*/
         return true;
     }
 
-    if (udpif->dump_duration < 200) {
+    if (udpif->dump_duration < 300) {
         /* We are likely to handle full revalidation for the flows. */
-    	/*VLOG_INFO("++++++++tsf should_revalidate: revalidate udpif->dump_duration");*/
-        /*return true;*/    // tsf: original
-    	return false;
+    	/*VLOG_INFO("++++++++tsf should_revalidate 2222: revalidate udpif->dump_duration");*/
+        return true;    // tsf: original
+    	/*return false;*/
     }
 
     /* Calculate the mean time between seeing these packets. If this
@@ -1846,10 +1846,10 @@ should_revalidate(const struct udpif *udpif, uint64_t packets,
 
     if (metric < 200) {
         /* The flow is receiving more than ~5pps, so keep it. */
-    	/*VLOG_INFO("++++++++tsf should_revalidate: revalidate metric < 200");*/
+    	/*VLOG_INFO("++++++++tsf should_revalidate 3333: revalidate metric < 200");*/
         return true;
     }
-    /*VLOG_INFO("++++++++tsf should_revalidate: return false");*/
+    /*VLOG_INFO("++++++++tsf should_revalidate 4444: return false");*/
     return false;
 }
 
@@ -2048,7 +2048,14 @@ revalidate_ukey(struct udpif *udpif, struct udpif_key *ukey,
     push.n_bytes = (stats->n_bytes > ukey->stats.n_bytes
                     ? stats->n_bytes - ukey->stats.n_bytes
                     : 0);
-    /*VLOG_INFO("++++++ tsf revalidate_ukey: used(ms)=%lld, n_packets=%d, n_bytes=%d", push.used, push.n_packets , push.n_bytes);*/
+    /*VLOG_INFO("++++++ tsf revalidate_ukey: used(ms)=%lld, stats.n_packets=%d, push.n_packets=%d,, stats.n_bytes=%d, push.n_bytes=%d",
+    		push.used, stats->n_packets, push.n_packets, stats->n_bytes, push.n_bytes);*/
+
+    uint16_t PACKET_INTERVAL = 10;
+    if (stats->n_packets > PACKET_INTERVAL) {
+    	/*VLOG_INFO("++++++++tsf revalidate_ukey 0000: stats->n_packets=%d>packets_interval(10)!!! result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d",stats->n_packets, result);*/
+    	return result;  // delete
+    }
 
     if (need_revalidate) {
     	/*VLOG_INFO("++++++++tsf revalidate_ukey: need_revalidate");*/
@@ -2061,18 +2068,22 @@ revalidate_ukey(struct udpif *udpif, struct udpif_key *ukey,
             /*VLOG_INFO("++++++tsf revalidate_ukey: revalidate_ukey__");*/
             result = revalidate_ukey__(udpif, ukey, push.tcp_flags,
                                        odp_actions, recircs, ukey->xcache);
-            /*VLOG_INFO("++++++++tsf revalidate_ukey: result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d", result);*/
-        } /* else delete; too expensive to revalidate */
+            /*VLOG_INFO("++++++++tsf revalidate_ukey 1111: result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d", result);*/
+        } /* else delete; too expensive to revalidate , tsf: else keep. */
+        else {
+        	result = UKEY_KEEP;
+        }
     } else if (!push.n_packets || ukey->xcache
                || !populate_xcache(udpif, ukey, push.tcp_flags)) {
-    	/*VLOG_INFO("++++++++tsf revalidate_ukey: result = UKEY_KEEP");*/
         result = UKEY_KEEP;
+        /*VLOG_INFO("++++++++tsf revalidate_ukey 2222: result = %d", result);*/
     } else {
     	/* tsf: I wonder why reval_seq no change, but I'm sure it's not time to remove emc_entry now */
     	result = UKEY_KEEP;
+    	/*VLOG_INFO("++++++++tsf revalidate_ukey 3333: result = %d", result);*/
     }
 
-    /*VLOG_INFO("++++++++tsf revalidate_ukey: result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d", result);*/
+    /*VLOG_INFO("++++++++tsf revalidate_ukey 4444: result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d", result);*/
 
     /* Stats for deleted flows will be attributed upon flow deletion. Skip. */
     if (result != UKEY_DELETE) {

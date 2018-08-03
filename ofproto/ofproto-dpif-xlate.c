@@ -5865,7 +5865,9 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
         /* If the original flow did not come in on a tunnel, then it won't have
          * FLOW_TNL_F_UDPIF set. However, we still need to have a metadata
          * table in case we generate tunnel actions. */
-        flow->tunnel.metadata.tab = ofproto_dpif_get_tun_tab(xin->ofproto);
+
+    	/* tsf: the type cast in pof_do_xlation() for struct flow and pof_flow mat be changed ukey value. comment here. */
+        /*flow->tunnel.metadata.tab = ofproto_dpif_get_tun_tab(xin->ofproto);*/
     }
     ctx.wc->masks.tunnel.metadata.tab = flow->tunnel.metadata.tab;
 
