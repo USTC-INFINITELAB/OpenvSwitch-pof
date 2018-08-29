@@ -64,6 +64,15 @@ const char *flow_tun_flag_to_string(uint32_t flags);
 /* Maximum number of supported MPLS labels. */
 #define FLOW_MAX_MPLS_LABELS 3
 
+/* tsf: to store the In-Band-Telemetry data*/
+struct pof_metadata {
+	uint8_t in_port;            // input_port, 8 bits in pof, 32 bits in openflow
+	uint8_t out_port;           // output port
+	uint8_t pad[6];
+	uint64_t device_id;         // data_path id
+	uint64_t ingress_time;      // the time that receive packets
+};
+
 struct pof_flow {
     ovs_be16 field_id[POF_MAX_MATCH_FIELD_NUM];  /*0xffff means metadata,
                           0x8XXX means from table parameter,
@@ -88,8 +97,11 @@ struct pof_flow {
     /*Original pof_flow is 192 bytes, we add the following fields to pad pof_flow to flow,
       which is 584 bytes. */
     uint8_t mask[POF_MAX_MATCH_FIELD_NUM][POF_MAX_FIELD_LENGTH_IN_BYTE];
-    uint8_t flag[POF_MAX_MATCH_FIELD_NUM];
-    uint8_t pad_to_flow[POF_MAX_MATCH_FIELD_NUM][32];
+
+    uint8_t flag[POF_MAX_MATCH_FIELD_NUM];  // tsf: indicate the corresponding index for the stored fields to be processed
+    struct pof_metadata telemetry;          // tsf: to store the INT meta_data
+
+    uint8_t pad_to_flow[POF_MAX_MATCH_FIELD_NUM][8];
 };
 struct pof_fp_flow {
     /* Metadata */

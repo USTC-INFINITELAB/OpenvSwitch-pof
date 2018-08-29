@@ -5101,6 +5101,7 @@ odp_flow_key_to_flow__(const struct nlattr *key, size_t key_len,
     uint64_t present_attrs;
     int out_of_range_attr;
     bool is_mask = src_flow != flow;
+    /*VLOG_INFO("++++++++tsf odp_flow_key_to_flow__: is_mask?=%d", is_mask);*/
 
     memset(flow, 0, sizeof *flow);
 

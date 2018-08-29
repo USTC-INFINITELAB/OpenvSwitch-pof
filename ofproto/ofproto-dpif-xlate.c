@@ -4078,6 +4078,8 @@ xlate_output_action(struct xlate_ctx *ctx,
 
     switch (port) {         //sqy notes: port = 3 go to default
     case OFPP_IN_PORT:
+    	/*VLOG_INFO("++++++tsf xlate_output_action: OFPP_IN_PORT, inport=%"PRIu32,
+    			ctx->xin->flow.in_port.ofp_port);*/
         compose_output_action(ctx, ctx->xin->flow.in_port.ofp_port, NULL);
         break;
     case OFPP_TABLE:
@@ -4094,8 +4096,8 @@ xlate_output_action(struct xlate_ctx *ctx,
         flood_packets(ctx, true);
         break;
     case OFPP_CONTROLLER:
-    	VLOG_INFO("++++++tsf xlate_output_action: execute_controller_action, inport=%"PRIu32,
-    			ctx->xin->flow.in_port.ofp_port);
+    	/*VLOG_INFO("++++++tsf xlate_output_action: execute_controller_action, inport=%"PRIu32,
+    			ctx->xin->flow.in_port.ofp_port);*/
         execute_controller_action(ctx, max_len,
                                   (ctx->in_group ? OFPR_GROUP
                                    : ctx->in_action_set ? OFPR_ACTION_SET
@@ -4107,7 +4109,9 @@ xlate_output_action(struct xlate_ctx *ctx,
     case OFPP_LOCAL:
     default:
         if (port != ctx->xin->flow.in_port.ofp_port) {  //sqy notes: port = 3  ctx->xin->flow.in_port.ofp_port = 1
-            compose_output_action(ctx, port, NULL);
+        	/*VLOG_INFO("++++++tsf xlate_output_action: default, port=%d, flow.inport=%"PRIu32,
+        	    			port, ctx->xin->flow.in_port.ofp_port);*/
+        	compose_output_action(ctx, port, NULL);
         } else {
             xlate_report(ctx, "skipping output to input port");
         }

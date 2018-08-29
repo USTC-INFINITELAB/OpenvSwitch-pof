@@ -2051,6 +2051,9 @@ revalidate_ukey(struct udpif *udpif, struct udpif_key *ukey,
     /*VLOG_INFO("++++++ tsf revalidate_ukey: used(ms)=%lld, stats.n_packets=%d, push.n_packets=%d,, stats.n_bytes=%d, push.n_bytes=%d",
     		push.used, stats->n_packets, push.n_packets, stats->n_bytes, push.n_bytes);*/
 
+    /**
+     * TODO: the packet_interval can be changed, it's up to you.
+     */
     uint16_t PACKET_INTERVAL = 10;
     if (stats->n_packets > PACKET_INTERVAL) {
     	/*VLOG_INFO("++++++++tsf revalidate_ukey 0000: stats->n_packets=%d>packets_interval(10)!!! result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d",stats->n_packets, result);*/
