@@ -4206,8 +4206,8 @@ dp_netdev_input__(struct dp_netdev_pmd_thread *pmd,
 #endif
     struct netdev_flow_key keys[PKT_ARRAY_SIZE];
     struct packet_batch_per_flow batches[PKT_ARRAY_SIZE];
-    long long now = time_msec();
-//    long long now = time_usec();
+//    long long now = time_msec();
+    long long now = time_usec();
     size_t newcnt, n_batches, i;
     odp_port_t in_port;
 

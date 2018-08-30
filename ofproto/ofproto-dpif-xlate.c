@@ -4882,6 +4882,12 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
     memset(flow->flag, 0x00, sizeof (flow->flag));
     int action_num = 0;
 
+    /* tsf: initialize the pof_metadata */
+    flow->telemetry.in_port = ctx->xin->flow.in_port.ofp_port;
+    flow->telemetry.out_port = 0xff;
+    flow->telemetry.device_id = 0x0102030405060708;
+    flow->telemetry.ingress_time = 0xf1f2f3f4f5f6f7f8;
+
     if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
         tnl_neigh_snoop(flow, wc, ctx->xbridge->name);
     }

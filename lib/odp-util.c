@@ -5639,10 +5639,13 @@ get_pof_add_field_key(const struct pof_flow *flow, struct ovs_key_add_field *eth
 	/*VLOG_INFO("++++++tsf get_add_field_key: eth->field_id=%d, eth->len=%d, eth->offset=%d",
 					eth->field_id, eth->len, eth->offset);*/
 
-	for (int i = 0; i < 16; i++) {
-		eth->value[i] = flow->value[index][i];  // tsf: add 16 bytes most
-		/*VLOG_INFO("++++++tsf get_add_field_key:  eth->value[%d]=%d", i, eth->value[i]);*/
-	}
+	/* tsf: if field_id equals 0xff, then it's add INT fields, whose data comes from pof_flow->pof_metadata.
+	 *      otherwise, ovs should add static fields which are from controller.
+	 * */
+    for (int i=0; i < 16; i++) {
+        eth->value[i] = flow->value[index][i];  // tsf: add 16 bytes most
+        VLOG_INFO("++++++tsf get_add_field_key:  eth->value[%d]=%d", i, eth->value[i]);
+    }
 }
 
 static void
