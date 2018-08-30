@@ -4884,9 +4884,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 
     /* tsf: initialize the pof_metadata */
     flow->telemetry.in_port = ctx->xin->flow.in_port.ofp_port;
-    flow->telemetry.out_port = 0xff;
     flow->telemetry.device_id = 0x0102030405060708;
-    flow->telemetry.ingress_time = 0xf1f2f3f4f5f6f7f8;
 
     if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
         tnl_neigh_snoop(flow, wc, ctx->xbridge->name);
@@ -4922,6 +4920,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         switch (a->type) {
         case OFPACT_OUTPUT:
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_OUTPUT->type:%d, len:%d", a->type, a->len);
+        	flow->telemetry.out_port = ofpact_get_OUTPUT(a)->port;
             xlate_output_action(ctx, ofpact_get_OUTPUT(a)->port,
                                 ofpact_get_OUTPUT(a)->max_len, true);
             free(pf);

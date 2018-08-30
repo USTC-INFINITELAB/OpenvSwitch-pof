@@ -124,10 +124,10 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
    	VLOG_INFO("++++++tsf odp_pof_add_field: pre_time=%lld, now_time=%lld, diff_time=%lldus, key->value[0]=%d",
     			pre_time, now_time, diff_time, key->value[0]);
 
-	uint64_t device_id = 0x0102030405060708;
+	uint64_t device_id = key->device_id;
 
-	uint8_t in_port = 0x09;
-	uint8_t out_port = 0x0a;
+	uint8_t in_port = key->in_port;
+	uint8_t out_port = key->out_port;
 
 	/**
 	 * tsf: if field_id=0xffff, then to add INT field, the `value` store the adding intent.

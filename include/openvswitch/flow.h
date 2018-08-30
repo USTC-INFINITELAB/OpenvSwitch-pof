@@ -70,7 +70,7 @@ struct pof_metadata {
 	uint8_t out_port;           // output port
 	uint8_t pad[6];
 	uint64_t device_id;         // data_path id
-	uint64_t ingress_time;      // the time that receive packets
+	/*uint64_t ingress_time;*/  // the time that receive packets, get directly in odp_pof_add_field()
 };
 
 struct pof_flow {
@@ -81,19 +81,7 @@ struct pof_flow {
     ovs_be16 len[POF_MAX_MATCH_FIELD_NUM];    /*length in bit unit*/
     uint8_t pad[2][POF_MAX_MATCH_FIELD_NUM];   /*8 bytes aligned*/
 
-    /*union value {
-        struct in6_addr ipv6;
-        struct eth_addr mac;
-        ovs_be128 be128;
-        ovs_be64 be64;
-        ovs_be32 be32;
-        ovs_be16 be16;
-        uint8_t u8;
-        uint8_t value[POF_MAX_MATCH_FIELD_NUM][POF_MAX_FIELD_LENGTH_IN_BYTE];
-    };*/
-
     uint8_t value[POF_MAX_MATCH_FIELD_NUM][POF_MAX_FIELD_LENGTH_IN_BYTE];
-    /*uint8_t mask[POF_MAX_FIELD_LENGTH_IN_BYTE];*/
     /*Original pof_flow is 192 bytes, we add the following fields to pad pof_flow to flow,
       which is 584 bytes. */
     uint8_t mask[POF_MAX_MATCH_FIELD_NUM][POF_MAX_FIELD_LENGTH_IN_BYTE];
@@ -101,7 +89,7 @@ struct pof_flow {
     uint8_t flag[POF_MAX_MATCH_FIELD_NUM];  // tsf: indicate the corresponding index for the stored fields to be processed
     struct pof_metadata telemetry;          // tsf: to store the INT meta_data
 
-    uint8_t pad_to_flow[POF_MAX_MATCH_FIELD_NUM][8];
+    uint8_t pad_to_flow[POF_MAX_MATCH_FIELD_NUM][9];
 };
 struct pof_fp_flow {
     /* Metadata */
