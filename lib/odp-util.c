@@ -5478,7 +5478,7 @@ get_pof_set_field_key(const struct pof_flow *flow, struct ovs_key_set_field *eth
     eth->len = ntohs(flow->len[index]);
     eth->offset = ntohs(flow->offset[index]);
 
-    for(int i=0; i<16; i++){
+    for(int i=0; i < eth->len; i++){
         eth->value[i] = flow->value[index][i];
         /*VLOG_INFO("+++++++++++sqy get_set_field_key: eth->value[i]=%d, flow->value[0][i] = %d", eth->value[i], flow->value[0][i]);*/
     }
@@ -5491,7 +5491,7 @@ get_pof_set_field_mask(const struct pof_flow *flow, struct ovs_key_set_field *et
     eth->len = ntohs(flow->len[index]);
     eth->offset = ntohs(flow->offset[index]);
 
-    for(int i=0; i<16; i++){
+    for(int i=0; i < eth->len; i++){
         eth->value[i] = flow->mask[index][i];
         /*VLOG_INFO("+++++++++++sqy get_set_field_mask: eth->value[i]=%d, flow->mask[0][i] = %d", eth->value[i], flow->mask[0][i]);*/
     }
@@ -5500,10 +5500,10 @@ get_pof_set_field_mask(const struct pof_flow *flow, struct ovs_key_set_field *et
 static void
 put_pof_set_field_key(const struct ovs_key_set_field *eth, struct pof_flow *flow, int index)
 {
-    flow->field_id[index] = eth->field_id;
-    flow->len[index] = eth->len;
-    flow->offset[index] = eth->offset;
-    for(int i=0; i<16; i++){
+    flow->field_id[index] = htons(eth->field_id);
+    flow->len[index] = htons(eth->len);
+    flow->offset[index] = htons(eth->offset);
+    for(int i=0; i < eth->len; i++){
         flow->value[index][i] = eth->value[i];
         /*VLOG_INFO("++++++tsf put_set_field_key:flow->value[0][%d]=%d",i, flow->value[0][i]);*/
     }
@@ -5571,7 +5571,7 @@ get_pof_modify_field_key(const struct pof_flow *flow, struct ovs_key_modify_fiel
 	/*VLOG_INFO("++++++tsf get_modify_field_key: eth->field_id=%d, eth->len=%d, eth->offset=%d",
 					eth->field_id, eth->len, eth->offset);*/
 
-	for (int i = 0; i < 16; i++) {
+	for (int i = 0; i < eth->len; i++) {
 		eth->value[i] = flow->value[index][i];  // tsf: increment value has been cutoff to uint8_t
 		/*VLOG_INFO("++++++tsf get_modify_field_key:  eth->value[%d]=%d", i, eth->value[i]);*/
 	}
@@ -5586,7 +5586,7 @@ get_pof_modify_field_mask(const struct pof_flow *flow, struct ovs_key_modify_fie
 	/*VLOG_INFO("++++++tsf get_modify_field_mask: eth->field_id=%d, eth->len=%d, eth->offset=%d",
 						eth->field_id, eth->len, eth->offset);*/
 
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < eth->len; i++) {
         eth->value[i] = flow->mask[index][i];  // tsf: increment value has been cutoff to uint8_t
         /*VLOG_INFO("++++++tsf get_modify_field_mask:  eth->value[%d]=%d", i, eth->value[i]);*/
     }
@@ -5599,7 +5599,7 @@ put_pof_modify_field_key(const struct ovs_key_modify_field *eth, struct pof_flow
 	flow->len[index] = htons(eth->len);
 	flow->offset[index] = htons(eth->offset);
 
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < eth->len; i++) {
         flow->value[index][i] = eth->value[i];
         /*VLOG_INFO("++++++tsf put_modify_field_key:eth->value[%d]=%d",i, eth->value[i]);*/
     }
@@ -5643,9 +5643,9 @@ get_pof_add_field_key(const struct pof_flow *flow, struct ovs_key_add_field *eth
 	 *      otherwise, ovs should add static fields which are from controller.
 	 * */
 	if (eth->field_id != 0xffff) {  // add static fields which come from controller
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < eth->len; i++) {
             eth->value[i] = flow->value[index][i];  // tsf: add 16 bytes most
-            VLOG_INFO("++++++tsf get_add_field_key:  eth->value[%d]=%d", i, eth->value[i]);
+            VLOG_INFO("++++++tsf get_add_pof_field_key:  eth->value[%d]=%d", i, eth->value[i]);
         }
     } else {   // add INT fields which come from ovs, value[0] stores the INT intent
     	eth->value[0] = flow->value[index][0];
@@ -5670,7 +5670,7 @@ get_pof_add_field_mask(const struct pof_flow *flow, struct ovs_key_add_field *et
      *      otherwise, ovs should add static fields which are from controller.
      * */
     if (eth->field_id != 0xffff) {  // add static fields which come from controller
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < eth->len; i++) {
             eth->value[i] = flow->value[index][i];  // tsf: add 16 bytes most
             VLOG_INFO("++++++tsf get_add_field_key:  eth->value[%d]=%d", i, eth->value[i]);
         }
@@ -5695,7 +5695,7 @@ put_pof_add_field_key(const struct ovs_key_add_field *eth, struct pof_flow *flow
      *      otherwise, ovs should add static fields which are from controller.
      * */
     if (eth->field_id != 0xffff) {    // add static fields come from controller
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < eth->len; i++) {
             flow->value[index][i] = eth->value[i];
             /*VLOG_INFO("++++++tsf put_add_field_key:eth->value[%d]=%d",i, eth->value[i]);*/
         }
