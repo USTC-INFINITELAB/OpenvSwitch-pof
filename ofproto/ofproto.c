@@ -3313,7 +3313,8 @@ handle_features_request(struct ofconn *ofconn, const struct ofp_header *oh)
     VLOG_INFO("blala  ");
     VLOG_DBG("  +++sqy test2");*/
     features.datapath_id = ofproto->datapath_id;
-    /*VLOG_INFO("++++++tsf datapath_id=%016"PRIx64, ofproto->datapath_id);*/
+    VLOG_INFO("++++++tsf datapath_id=%016"PRIx64, ofproto->datapath_id);
+    VLOG_INFO("++++++tsf datapath_name=%s", ofproto->name);
     features.n_buffers = 0;
     features.port_num = 0;
     OFPROTO_PORT_FOR_EACH (&ofproto_port, &dump, ofproto) {

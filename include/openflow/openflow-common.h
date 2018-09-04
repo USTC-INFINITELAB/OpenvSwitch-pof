@@ -282,13 +282,12 @@ OFP_ASSERT(sizeof(struct ofp_prop_experimenter) == 12);
 /* Switch features. */
 struct ofp_switch_features {
 
-    ovs_be32 datapath_id;/*dev_id*/
+    ovs_be32 datapath_id;/* tsf: 32b in pof, 64b in of*/
     ovs_be16 slotID;
     ovs_be16 port_num;/*how to init sqy*/
     ovs_be16 n_tables;/*table_num*/
     uint8_t pad[2];       /*   Align to 64-bits. */
     ovs_be32 capabilities;
-
 
     /*ovs_be64 datapath_id;*/   /* Datapath unique ID.  The lower 48-bits are for
                                a MAC address, while the upper 16-bits are
