@@ -326,6 +326,40 @@ struct ovs_flow_stats {
 	__u64 n_bytes;           /* Number of matched bytes. */
 };
 
+struct ovs_key_set_field {
+	uint16_t field_id;
+	uint16_t offset;
+	uint16_t len;
+	uint8_t value[16];
+};
+
+struct ovs_key_modify_field {
+	uint16_t field_id;
+	uint16_t offset;
+	uint16_t len;
+	uint8_t value[16];
+};
+
+struct ovs_key_add_field {
+	uint16_t field_id;    /* tsf: if field_id=0xffff, add_INT; otherwise, add_field */
+	uint16_t offset;
+	uint16_t len;
+	uint8_t value[16];    /* tsf: the static fields for all value array or INT intent for value[0]*/
+
+	/* tsf: INT fields, bitmap in value[0], can be combined with more fields whose bit is 1. */
+	uint64_t device_id;  /* value[0]=0x01 */
+	uint8_t in_port;     /* value[0]=0x02 */
+	uint8_t out_port;    /* value[0]=0x04 */
+	/*uint64_t pre_time;*/   /* value[0]=0x08, get in odp_pof_add_field */
+	/*uint64_t now_time;*/   /* value[0]=0x10, get in odp_pof_add_field */
+};
+
+struct ovs_key_delete_field {
+	uint16_t offset;
+	uint16_t len;
+	uint16_t len_type;
+};
+
 enum ovs_key_attr {
 	OVS_KEY_ATTR_UNSPEC,
 	OVS_KEY_ATTR_ENCAP,	/* Nested set of encapsulated attributes. */
@@ -356,6 +390,10 @@ enum ovs_key_attr {
 	OVS_KEY_ATTR_CT_ZONE,	/* u16 connection tracking zone. */
 	OVS_KEY_ATTR_CT_MARK,	/* u32 connection tracking mark */
 	OVS_KEY_ATTR_CT_LABELS,	/* 16-octet connection tracking labels */
+	OVS_KEY_ATTR_SET_FIELD,    /* tsf: set_field action in pof */
+	OVS_KEY_ATTR_MODIFY_FIELD, /* tsf: modify_field action in pof */
+	OVS_KEY_ATTR_ADD_FIELD,    /* tsf: add_field action in pof */
+	OVS_KEY_ATTR_DELETE_FIELD, /* tsf: delete_field action in pof */
 
 #ifdef __KERNEL__
 	/* Only used within kernel data path. */
