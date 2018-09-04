@@ -1,3 +1,11 @@
+ 
+ Notification:
+ 
+   I have fix this problem that users have to modify ```./include/odp-netlik.h``` manually. ```odp-netlink.h```
+ is auto-make from ```<linux/openvswitch.h>```, so I modify the above file. Therefore, skip steps below.
+ 
+ ---
+ 
  # odp-netlink.h
  
  Because 'odp-netlink.h' is read-only file, while the user space communicates with kernel space using the netlink protocol. 
@@ -84,12 +92,19 @@
  	uint8_t value[16];
  };
  
- struct ovs_key_add_field {
- 	uint16_t field_id;
- 	uint16_t offset;
- 	uint16_t len;
- 	uint8_t value[16];
- };
+struct ovs_key_add_field {
+	uint16_t field_id;    /* tsf: if field_id=0xffff, add_INT; otherwise, add_field */
+	uint16_t offset;
+	uint16_t len;
+	uint8_t value[16];    /* tsf: the static fields for all value array or INT intent for value[0]*/
+
+	/* tsf: INT fields, bitmap in value[0], can be combined with more fields whose bit is 1. */
+	uint64_t device_id;  /* value[0]=0x01 */
+	uint8_t in_port;     /* value[0]=0x02 */
+	uint8_t out_port;    /* value[0]=0x04 */
+	/*uint64_t pre_time;*/   /* value[0]=0x08, get in odp_pof_add_field */
+	/*uint64_t now_time;*/   /* value[0]=0x10, get in odp_pof_add_field */
+};
  
  struct ovs_key_delete_field {
  	uint16_t offset;
