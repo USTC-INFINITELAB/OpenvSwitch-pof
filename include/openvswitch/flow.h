@@ -89,7 +89,7 @@ struct pof_flow {
     uint8_t flag[POF_MAX_MATCH_FIELD_NUM];  // tsf: indicate the corresponding index for the stored fields to be processed
     struct pof_metadata telemetry;          // tsf: to store the INT meta_data
 
-    uint8_t pad_to_flow[POF_MAX_MATCH_FIELD_NUM][9];
+    uint8_t pad_to_flow[POF_MAX_MATCH_FIELD_NUM][30];
 };
 struct pof_fp_flow {
     /* Metadata */
