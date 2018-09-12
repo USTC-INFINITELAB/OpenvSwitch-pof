@@ -6357,5 +6357,7 @@ commit_odp_actions(const struct flow *flow, struct flow *base,
     commit_set_priority_action(flow, base, odp_actions, wc, use_masked);    // sqy notes: return false
     commit_set_pkt_mark_action(flow, base, odp_actions, wc, use_masked);
 
+//    VLOG_INFO("++++++tsf commit_odp_actions: slow1=%d, slow2=%d, ret=%d(s1?s1:s2", slow1, slow2, slow1 ? slow1 : slow2);
+
     return slow1 ? slow1 : slow2;
 }

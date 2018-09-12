@@ -2664,22 +2664,22 @@ dpif_netdev_operate(struct dpif *dpif, struct dpif_op **ops, size_t n_ops)
 
         switch (op->type) {
         case DPIF_OP_FLOW_PUT:
-        	VLOG_INFO("+++++++tsf dpif_netdev_operate: dpif_netdev_flow_put");
+//        	VLOG_INFO("+++++++tsf dpif_netdev_operate: dpif_netdev_flow_put");
             op->error = dpif_netdev_flow_put(dpif, &op->u.flow_put);
             break;
 
         case DPIF_OP_FLOW_DEL:
-        	VLOG_INFO("+++++++tsf dpif_netdev_operate: dpif_netdev_flow_del");
+//        	VLOG_INFO("+++++++tsf dpif_netdev_operate: dpif_netdev_flow_del");
             op->error = dpif_netdev_flow_del(dpif, &op->u.flow_del);
             break;
 
         case DPIF_OP_EXECUTE:
-        	VLOG_INFO("+++++++tsf dpif_netdev_operate: dpif_netdev_execute");
+//        	VLOG_INFO("+++++++tsf dpif_netdev_operate: dpif_netdev_execute");
             op->error = dpif_netdev_execute(dpif, &op->u.execute);
             break;
 
         case DPIF_OP_FLOW_GET:
-        	VLOG_INFO("+++++++tsf dpif_netdev_operate: dpif_netdev_flow_get");
+//        	VLOG_INFO("+++++++tsf dpif_netdev_operate: dpif_netdev_flow_get");
             op->error = dpif_netdev_flow_get(dpif, &op->u.flow_get);
             break;
         }
@@ -3797,7 +3797,7 @@ dp_netdev_flow_used(struct dp_netdev_flow *netdev_flow, int cnt, int size,
     flags |= tcp_flags;
     atomic_store_relaxed(&netdev_flow->stats.tcp_flags, flags);
 
-    VLOG_INFO("+++++tsf dp_netdev_flow_used: n_packets=%d, n_bytes=%d", netdev_flow->stats.packet_count, netdev_flow->stats.byte_count);
+//    VLOG_INFO("+++++tsf dp_netdev_flow_used: n_packets=%d, n_bytes=%d", netdev_flow->stats.packet_count, netdev_flow->stats.byte_count);
 }
 
 static void
@@ -3988,12 +3988,12 @@ emc_processing(struct dp_netdev_pmd_thread *pmd, struct dp_packet_batch *packets
         /*VLOG_INFO("++++++tsf emc_processing: key->hash=%d", key->hash);*/
 
         flow = emc_lookup(flow_cache, key);
-        if (flow != NULL) {
-            /*VLOG_INFO("+++++tsf emc_processing: flow.stats->n_packets=%d, n_bytes=%d", flow->stats.packet_count,
-                      flow->stats.byte_count);*/
-        } else {
-        	VLOG_WARN("+++++tsf emc_processing: no finding emc_rule!!!");
-        }
+//        if (flow != NULL) {
+//            /*VLOG_INFO("+++++tsf emc_processing: flow.stats->n_packets=%d, n_bytes=%d", flow->stats.packet_count,
+//                      flow->stats.byte_count);*/
+//        } else {
+//        	VLOG_WARN("+++++tsf emc_processing: no finding emc_rule!!!");
+//        }
 
         if (OVS_LIKELY(flow)) {
         	/*VLOG_INFO("+++++++tsf emc_processing: dp_netdev_queue_batches 111");*/
@@ -4146,7 +4146,7 @@ fast_path_processing(struct dp_netdev_pmd_thread *pmd,
             }
 
             miss_cnt++;
-            VLOG_INFO("++++++tsf fast_path_processing: handle_packet_upcall");
+//            VLOG_INFO("++++++tsf fast_path_processing: handle_packet_upcall");
             handle_packet_upcall(pmd, packets[i], &keys[i], &actions,
                                  &put_actions, &lost_cnt, now);
         }
@@ -4211,7 +4211,7 @@ dp_netdev_input__(struct dp_netdev_pmd_thread *pmd,
     size_t newcnt, n_batches, i;
     odp_port_t in_port;
 
-    VLOG_INFO("++++++tsf dp_netdev_input__: now = %lld", now);
+//    VLOG_INFO("++++++tsf dp_netdev_input__: now = %lld", now);
 
     n_batches = 0;
     newcnt = emc_processing(pmd, packets, keys, batches, &n_batches,

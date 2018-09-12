@@ -2057,7 +2057,8 @@ revalidate_ukey(struct udpif *udpif, struct udpif_key *ukey,
     uint16_t PACKET_INTERVAL = 10;
     if (stats->n_packets > PACKET_INTERVAL) {
     	/*VLOG_INFO("++++++++tsf revalidate_ukey 0000: stats->n_packets=%d>packets_interval(10)!!! result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d",stats->n_packets, result);*/
-    	return result;  // delete
+
+//    	return result;  // delete
     }
 
     if (need_revalidate) {
