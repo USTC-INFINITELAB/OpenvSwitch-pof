@@ -16,8 +16,8 @@ ps -ef|grep ovs
 
 sleep 1s
 cd  /home/tsf/dpdk-16.07
-./tools/dpdk-devbind.py --bind=igb 0000:05:00.2
-./tools/dpdk-devbind.py --bind=igb 0000:05:00.3
+./tools/dpdk-devbind.py --bind=i40e 0000:05:00.0
+./tools/dpdk-devbind.py --bind=i40e 0000:05:00.1
 
 sleep 1s
 umount -t hugetlbfs none /dev/hugepages

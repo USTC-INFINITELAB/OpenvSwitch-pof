@@ -40,8 +40,11 @@ mount -t hugetlbfs none /dev/hugepages
 #    sudo /usr/bin/chmod 0666 /dev/vfio/*
 cd $DPDK_DIR
 modprobe uio_pci_generic
+
+# for i40e, run only once
 #sudo modprobe uio
 #insmod $DPDK_BUILD/kmod/igb_uio.ko
+
 #tools/dpdk-devbind.py --status
 #echo "Input the number of DPDK ports (even): (Enter)"
 #read n
@@ -53,8 +56,8 @@ modprobe uio_pci_generic
 #  sudo ifconfig ${port[$i]} down
 #  sudo ./tools/dpdk-devbind.py --bind=uio_pci_generic ${port[$i]}
 #done
-./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:05:00.2
-./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:05:00.3
+./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.0
+./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.1
 ./tools/dpdk-devbind.py --status
 echo "DPDK Environment Success"
 cd $OVS_DIR
