@@ -6344,20 +6344,22 @@ commit_odp_actions(const struct flow *flow, struct flow *base,
 {
     enum slow_path_reason slow1, slow2;
 
+    /* tsf: because pof use 'struct pof_flow', which overrides the original 'struct pof', therefore,
+     *      there is no need to commit the original ovs actions. commit_set_priority_action may be
+     *      useful, keep teporarily.
+     * */
     commit_pof_action(flow, base, odp_actions, wc, use_masked);
-    /*commit_pof_set_field_action(flow, base, odp_actions, wc, use_masked);*/
-    /*commit_pof_modify_field_action(flow, base, odp_actions, wc, use_masked);*/
 
-    commit_set_ether_addr_action(flow, base, odp_actions, wc, use_masked);
-    slow1 = commit_set_nw_action(flow, base, odp_actions, wc, use_masked);  // sqy notes: return 0
-    commit_set_port_action(flow, base, odp_actions, wc, use_masked);
-    slow2 = commit_set_icmp_action(flow, base, odp_actions, wc);            // sqy notes: return 0
-    commit_mpls_action(flow, base, odp_actions);
-    commit_vlan_action(flow->vlan_tci, base, odp_actions, wc);
+//    commit_set_ether_addr_action(flow, base, odp_actions, wc, use_masked);
+//    slow1 = commit_set_nw_action(flow, base, odp_actions, wc, use_masked);  // sqy notes: return 0
+//    commit_set_port_action(flow, base, odp_actions, wc, use_masked);
+//    slow2 = commit_set_icmp_action(flow, base, odp_actions, wc);            // sqy notes: return 0
+//    commit_mpls_action(flow, base, odp_actions);
+//    commit_vlan_action(flow->vlan_tci, base, odp_actions, wc);
     commit_set_priority_action(flow, base, odp_actions, wc, use_masked);    // sqy notes: return false
-    commit_set_pkt_mark_action(flow, base, odp_actions, wc, use_masked);
+//    commit_set_pkt_mark_action(flow, base, odp_actions, wc, use_masked);
 
-//    VLOG_INFO("++++++tsf commit_odp_actions: slow1=%d, slow2=%d, ret=%d(s1?s1:s2", slow1, slow2, slow1 ? slow1 : slow2);
+//    return slow1 ? slow1 : slow2;
 
-    return slow1 ? slow1 : slow2;
+    return 0;
 }
