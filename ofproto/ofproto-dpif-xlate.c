@@ -4870,7 +4870,6 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 {
     struct pof_fp_flow_wildcards *wc = ctx->wc;
     struct pof_flow *flow = &ctx->xin->flow;
-    struct pof_fp_flow *base_flow = &ctx->xin->flow;
     const struct ofpact *a;
 
     /* tsf: memset pof_flow.flag[8], try to support multiple action.
@@ -4892,20 +4891,21 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
     if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
         tnl_neigh_snoop(flow, wc, ctx->xbridge->name);
     }
+
     /* dl_type already in the mask, not set below. */
     int i = 0;
-    OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
-    	/*VLOG_INFO("+++++tsf pof_do_xlate_actions run %dth time, a->type:%d, a->len:%d", i++, a->type, a->len);*/
-        struct ofpact_controller *controller;
-        const struct ofpact_metadata *metadata;
-        const struct ofpact_set_field *set_field;
-        const struct ofpact_add_field *add_field;
-        const struct ofpact_drop *drop;
-        const struct ofpact_modify_field *modify_field;
-        const struct ofpact_delete_field *delete_field;
-        struct pof_match_u *pf = (struct pof_match_u *) malloc(sizeof(struct pof_match_u));
-        const struct mf_field *mf;
 
+    /* tsf: used in OFPACT_FOR_EACH loop. */
+    struct ofpact_controller *controller;
+    const struct ofpact_metadata *metadata;
+    const struct ofpact_set_field *set_field;
+    const struct ofpact_add_field *add_field;
+    const struct ofpact_drop *drop;
+    const struct ofpact_modify_field *modify_field;
+    const struct ofpact_delete_field *delete_field;
+    const struct mf_field *mf;
+
+    OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
         if (ctx->error) {//sqy notes: false
             break;
         }
@@ -4926,7 +4926,6 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         	flow->telemetry.out_port = ofpact_get_OUTPUT(a)->port;
             xlate_output_action(ctx, ofpact_get_OUTPUT(a)->port,
                                 ofpact_get_OUTPUT(a)->max_len, true);
-            free(pf);
             break;
 
         case OFPACT_DROP:    /* tsf: add OFPACT_DROP */
@@ -4938,30 +4937,20 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         case OFPACT_SET_FIELD:  {
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_SET_FIELD->type:%d, len:%d", a->type, a->len);
             set_field = ofpact_get_SET_FIELD(a);
-            pf->field_id = set_field->field_id;
-            pf->len = set_field->len;
-            pf->offset = set_field->offset;
+            struct pof_match_u pf;
+            pf.field_id = set_field->field_id;
+            pf.len = set_field->len;
+            pf.offset = set_field->offset;
 
-            flow->field_id[action_num] = htons(pf->field_id);
-            flow->len[action_num] = htons(pf->len);
-            flow->offset[action_num] = htons(pf->offset);
+            flow->field_id[action_num] = htons(pf.field_id);
+            flow->len[action_num] = htons(pf.len);
+            flow->offset[action_num] = htons(pf.offset);
             flow->flag[action_num] = OFPACT_SET_FIELD;
 
-           /*VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: OFPACT_SET_FIELD, fieldid=%d, len=%d, offset=%d",
-                      pf->field_id, pf->len, pf->offset);*/
-            pof_mf_mask_field_masked(pf, ofpact_pof_set_field_mask(set_field), wc);
-            /*pof_mf_set_flow_value_masked(pf, set_field->value,
-                                     ofpact_pof_set_field_mask(set_field),
-                                     flow);*/
-            pof_mf_set_flow_value_v1(pf, set_field->value,
+            pof_mf_mask_field_masked(&pf, ofpact_pof_set_field_mask(set_field), wc);
+            pof_mf_set_flow_value_v1(&pf, set_field->value,
                                      ofpact_pof_set_field_mask(set_field),
                                      flow, action_num);
-            free(pf);
-            /*for(int i=0; i<14; i++) {
-                VLOG_INFO("+++++++++++tsf pof_do_xlate_actions base_flow->value[0][%d]=0x%lx / 0x%lx",
-                          i, ntohll(base_flow->pof_normal[i]), base_flow->pof_normal[i]);
-            }*/
-            /*VLOG_INFO("+++++++++++sqy pof_do_xlate_actions: after pof_mf_set_flow_value_masked");*/
 
             action_num++;
         }
@@ -4970,26 +4959,17 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         case OFPACT_MODIFY_FIELD: {
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_MODIFY_FIELD->type:%d, len:%d", a->type, a->len);
             modify_field = ofpact_get_MODIFY_FIELD(a);
-            pf->field_id = modify_field->field_id;
-            pf->len = modify_field->len_field / 8;
-            pf->offset = modify_field->offset / 8;
-            /*VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_MODIFY_FIELD, field_id=%d, len=%d, offset=%d",
-                      pf->field_id, pf->len, pf->offset);  // bytes*/
 
-            flow->field_id[action_num] = htons(pf->field_id);
-            flow->len[action_num] = htons(pf->len);
-            flow->offset[action_num] = htons(pf->offset);
+            flow->field_id[action_num] = htons(modify_field->field_id);
+            flow->len[action_num] = htons(modify_field->len_field / 8);  // tsf: bytes
+            flow->offset[action_num] = htons(modify_field->offset / 8);
             flow->flag[action_num] = OFPACT_MODIFY_FIELD;
 
             /*tsf: cut off increment from uint32_t into uint8_t*/
-            memset(flow->value[action_num], 0x00, sizeof(flow->value[action_num]));
-            memset(flow->mask[action_num], 0x00, sizeof(flow->mask[action_num]));
+//            memset(flow->value[action_num], 0x00, sizeof(flow->value[action_num]));
+//            memset(flow->mask[action_num], 0x00, sizeof(flow->mask[action_num]));
             flow->value[action_num][0] = modify_field->increment;
             flow->mask[action_num][0] = 0xff;
-            /*for (int i = 0; i < 16; i++) {  // tsf: display the whole packet
-                VLOG_INFO("+++++++++++tsf pof_do_xlate_actions:MODIFY_FIELD: flow->value[1][%d]=%d, flow->mask[1][%d]=%d",
-                        i, flow->value[1][i], i, flow->mask[1][i]);
-            }*/
 
             action_num++;
         }
@@ -4998,22 +4978,17 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         case OFPACT_ADD_FIELD: {
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_ADD_FIELD->type:%d, len:%d", a->type, a->len);
         	add_field = ofpact_get_ADD_FIELD(a);
-        	pf->field_id = add_field->tag_id;
-        	pf->len = add_field->tag_len / 8;  // tag_len cut off from uint32_t to uint16_t
-        	pf->offset = add_field->tag_pos / 8;
-        	VLOG_INFO("+++++++++++tsf pof_do_xlate_actions: OFPACT_ADD_FIELD, field_id=%d, len=%d, offset=%d",
-        	          pf->field_id, pf->len, pf->offset);  // bytes
 
-        	flow->field_id[action_num] = htons(pf->field_id);
-        	flow->len[action_num] = htons(pf->len);
-        	flow->offset[action_num] = htons(pf->offset);
+        	flow->field_id[action_num] = htons(add_field->tag_id);
+        	flow->len[action_num] = htons(add_field->tag_len / 8);  // bytes
+        	flow->offset[action_num] = htons(add_field->tag_pos / 8);
         	flow->flag[action_num] = OFPACT_ADD_FIELD;
 
-        	memset(flow->value[action_num], 0x00, sizeof(flow->value[2]));
-        	memset(flow->value[action_num], 0x00, sizeof(flow->mask[2]));
+//        	memset(flow->value[action_num], 0x00, sizeof(flow->value[2]));
+//        	memset(flow->value[action_num], 0x00, sizeof(flow->mask[2]));
 
-        	memcpy(flow->value[action_num], add_field->tag_value, pf->len);
-        	memset(flow->mask[action_num], 0xff, pf->len);
+        	memcpy(flow->value[action_num], add_field->tag_value, add_field->tag_len / 8);
+        	memset(flow->mask[action_num], 0xff, add_field->tag_len / 8);
 
         	action_num++;
         }
@@ -5029,8 +5004,8 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             /*VLOG_INFO("++++++tsf pof_do_xlate_actions delete_field->len_type=%d", flow->len[3]);*/
 
             struct pof_match *pm;
-            memset(flow->value[action_num], 0x00, sizeof(flow->value[3]));
-            memset(flow->mask[action_num], 0x00, sizeof(flow->mask[3]));
+            memset(flow->value[action_num], 0x00, sizeof(flow->value[action_num]));
+            memset(flow->mask[action_num], 0x00, sizeof(flow->mask[action_num]));
             if (flow->len[action_num] == 0) { // POFVT_IMMEDIATE_NUM
                 flow->value[action_num][0] = delete_field->tag_len.value;
                 flow->mask[action_num][0] = 0xff;

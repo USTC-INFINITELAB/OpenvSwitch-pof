@@ -5571,10 +5571,13 @@ get_pof_modify_field_key(const struct pof_flow *flow, struct ovs_key_modify_fiel
 	/*VLOG_INFO("++++++tsf get_modify_field_key: eth->field_id=%d, eth->len=%d, eth->offset=%d",
 					eth->field_id, eth->len, eth->offset);*/
 
-	for (int i = 0; i < eth->len; i++) {
-		eth->value[i] = flow->value[index][i];  // tsf: increment value has been cutoff to uint8_t
-		/*VLOG_INFO("++++++tsf get_modify_field_key:  eth->value[%d]=%d", i, eth->value[i]);*/
-	}
+    // tsf: increment value has been cutoff to uint8_t
+    eth->value[0] = flow->value[index][0];
+
+//	for (int i = 0; i < eth->len; i++) {
+//		eth->value[i] = flow->value[index][i];  // tsf: increment value has been cutoff to uint8_t
+//		/*VLOG_INFO("++++++tsf get_modify_field_key:  eth->value[%d]=%d", i, eth->value[i]);*/
+//	}
 }
 
 static void
@@ -5586,10 +5589,13 @@ get_pof_modify_field_mask(const struct pof_flow *flow, struct ovs_key_modify_fie
 	/*VLOG_INFO("++++++tsf get_modify_field_mask: eth->field_id=%d, eth->len=%d, eth->offset=%d",
 						eth->field_id, eth->len, eth->offset);*/
 
-    for (int i = 0; i < eth->len; i++) {
-        eth->value[i] = flow->mask[index][i];  // tsf: increment value has been cutoff to uint8_t
-        /*VLOG_INFO("++++++tsf get_modify_field_mask:  eth->value[%d]=%d", i, eth->value[i]);*/
-    }
+    // tsf: increment value has been cutoff to uint8_t
+    eth->value[0] = flow->value[index][0];
+
+//    for (int i = 0; i < eth->len; i++) {
+//        eth->value[i] = flow->mask[index][i];  // tsf: increment value has been cutoff to uint8_t
+//        /*VLOG_INFO("++++++tsf get_modify_field_mask:  eth->value[%d]=%d", i, eth->value[i]);*/
+//    }
 }
 
 static void
@@ -5599,10 +5605,13 @@ put_pof_modify_field_key(const struct ovs_key_modify_field *eth, struct pof_flow
 	flow->len[index] = htons(eth->len);
 	flow->offset[index] = htons(eth->offset);
 
-    for (int i = 0; i < eth->len; i++) {
-        flow->value[index][i] = eth->value[i];
-        /*VLOG_INFO("++++++tsf put_modify_field_key:eth->value[%d]=%d",i, eth->value[i]);*/
-    }
+    // tsf: increment value has been cutoff to uint8_t
+    flow->value[index][0] = eth->value[0];
+
+//    for (int i = 0; i < eth->len; i++) {
+//        flow->value[index][i] = eth->value[i];
+//        /*VLOG_INFO("++++++tsf put_modify_field_key:eth->value[%d]=%d",i, eth->value[i]);*/
+//    }
 }
 
 static void
