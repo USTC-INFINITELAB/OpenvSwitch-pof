@@ -6899,7 +6899,7 @@ ofputil_decode_pof_role_message(const struct ofp_header *oh,
                             struct ofputil_role_request *rr)
 {
     struct ofpbuf b = ofpbuf_const_initializer(oh, ntohs(oh->length));
-    VLOG_INFO("++++++tsf ofputil_decode_pof_role_message: oh->legth=%u", ntohs(oh->length));
+    //VLOG_INFO("++++++tsf ofputil_decode_pof_role_message: oh->legth=%u", ntohs(oh->length));
     enum ofpraw raw = ofpraw_pull_assert(&b);
     if (raw == OFPRAW_OFPT12_ROLE_REQUEST ||
         raw == OFPRAW_OFPT12_ROLE_REPLY) {
@@ -6973,7 +6973,7 @@ ofputil_encode_pof_role_reply(const struct ofp_header *request,
     if (raw == OFPRAW_OFPT12_ROLE_REQUEST) {
         struct ofp12_pof_role_request *orr;
 
-        VLOG_INFO("+++++tsf ofputil_encode_pof_role_reply: before ofpraw_alloc_reply.");
+        /*VLOG_INFO("+++++tsf ofputil_encode_pof_role_reply: before ofpraw_alloc_reply.");*/
         buf = ofpraw_alloc_reply(OFPRAW_OFPT12_ROLE_REPLY, request, 0);
         orr = ofpbuf_put_zeros(buf, sizeof *orr);
 

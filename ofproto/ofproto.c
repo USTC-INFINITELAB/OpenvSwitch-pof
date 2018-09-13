@@ -3313,8 +3313,8 @@ handle_features_request(struct ofconn *ofconn, const struct ofp_header *oh)
     VLOG_INFO("blala  ");
     VLOG_DBG("  +++sqy test2");*/
     features.datapath_id = ofproto->datapath_id;
-    VLOG_INFO("++++++tsf datapath_id=%016"PRIx64, ofproto->datapath_id);
-    VLOG_INFO("++++++tsf datapath_name=%s", ofproto->name);
+    /*VLOG_INFO("++++++tsf datapath_id=%016"PRIx64, ofproto->datapath_id);
+    VLOG_INFO("++++++tsf datapath_name=%s", ofproto->name);*/
     features.n_buffers = 0;
     features.port_num = 0;
     OFPROTO_PORT_FOR_EACH (&ofproto_port, &dump, ofproto) {
@@ -3359,6 +3359,7 @@ handle_port_status(struct ofconn *ofconn, const struct ofp_header *oh)  /*sqy*/
     struct ofproto_port_dump dump;
     struct ofproto_port ofproto_port;
 
+    VLOG_INFO("++++++++tsf dpid:%016"PRIx64", dp_name:%s", p->datapath_id, p->name);
     OFPROTO_PORT_FOR_EACH (&ofproto_port, &dump, p) {
         const char *name = ofproto_port.name;
         VLOG_INFO_RL(&rl, "%s:  %s +++sqy",
@@ -4413,19 +4414,19 @@ handle_flow_stats_request(struct ofconn *ofconn,
     struct ovs_list replies;
     enum ofperr error;
 
-    VLOG_INFO("++++++++++sqy handle_flow_stats_request: before ofputil_decode_pof_flow_stats_request");
+    /*VLOG_INFO("++++++++++sqy handle_flow_stats_request: before ofputil_decode_pof_flow_stats_request");*/
     error = ofputil_decode_pof_flow_stats_request(&fsr, request,
                                               ofproto_get_tun_tab(ofproto));
     if (error) {
         return error;
     }
-    VLOG_INFO("++++++++++sqy handle_flow_stats_request: before pof_rule_criteria_init");
+    /*VLOG_INFO("++++++++++sqy handle_flow_stats_request: before pof_rule_criteria_init");*/
     pof_rule_criteria_init(&criteria, fsr.table_id, &fsr.match, 0, OVS_VERSION_MAX,
                        fsr.cookie, fsr.cookie_mask, fsr.out_port,
                        fsr.out_group);
 
     ovs_mutex_lock(&ofproto_mutex);
-    VLOG_INFO("++++++++++sqy handle_flow_stats_request: before collect_rules_loose");
+    /*VLOG_INFO("++++++++++sqy handle_flow_stats_request: before collect_rules_loose");*/
     error = collect_rules_loose(ofproto, &criteria, &rules);
     rule_criteria_destroy(&criteria);
     if (!error) {
@@ -4436,7 +4437,7 @@ handle_flow_stats_request(struct ofconn *ofconn,
     if (error) {
         return error;
     }
-    VLOG_INFO("++++++++++sqy handle_flow_stats_request: before RULE_COLLECTION_FOR_EACH");
+    /*VLOG_INFO("++++++++++sqy handle_flow_stats_request: before RULE_COLLECTION_FOR_EACH");*/
     ofpmp_init(&replies, request);
     struct rule *rule;
     RULE_COLLECTION_FOR_EACH (rule, &rules) {
@@ -4459,7 +4460,7 @@ handle_flow_stats_request(struct ofconn *ofconn,
 
         ofproto->ofproto_class->rule_get_stats(rule, &fs.packet_count,
                                                &fs.byte_count, &used);
-        VLOG_INFO("++++++++++sqy handle_flow_stats_request: before pof_minimatch_expand");
+        /*VLOG_INFO("++++++++++sqy handle_flow_stats_request: before pof_minimatch_expand");*/
         pof_minimatch_expand(&rule->cr.match, &fs.match);
         fs.table_id = rule->table_id;
         calc_duration(created, now, &fs.duration_sec, &fs.duration_nsec);
@@ -4470,10 +4471,10 @@ handle_flow_stats_request(struct ofconn *ofconn,
         fs.ofpacts_len = actions->ofpacts_len;
 
         fs.flags = flags;
-        VLOG_INFO("++++++++++sqy handle_flow_stats_request: before ofputil_append_pof_flow_stats_reply");
+        /*VLOG_INFO("++++++++++sqy handle_flow_stats_request: before ofputil_append_pof_flow_stats_reply");*/
         ofputil_append_pof_flow_stats_reply(&fs, &replies,
                                         ofproto_get_tun_tab(ofproto));
-        VLOG_INFO("++++++++++sqy handle_flow_stats_request: after ofputil_append_pof_flow_stats_reply");
+        /*VLOG_INFO("++++++++++sqy handle_flow_stats_request: after ofputil_append_pof_flow_stats_reply");*/
     }
 
     rule_collection_unref(&rules);
@@ -8358,7 +8359,7 @@ handle_openflow__(struct ofconn *ofconn, const struct ofpbuf *msg)
 
     case OFPTYPE_ROLE_REQUEST:
         /*return handle_role_request(ofconn, oh);*/
-    	VLOG_INFO("+++++tsf handle_openflow__: handle_pof_role_msg");
+    	/*VLOG_INFO("+++++tsf handle_openflow__: handle_pof_role_msg");*/
         return handle_pof_role_request(ofconn, oh); /* tsf: adapt to onos 1.11. */
 
         /* OpenFlow replies. */
