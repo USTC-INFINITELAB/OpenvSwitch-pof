@@ -1090,7 +1090,8 @@ upcall_xlate(struct udpif *udpif, struct upcall *upcall,
 
     stats.n_packets = 1;
     stats.n_bytes = dp_packet_size(upcall->packet);
-    stats.used = time_msec();
+//    stats.used = time_msec();
+    stats.used = time_usec();
     stats.tcp_flags = ntohs(upcall->flow->tcp_flags);
 
     xlate_in_init(&xin, upcall->ofproto,
@@ -1196,7 +1197,7 @@ should_install_flow(struct udpif *udpif, struct upcall *upcall)
     }
 
     /* tsf: if we should install emc rule, then return true. */
-     return true;
+    return true;
 //    return false;
 }
 
@@ -1489,7 +1490,8 @@ ukey_create__(const struct nlattr *key, size_t key_len,
     ukey->dump_seq = dump_seq;
     ukey->reval_seq = reval_seq;
     ukey->state = UKEY_CREATED;
-    ukey->created = time_msec();
+//    ukey->created = time_msec();
+    ukey->created = time_usec();
     memset(&ukey->stats, 0, sizeof ukey->stats);
     ukey->stats.used = used;
     ukey->xcache = NULL;

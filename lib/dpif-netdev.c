@@ -1993,17 +1993,18 @@ emc_lookup(struct emc_cache *cache, const struct netdev_flow_key *key)
     struct emc_entry *current_entry;
 
     EMC_FOR_EACH_POS_WITH_HASH(cache, current_entry, key->hash) {
-    	/*VLOG_INFO("++++++tsf emc_lookup: emc_entry_alive=%d, emc_cache_idx=%d", emc_entry_alive(current_entry), cache->sweep_idx);
-    	VLOG_INFO("+++++++tsf emc_entry_alive: !ce->flow->dead?=%d", current_entry->flow==NULL? 2: !(current_entry->flow->dead));*/
+    	/*VLOG_INFO("++++++tsf emc_lookup: emc_entry_alive=%d, emc_cache_idx=%d", emc_entry_alive(current_entry), cache->sweep_idx);*/
+//    	VLOG_INFO("+++++++tsf emc_entry_alive: !ce->flow->dead?=%d", emc_entry_alive(current_entry));
 
-    	/*VLOG_INFO("++++++tsf emc_lookup: cur_hash=%d, key_hash=%d", current_entry->key.hash, key->hash);
-    	VLOG_INFO("++++++tsf emc_lookup: netdev_flow_key_equal_mf=%d", netdev_flow_key_equal_mf(&current_entry->key, &key->mf));*/
+//    	VLOG_INFO("++++++tsf emc_lookup: cur_hash=%d, key_hash=%d", current_entry->key.hash, key->hash);
+//    	VLOG_INFO("++++++tsf emc_lookup: netdev_flow_key_equal_mf=%d", netdev_flow_key_equal_mf(&current_entry->key, &key->mf));
 
     	if (current_entry->key.hash == key->hash
             && emc_entry_alive(current_entry)
             && netdev_flow_key_equal_mf(&current_entry->key, &key->mf)) {
 
             /* We found the entry with the 'key->mf' miniflow */
+//    		VLOG_INFO("++++++tsf emc_lookup: cur_flow.ufid=%d", current_entry->flow->ufid);
             return current_entry->flow;
         }
     }

@@ -119,15 +119,8 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 			  key->field_id, key->offset, key->len, (uint64_t *)(key->value), (uint64_t *)key->value + 8);*/
 
 	char * header;
-	uint64_t now_time = time_usec();
-	uint64_t diff_time = now_time - pre_time;
-   	VLOG_INFO("++++++tsf odp_pof_add_field: pre_time=%lld, now_time=%lld, diff_time=%lldus, key->value[0]=%d",
-    			pre_time, now_time, diff_time, key->value[0]);
-
-	uint64_t device_id = key->device_id;
-
-	uint8_t in_port = key->in_port;
-	uint8_t out_port = key->out_port;
+   	/*VLOG_INFO("++++++tsf odp_pof_add_field: pre_time=%lld, now_time=%lld, diff_time=%lldus, key->value[0]=%d",
+    			pre_time, now_time, diff_time, key->value[0]);*/
 
 	/**
 	 * tsf: if field_id=0xffff, then to add INT field, the `value` store the adding intent.
@@ -138,41 +131,48 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
         memmove(header, header + key->len, key->offset);
 		memcpy(header + key->offset, key->value, key->len);
 	} else {
+		uint64_t device_id = key->device_id;
+
+		uint8_t in_port = key->in_port;
+		uint8_t out_port = key->out_port;
+
 		uint16_t int_len = 0;
 		uint8_t int_value[32];
 
         if (key->value[0] & (UINT8_C(1))) { // tsf: device_id, 8B
         	memcpy(int_value, uint64_to_arr(device_id), 8);
         	int_len += 8;
-        	VLOG_INFO("++++++tsf odp_pof_add_field: device_id=%llx", device_id);
+        	/*VLOG_INFO("++++++tsf odp_pof_add_field: device_id=%llx", device_id);*/
         }
 
         if (key->value[0] & (UINT8_C(1) << 1)) { // tsf: in_port, 1B
         	memcpy(int_value + int_len, uint8_to_arr(in_port), 1);
         	int_len += 1;
-        	VLOG_INFO("++++++tsf odp_pof_add_field: in_port=%llx", in_port);
+        	/*VLOG_INFO("++++++tsf odp_pof_add_field: in_port=%llx", in_port);*/
         }
 
         if (key->value[0] & (UINT8_C(1) << 2)) { // tsf: out_port, 1B
         	memcpy(int_value + int_len, uint8_to_arr(out_port), 1);
         	int_len += 1;
-        	VLOG_INFO("++++++tsf odp_pof_add_field: out_port=%llx", out_port);
+        	/*VLOG_INFO("++++++tsf odp_pof_add_field: out_port=%llx", out_port);*/
         }
 
         if (key->value[0] & (UINT8_C(1) << 3)) { // tsf: pre_time, 8B
         	memcpy(int_value + int_len, uint64_to_arr(pre_time), 8);
         	int_len += 8;
-        	VLOG_INFO("++++++tsf odp_pof_add_field: pre_time=%llx", pre_time);
+        	/*VLOG_INFO("++++++tsf odp_pof_add_field: pre_time=%llx", pre_time);*/
         }
 
         if (key->value[0] & (UINT8_C(1) << 4)) { // tsf: now_time, 8B
+        	uint64_t now_time = time_usec();
+        	uint64_t diff_time = now_time - pre_time;
         	memcpy(int_value + int_len, uint64_to_arr(now_time), 8);
         	int_len += 8;
-        	VLOG_INFO("++++++tsf odp_pof_add_field: now_time=%llx", now_time);
+        	/*VLOG_INFO("++++++tsf odp_pof_add_field: now_time=%llx", now_time);*/
         }
 
-        VLOG_INFO("++++++tsf odp_pof_add_field: before dp_packet_pof_resize_field, int_value=%s, offset=%d, int_len=%d ",
-        		int_value, key->offset, int_len);
+        /*VLOG_INFO("++++++tsf odp_pof_add_field: before dp_packet_pof_resize_field, int_value=%s, offset=%d, int_len=%d ",
+        		int_value, key->offset, int_len);*/
         header = dp_packet_pof_resize_field(packet, int_len);
         memmove(header, header + int_len, key->offset);
         memcpy(header + key->offset, int_value, int_len);
@@ -508,24 +508,24 @@ odp_execute_masked_set_action(struct dp_packet *packet,
 
     switch (type) {
     case OVS_KEY_ATTR_SET_FIELD:
-        VLOG_INFO("+++++++++++sqy odp_execute_masked_set_action: before OVS_KEY_ATTR_SET_FIELD");
+        /*VLOG_INFO("+++++++++++sqy odp_execute_masked_set_action: before OVS_KEY_ATTR_SET_FIELD");*/
         odp_pof_set_field(packet, nl_attr_get(a),
                           get_mask(a, struct ovs_key_set_field));
         /*VLOG_INFO("+++++++++++sqy odp_execute_masked_set_action: after OVS_KEY_ATTR_SET_FIELD");*/
         break;
     case OVS_KEY_ATTR_MODIFY_FIELD:
-    	VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: before OVS_KEY_ATTR_MODIFY_FIELD");
+    	/*VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: before OVS_KEY_ATTR_MODIFY_FIELD");*/
     	odp_pof_modify_field(packet, nl_attr_get(a),
     						get_mask(a, struct ovs_key_modify_field));
     	/*VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: after OVS_KEY_ATTR_MODIFY_FIELD");*/
     	break;
     case OVS_KEY_ATTR_ADD_FIELD:
-    	VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: before OVS_KEY_ATTR_ADD_FIELD");
+    	/*VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: before OVS_KEY_ATTR_ADD_FIELD");*/
     	odp_pof_add_field(packet, nl_attr_get(a),
     						get_mask(a, struct ovs_key_add_field), pre_time);
     	break;
     case OVS_KEY_ATTR_DELETE_FIELD:
-    	VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: before OVS_KEY_ATTR_DELETE_FIELD");
+    	/*VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: before OVS_KEY_ATTR_DELETE_FIELD");*/
     	odp_pof_delete_field(packet, nl_attr_get(a),
     						get_mask(a, struct ovs_key_delete_field));
     	break;

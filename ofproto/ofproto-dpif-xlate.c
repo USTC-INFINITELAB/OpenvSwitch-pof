@@ -4957,7 +4957,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         break;
 
         case OFPACT_MODIFY_FIELD: {
-        	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_MODIFY_FIELD->type:%d, len:%d", a->type, a->len);
+        	/*VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_MODIFY_FIELD->type:%d, len:%d", a->type, a->len);*/
             modify_field = ofpact_get_MODIFY_FIELD(a);
 
             flow->field_id[action_num] = htons(modify_field->field_id);
@@ -4976,7 +4976,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         break;
 
         case OFPACT_ADD_FIELD: {
-        	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_ADD_FIELD->type:%d, len:%d", a->type, a->len);
+        	/*VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_ADD_FIELD->type:%d, len:%d", a->type, a->len);*/
         	add_field = ofpact_get_ADD_FIELD(a);
 
         	flow->field_id[action_num] = htons(add_field->tag_id);

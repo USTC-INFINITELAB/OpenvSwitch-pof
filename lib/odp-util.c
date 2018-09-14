@@ -5630,7 +5630,7 @@ commit_pof_add_field_action(const struct flow *flow, struct flow *base_flow,
     use_masked = true;
     get_pof_add_field_mask(pflow, &mask, index);
 
-    VLOG_INFO("+++++++++++tsf commit_pof_add_field_action: before pof_commit");
+    /*VLOG_INFO("+++++++++++tsf commit_pof_add_field_action: before pof_commit");*/
     if (pof_commit(OVS_KEY_ATTR_ADD_FIELD, use_masked,
                &key, &base, &mask, sizeof key, odp_actions, pflow->flag)) {     //sqy notes: commit return false, no run
         /*VLOG_INFO("+++++++++++tsf commit_pof_add_field_action: after pof_commit");*/
@@ -5654,15 +5654,15 @@ get_pof_add_field_key(const struct pof_flow *flow, struct ovs_key_add_field *eth
 	if (eth->field_id != 0xffff) {  // add static fields which come from controller
         for (int i = 0; i < eth->len; i++) {
             eth->value[i] = flow->value[index][i];  // tsf: add 16 bytes most
-            VLOG_INFO("++++++tsf get_add_pof_field_key:  eth->value[%d]=%d", i, eth->value[i]);
+            /*VLOG_INFO("++++++tsf get_add_pof_field_key:  eth->value[%d]=%d", i, eth->value[i]);*/
         }
     } else {   // add INT fields which come from ovs, value[0] stores the INT intent
     	eth->value[0] = flow->value[index][0];
     	eth->device_id = flow->telemetry.device_id;
     	eth->in_port = flow->telemetry.in_port;
     	eth->out_port = flow->telemetry.out_port;
-    	VLOG_INFO("++++++tsf get_add_field_key:  eth->value[0](intent)=%d, device_id=%lx, in_port=%d, out_port=%d",
-    			eth->value[0], eth->device_id, eth->in_port, eth->out_port);
+    	/*VLOG_INFO("++++++tsf get_add_field_key:  eth->value[0](intent)=%d, device_id=%lx, in_port=%d, out_port=%d",
+    			eth->value[0], eth->device_id, eth->in_port, eth->out_port);*/
     }
 }
 
@@ -5672,8 +5672,8 @@ get_pof_add_field_mask(const struct pof_flow *flow, struct ovs_key_add_field *et
 	eth->field_id = ntohs(flow->field_id[index]);
 	eth->len = ntohs(flow->len[index]);
 	eth->offset = ntohs(flow->offset[index]);
-	VLOG_INFO("++++++tsf get_add_field_mask: eth->field_id=%d, eth->len=%d, eth->offset=%d",
-					eth->field_id, eth->len, eth->offset);
+	/*VLOG_INFO("++++++tsf get_add_field_mask: eth->field_id=%d, eth->len=%d, eth->offset=%d",
+					eth->field_id, eth->len, eth->offset);*/
 
     /* tsf: if field_id equals 0xffff, then it's add INT fields, whose data comes from pof_flow->pof_metadata.
      *      otherwise, ovs should add static fields which are from controller.
@@ -5681,15 +5681,15 @@ get_pof_add_field_mask(const struct pof_flow *flow, struct ovs_key_add_field *et
     if (eth->field_id != 0xffff) {  // add static fields which come from controller
         for (int i = 0; i < eth->len; i++) {
             eth->value[i] = flow->value[index][i];  // tsf: add 16 bytes most
-            VLOG_INFO("++++++tsf get_add_field_key:  eth->value[%d]=%d", i, eth->value[i]);
+            /*VLOG_INFO("++++++tsf get_add_field_key:  eth->value[%d]=%d", i, eth->value[i]);*/
         }
     } else {   // add INT fields which come from ovs, value[0] stores the INT intent
         eth->value[0] = flow->value[index][0];
         eth->device_id = flow->telemetry.device_id;
         eth->in_port = flow->telemetry.in_port;
         eth->out_port = flow->telemetry.out_port;
-        VLOG_INFO("++++++tsf get_add_field_key:  eth->value[0](intent)=%d, device_id=%lx, in_port=%d, out_port=%d",
-                  eth->value[0], eth->device_id, eth->in_port, eth->out_port);
+        /*VLOG_INFO("++++++tsf get_add_field_key:  eth->value[0](intent)=%d, device_id=%lx, in_port=%d, out_port=%d",
+                  eth->value[0], eth->device_id, eth->in_port, eth->out_port);*/
     }
 }
 
@@ -5828,12 +5828,12 @@ commit_pof_action(const struct flow *flow, struct flow *base_flow,
 				break;
 
 			case OFPACT_MODIFY_FIELD:    // flag == 8
-				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_modify_field_action.");
+				/*VLOG_INFO("++++++tsf commit_pof_action: commit_pof_modify_field_action.");*/
 				commit_pof_modify_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 
 			case OFPACT_ADD_FIELD:       // flag == 9
-				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_add_field_action.");
+				/*VLOG_INFO("++++++tsf commit_pof_action: commit_pof_add_field_action.");*/
 				commit_pof_add_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 
