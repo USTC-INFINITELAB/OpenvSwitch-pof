@@ -1617,6 +1617,7 @@ dp_netdev_pmd_lookup_dpcls(struct dp_netdev_pmd_thread *pmd,
     CMAP_FOR_EACH_WITH_HASH (cls, node, hash, &pmd->classifiers) {
         if (cls->in_port == in_port) {
             /* Port classifier exists already */
+        	/*VLOG_INFO("++++++tsf dp_netdev_pmd_lookup_dpcls: Port classifier exists already ");*/
             return cls;
         }
     }
@@ -2010,7 +2011,7 @@ emc_lookup(struct emc_cache *cache, const struct netdev_flow_key *key)
 
             /* We found the entry with the 'key->mf' miniflow */
 //    		VLOG_INFO("++++++tsf emc_lookup: cur_flow.ufid=%d", current_entry->flow->ufid);
-            return current_entry->flow;
+    		return current_entry->flow;
         }
     }
 
@@ -3803,7 +3804,10 @@ dp_netdev_flow_used(struct dp_netdev_flow *netdev_flow, int cnt, int size,
     flags |= tcp_flags;
     atomic_store_relaxed(&netdev_flow->stats.tcp_flags, flags);
 
-//    VLOG_INFO("+++++tsf dp_netdev_flow_used: n_packets=%d, n_bytes=%d", netdev_flow->stats.packet_count, netdev_flow->stats.byte_count);
+//    if (netdev_flow->stats.packet_count > 100) {
+//    	netdev_flow->dead = true;
+//    	VLOG_INFO("+++++tsf dp_netdev_flow_used: n_packets=%d, n_bytes=%d", netdev_flow->stats.packet_count, netdev_flow->stats.byte_count);
+//    }
 }
 
 static void

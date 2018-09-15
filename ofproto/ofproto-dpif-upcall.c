@@ -1090,8 +1090,8 @@ upcall_xlate(struct udpif *udpif, struct upcall *upcall,
 
     stats.n_packets = 1;
     stats.n_bytes = dp_packet_size(upcall->packet);
-//    stats.used = time_msec();
-    stats.used = time_usec();
+    stats.used = time_msec();
+//    stats.used = time_usec();
     stats.tcp_flags = ntohs(upcall->flow->tcp_flags);
 
     xlate_in_init(&xin, upcall->ofproto,
@@ -1490,8 +1490,8 @@ ukey_create__(const struct nlattr *key, size_t key_len,
     ukey->dump_seq = dump_seq;
     ukey->reval_seq = reval_seq;
     ukey->state = UKEY_CREATED;
-//    ukey->created = time_msec();
-    ukey->created = time_usec();
+    ukey->created = time_msec();
+//    ukey->created = time_usec();
     memset(&ukey->stats, 0, sizeof ukey->stats);
     ukey->stats.used = used;
     ukey->xcache = NULL;
@@ -2058,7 +2058,7 @@ revalidate_ukey(struct udpif *udpif, struct udpif_key *ukey,
      */
     uint16_t PACKET_INTERVAL = 10;
     if (stats->n_packets > PACKET_INTERVAL) {
-    	/*VLOG_INFO("++++++++tsf revalidate_ukey 0000: stats->n_packets=%d>packets_interval(10)!!! result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d",stats->n_packets, result);*/
+//    	VLOG_INFO("++++++++tsf revalidate_ukey 0000: stats->n_packets=%d, packets_interval(10)!!! result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d",stats->n_packets, result);
 
 //    	return result;  // delete
     }
