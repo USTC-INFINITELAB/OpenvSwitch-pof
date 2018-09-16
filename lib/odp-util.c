@@ -5480,7 +5480,7 @@ get_pof_set_field_key(const struct pof_flow *flow, struct ovs_key_set_field *eth
 
     for(int i=0; i < eth->len; i++){
         eth->value[i] = flow->value[index][i];
-        /*VLOG_INFO("+++++++++++sqy get_set_field_key: eth->value[i]=%d, flow->value[0][i] = %d", eth->value[i], flow->value[0][i]);*/
+        /*VLOG_INFO("+++++++++++tsf get_set_field_key: eth->value[i]=%d, flow->value[i][i] = %d", eth->value[i], flow->value[index][i]);*/
     }
 }
 
@@ -5732,7 +5732,7 @@ commit_pof_delete_field_action(const struct flow *flow, struct flow *base_flow,
     use_masked = true;
     get_pof_delete_field_mask(pflow, &mask, index);
 
-    VLOG_INFO("+++++++++++tsf commit_pof_delete_field_action: before pof_commit");
+    /*VLOG_INFO("+++++++++++tsf commit_pof_delete_field_action: before pof_commit");*/
     if (pof_commit(OVS_KEY_ATTR_DELETE_FIELD, use_masked,
                &key, &base, &mask, sizeof key, odp_actions, pflow->flag)) {     //sqy notes: commit return false, no run
         /*VLOG_INFO("+++++++++++tsf commit_pof_delete_field_action: after pof_commit");*/
@@ -5823,7 +5823,7 @@ commit_pof_action(const struct flow *flow, struct flow *base_flow,
 		switch (action_flag) {
 
 			case OFPACT_SET_FIELD:      // flag == 7
-				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_set_field_action.");
+				/*VLOG_INFO("++++++tsf commit_pof_action: commit_pof_set_field_action.");*/
 				commit_pof_set_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 
@@ -5838,7 +5838,7 @@ commit_pof_action(const struct flow *flow, struct flow *base_flow,
 				break;
 
 			case OFPACT_DELETE_FIELD:    // flag == 10
-				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_delete_field_action.");
+				/*VLOG_INFO("++++++tsf commit_pof_action: commit_pof_delete_field_action.");*/
 				commit_pof_delete_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 		}

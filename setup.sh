@@ -19,7 +19,7 @@ fi
 cd $HOME
 export OVS_DIR=$HOME/OpenvSwitch-pof
 cd $OVS_DIR
-./boot.sh
+#./boot.sh  # run once
 #./configure --with-dpdk=$DPDK_BUILD
 ./configure CFLAGS="-g -O0" --with-dpdk=$DPDK_BUILD
 make -j24
