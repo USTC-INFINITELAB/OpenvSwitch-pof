@@ -2054,14 +2054,15 @@ revalidate_ukey(struct udpif *udpif, struct udpif_key *ukey,
     		push.used, stats->n_packets, push.n_packets, stats->n_bytes, push.n_bytes);*/
 
     /**
-     * TODO: the packet_interval can be changed, it's up to you.
+     *  the packet_interval can be changed, it's up to you. I move this condition in `if`.
      */
-    uint16_t PACKET_INTERVAL = 10;
-    if (stats->n_packets > PACKET_INTERVAL) {
-//    	VLOG_INFO("++++++++tsf revalidate_ukey 0000: stats->n_packets=%d, packets_interval(10)!!! result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d",stats->n_packets, result);
-
+//    uint16_t PACKET_INTERVAL = 10;
+//    if (stats->n_packets > PACKET_INTERVAL) {
+//    	VLOG_INFO("++++++++tsf revalidate_ukey 0000: push.n_packets=%d, ukey->n_packets=%d, stats->n_packets=%d, packets_interval(10)!!! result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d",
+//    			push.n_packets, ukey->stats.n_packets, stats->n_packets, result);
+//
 //    	return result;  // delete
-    }
+//    }
 
     if (need_revalidate) {
     	/*VLOG_INFO("++++++++tsf revalidate_ukey: need_revalidate");*/
@@ -2372,9 +2373,15 @@ revalidate(struct revalidator *revalidator)
                 used = ukey->created;
             	/*VLOG_INFO("++++++tsf revalidate: flow no used, so used=created=%lld(ms?), now=%lld", used, now);*/
             }
-            /* tsf: the `used` seems no change in ovs-pof, no skip it for now. */
-//            if (kill_them_all || (used && used < now - max_idle)) {
-            if (kill_them_all) {
+
+            /* tsf: We should keep `used` to control flow_limit, so I let it back. It doesn't influence forwarding performance.
+             *      I add the condition `f->stats.n_bytes>10` in `if` to make fast_path netdev_flow and emc_rule invalid. The `10`
+             *      should be changed up to you.
+             *      ###################################################################################################################
+             *      # If you DO NOT NEED to switch select_group.buckets, I advise you to COMMENT the condition `f->stats.n_bytes>10`. #
+             *      ###################################################################################################################
+             *  */
+            if (kill_them_all || (used && used < now - max_idle) || f->stats.n_bytes > 10) {
                 result = UKEY_DELETE;
                 /*VLOG_INFO("++++++tsf revalidate: result=DELETE, kill_them_all?%d, used=%d, now-max_idle=%d"
                 		, kill_them_all, used, now - max_idle);*/
