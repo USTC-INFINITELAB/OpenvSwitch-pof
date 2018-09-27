@@ -3837,6 +3837,8 @@ rule_dpif_credit_stats__(struct rule_dpif *rule,
         rule->stats.n_bytes += stats->n_bytes;
     }
     rule->stats.used = MAX(rule->stats.used, stats->used);
+    /*VLOG_INFO("+++++++tsf rule_dpif_credit_stats__: rule->stats.n_packets=%d, rule->stats.n_bytes=%d",
+    		rule->stats.n_packets, rule->stats.n_bytes);*/
 }
 
 void
@@ -3847,9 +3849,13 @@ rule_dpif_credit_stats(struct rule_dpif *rule,
     if (OVS_UNLIKELY(rule->new_rule)) {
         ovs_mutex_lock(&rule->new_rule->stats_mutex);
         rule_dpif_credit_stats__(rule->new_rule, stats, rule->forward_counts);
+        /*VLOG_INFO("+++++++tsf rule_dpif_credit_stats(after): new_rule->stats.n_packets=%d, new_rule->stats.n_bytes=%d",
+        		rule->stats.n_packets, rule->stats.n_bytes);*/
         ovs_mutex_unlock(&rule->new_rule->stats_mutex);
     } else {
         rule_dpif_credit_stats__(rule, stats, true);
+        /*VLOG_INFO("+++++++tsf rule_dpif_credit_stats(after): rule->stats.n_packets=%d, rule->stats.n_bytes=%d",
+        		rule->stats.n_packets, rule->stats.n_bytes);*/
     }
     ovs_mutex_unlock(&rule->stats_mutex);
 }
@@ -3955,6 +3961,9 @@ ofproto_dpif_credit_table_stats(struct ofproto_dpif *ofproto, uint8_t table_id,
     if (n_misses) {
         atomic_add_relaxed(&tbl->n_missed, n_misses, &orig);
     }
+
+    VLOG_INFO("++++++++tsf ofproto_dpif_credit_table_stats: tbl->n_matched=%d, tbl->n_missed=%d",
+    		tbl->n_matched, tbl->n_missed);
 }
 
 /* Look up 'flow' in 'ofproto''s classifier version 'version', starting from
@@ -4415,7 +4424,7 @@ rule_get_stats(struct rule *rule_, uint64_t *packets, uint64_t *bytes,
         *used = rule->stats.used;
     }
     ovs_mutex_unlock(&rule->stats_mutex);
-    /*VLOG_INFO("++++++tsf rule_get_stats: n_packets=%d, n_bytes=%d, used=%d", *packets, *bytes, *used);*/
+    VLOG_INFO("++++++tsf rule_get_stats: n_packets=%d, n_bytes=%d, used=%d", *packets, *bytes, *used);
 }
 
 struct ofproto_dpif_packet_out {

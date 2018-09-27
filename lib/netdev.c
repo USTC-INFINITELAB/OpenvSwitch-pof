@@ -710,6 +710,7 @@ int
 netdev_send(struct netdev *netdev, int qid, struct dp_packet_batch *batch,
             bool may_steal, bool concurrent_txq)
 {
+//	VLOG_INFO("++++++++++tsf netdev_send, qid=%d", qid);
     if (!netdev->netdev_class->send) {
         dp_packet_delete_batch(batch, may_steal);
         return EOPNOTSUPP;

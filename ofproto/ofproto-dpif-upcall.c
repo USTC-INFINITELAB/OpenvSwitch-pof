@@ -936,7 +936,7 @@ udpif_revalidator(void *arg)
 
             /* tsf: control approximate revalidating period here. */
 //            poll_timer_wait_until(start_time + MIN(ofproto_max_idle, 500));
-            poll_timer_wait_until(start_time + MIN(ofproto_max_idle, 100));
+            poll_timer_wait_until(start_time + MIN(ofproto_max_idle, 50));
 
             seq_wait(udpif->reval_seq, last_reval_seq);
             latch_wait(&udpif->exit_latch);
@@ -2056,50 +2056,53 @@ revalidate_ukey(struct udpif *udpif, struct udpif_key *ukey,
     /*VLOG_INFO("++++++ tsf revalidate_ukey: used(ms)=%lld, stats.n_packets=%d, push.n_packets=%d,, stats.n_bytes=%d, push.n_bytes=%d",
     		push.used, stats->n_packets, push.n_packets, stats->n_bytes, push.n_bytes);*/
 
-    /**
-     *  the packet_interval can be changed, it's up to you. I move this condition in `if`.
-     */
-//    uint16_t PACKET_INTERVAL = 10;
-//    if (stats->n_packets > PACKET_INTERVAL) {
-//    	VLOG_INFO("++++++++tsf revalidate_ukey 0000: push.n_packets=%d, ukey->n_packets=%d, stats->n_packets=%d, packets_interval(10)!!! result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d",
-//    			push.n_packets, ukey->stats.n_packets, stats->n_packets, result);
-//
-//    	return result;  // delete
-//    }
-
+//    VLOG_INFO("++++++++++tsf revalidate_ukey 0000: !push.npackets=%d, ukey_cache=%d",
+//    		!push.n_packets, ukey->xcache != NULL? 1:0);
     if (need_revalidate) {
     	/*VLOG_INFO("++++++++tsf revalidate_ukey: need_revalidate");*/
         if (should_revalidate(udpif, push.n_packets, ukey->stats.used)) {
             if (!ukey->xcache) {
                 ukey->xcache = xlate_cache_new();
+//                VLOG_INFO("++++++++tsf revalidate_ukey: should_revalidate->xlate_cache_new()");
             } else {
                 xlate_cache_clear(ukey->xcache);
+//                VLOG_INFO("++++++++tsf revalidate_ukey: should_revalidate->xlate_cache_clear()");
             }
             /*VLOG_INFO("++++++tsf revalidate_ukey: revalidate_ukey__");*/
             result = revalidate_ukey__(udpif, ukey, push.tcp_flags,
                                        odp_actions, recircs, ukey->xcache);
-            /*VLOG_INFO("++++++++tsf revalidate_ukey 1111: result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d", result);*/
+//            VLOG_INFO("++++++++tsf revalidate_ukey 1111: result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d", result);
         } /* else delete; too expensive to revalidate , tsf: else keep. */
-        else {
-        	result = UKEY_KEEP;
-        }
+
+//        else {
+//        	result = UKEY_KEEP;
+//        }
+
     } else if (!push.n_packets || ukey->xcache
                || !populate_xcache(udpif, ukey, push.tcp_flags)) {
         result = UKEY_KEEP;
-        /*VLOG_INFO("++++++++tsf revalidate_ukey 2222: result = %d", result);*/
-    } else {
-    	/* tsf: I wonder why reval_seq no change, but I'm sure it's not time to remove emc_entry now */
-    	result = UKEY_KEEP;
-    	/*VLOG_INFO("++++++++tsf revalidate_ukey 3333: result = %d", result);*/
+//        VLOG_INFO("++++++++tsf revalidate_ukey 2222: result = %d", result);
     }
+//    else {
+//    	/* tsf: I wonder why reval_seq no change, but I'm sure it's not time to remove emc_entry now */
+//    	result = UKEY_KEEP;
+//    	/*VLOG_INFO("++++++++tsf revalidate_ukey 3333: result = %d", result);*/
+//    }
 
-    /*VLOG_INFO("++++++++tsf revalidate_ukey 4444: result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d", result);*/
+//    VLOG_INFO("++++++++tsf revalidate_ukey 4444: result = UKEY_KEEP(0):DELETE(1):MODIFY(2)?=%d", result);
 
     /* Stats for deleted flows will be attributed upon flow deletion. Skip. */
     if (result != UKEY_DELETE) {
-        xlate_push_stats(ukey->xcache, &push);
+//        VLOG_INFO("+++++++tsf revalidate_ukey: xlate_push_stats");
+    	xlate_push_stats(ukey->xcache, &push);
         ukey->stats = *stats;
         ukey->reval_seq = reval_seq;
+    }
+
+    /* tsf: count before making fast-path invalid. check threshold after revalidated period (50ms) */
+    int packet_processed_threshold = 10;
+    if (stats->n_packets > packet_processed_threshold) {
+    	result = UKEY_DELETE;
     }
 
     return result;
@@ -2377,17 +2380,8 @@ revalidate(struct revalidator *revalidator)
             	/*VLOG_INFO("++++++tsf revalidate: flow no used, so used=created=%lld(ms?), now=%lld", used, now);*/
             }
 
-            /* tsf: We should keep `used` to control flow_limit, so I let it back. It doesn't influence forwarding performance.
-             *      I add the condition `f->stats.n_bytes>10` in `if` to make fast_path netdev_flow and emc_rule invalid. The `10`
-             *      should be changed up to you.
-             *      ###################################################################################################################
-             *      # If you DO NOT NEED to switch select_group.buckets, I advise you to COMMENT the condition `f->stats.n_bytes>10`. #
-             *      ###################################################################################################################
-             *  */
-            if (kill_them_all || (used && used < now - max_idle) || f->stats.n_bytes > 10) {
+            if (kill_them_all || (used && used < now - max_idle)) {
                 result = UKEY_DELETE;
-                /*VLOG_INFO("++++++tsf revalidate: result=DELETE, kill_them_all?%d, used=%d, now-max_idle=%d"
-                		, kill_them_all, used, now - max_idle);*/
             } else {
             	/*VLOG_INFO("++++++tsf revalidate: result=revalidate_ukey, n_packets=%d, n_bytes=%d, used=%lld, now=%lld",
             				f->stats.n_packets, f->stats.n_bytes, f->stats.used, now);*/

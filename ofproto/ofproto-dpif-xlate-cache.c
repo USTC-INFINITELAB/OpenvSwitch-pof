@@ -95,6 +95,8 @@ xlate_push_stats_entry(struct xc_entry *entry,
 
     switch (entry->type) {
     case XC_TABLE:
+    	//VLOG_INFO("+++++++++tsf xlate_push_stats_entry: ofproto_dpif_credit_table_stats");
+    	entry->table.match = true; //tsf
         ofproto_dpif_credit_table_stats(entry->table.ofproto,
                                         entry->table.id,
                                         entry->table.match
@@ -103,20 +105,25 @@ xlate_push_stats_entry(struct xc_entry *entry,
                                         ? 0 : stats->n_packets);
         break;
     case XC_RULE:
+    	//VLOG_INFO("+++++++++tsf xlate_push_stats_entry: rule_dpif_credit_stats");
         rule_dpif_credit_stats(entry->rule, stats);
         break;
     case XC_BOND:
+    	//VLOG_INFO("+++++++++tsf xlate_push_stats_entry: bond_account");
         bond_account(entry->bond.bond, entry->bond.flow,
                      entry->bond.vid, stats->n_bytes);
         break;
     case XC_NETDEV:
+    	//VLOG_INFO("+++++++++tsf xlate_push_stats_entry: xlate_cache_netdev");
         xlate_cache_netdev(entry, stats);
         break;
     case XC_NETFLOW:
+    	//VLOG_INFO("+++++++++tsf xlate_push_stats_entry: netflow_flow_update");
         netflow_flow_update(entry->nf.netflow, entry->nf.flow,
                             entry->nf.iface, stats);
         break;
     case XC_MIRROR:
+    	//VLOG_INFO("+++++++++tsf xlate_push_stats_entry: mirror_update_stats");
         mirror_update_stats(entry->mirror.mbridge,
                             entry->mirror.mirrors,
                             stats->n_packets, stats->n_bytes);
@@ -144,6 +151,7 @@ xlate_push_stats_entry(struct xc_entry *entry,
         }
         break;
     case XC_GROUP:
+    	VLOG_INFO("+++++++++tsf xlate_push_stats_entry: group_dpif_credit_stats");
         group_dpif_credit_stats(entry->group.group, entry->group.bucket,
                                 stats);
         break;
@@ -175,6 +183,7 @@ xlate_push_stats(struct xlate_cache *xcache,
     struct xc_entry *entry;
     struct ofpbuf entries = xcache->entries;
     XC_ENTRY_FOR_EACH (entry, &entries) {
+        //VLOG_INFO("+++++++tsf xlate_push_stats: xlate_push_stats_entry");
         xlate_push_stats_entry(entry, stats);
     }
 }

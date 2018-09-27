@@ -267,6 +267,8 @@ enum dp_stat_type {
     DP_STAT_LOST,               /* Packets not passed up to the client. */
     DP_STAT_LOOKUP_HIT,         /* Number of subtable lookups for flow table
                                    hits */
+    DP_STAT_PKT_PROCESSED,      /* Number of datapath processed packets, added by tsf. */
+    DP_STAT_BYTE_PROCESSED,     /* Packet bytes processed by pmd, added by tsf. */
     DP_N_STATS
 };
 
@@ -3912,6 +3914,10 @@ packet_batch_per_flow_init(struct packet_batch_per_flow *batch,
     batch->tcp_flags = 0;
 }
 
+long long last_flow_used = 0;      // tsf: last flow statistics
+long long last_bytes_used = 0;     // tsf: last processed bytes
+long long first_used_time = 0;     // tsf: first used time when begin to count pmd->stat
+
 static inline void
 packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
                               struct dp_netdev_pmd_thread *pmd,
@@ -3920,16 +3926,43 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: 1111111111111");*/
     struct dp_netdev_actions *actions;
     struct dp_netdev_flow *flow = batch->flow;
+    struct bandwidth_info bd_info;
+
+    long long diff_time = 0;
+    double bandwidth = 0;
 
     /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: before dp_netdev_flow_used");*/
     dp_netdev_flow_used(flow, batch->array.count, batch->byte_count,
                         batch->tcp_flags, now);
-    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_flow_used");*/
     actions = dp_netdev_flow_get_actions(flow);
-    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_flow_get_actions");*/
+
+    // tsf: if fast_path invalid, flow->stats will be cleaned.
+    VLOG_INFO("+++++tsf dp_netdev_flow_used: last_flow_used=%d, n_packets=%d", last_flow_used, flow->stats.packet_count);
+    bool comp_latch = (flow->stats.packet_count > last_flow_used) ? true : false;
+
+    if (!comp_latch) {
+        // 1. packet count
+        dp_netdev_count_packet(pmd, DP_STAT_PKT_PROCESSED, last_flow_used);
+        dp_netdev_count_packet(pmd, DP_STAT_BYTE_PROCESSED, last_bytes_used);
+        // 2. interval time
+    	diff_time = now - first_used_time;
+    	// 3. compute bandwidth
+    	bandwidth = pmd->stats.n[DP_STAT_BYTE_PROCESSED] / (diff_time * 1.0) * 8;
+        VLOG_INFO("+++++++tsf packet_batch_per_flow_execute: pmd->stats.n_packets=%d, pmd->stats.n_bytes=%d,diff_time=%d us, bd=%lf Mbps",
+        		pmd->stats.n[DP_STAT_PKT_PROCESSED], pmd->stats.n[DP_STAT_BYTE_PROCESSED], diff_time, bandwidth);
+        // 4. clean
+        pmd->stats.n[DP_STAT_PKT_PROCESSED] = 0;
+        pmd->stats.n[DP_STAT_BYTE_PROCESSED] = 0;
+    }
+
+    if (flow->stats.packet_count == 1) {
+      	first_used_time = now;
+    }
+    last_flow_used = flow->stats.packet_count;
+    last_bytes_used = flow->stats.byte_count;
+
     dp_netdev_execute_actions(pmd, &batch->array, true, &flow->flow,
                               actions->actions, actions->size, now);
-    /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: after dp_netdev_execute_actions");*/
 }
 
 static inline void
@@ -3999,9 +4032,10 @@ emc_processing(struct dp_netdev_pmd_thread *pmd, struct dp_packet_batch *packets
 
         flow = emc_lookup(flow_cache, key);
 //        if (flow != NULL) {
-//            /*VLOG_INFO("+++++tsf emc_processing: flow.stats->n_packets=%d, n_bytes=%d", flow->stats.packet_count,
-//                      flow->stats.byte_count);*/
-//        } else {
+//            VLOG_INFO("+++++tsf emc_processing: flow.stats->n_packets=%d, n_bytes=%d", flow->stats.packet_count,
+//                      flow->stats.byte_count);
+//        }
+//        else {
 //        	VLOG_WARN("+++++tsf emc_processing: no finding emc_rule!!!");
 //        }
 
@@ -4241,8 +4275,11 @@ dp_netdev_input__(struct dp_netdev_pmd_thread *pmd,
         batches[i].flow->batch = NULL;
     }
 
-   	/*VLOG_INFO("+++++++tsf dp_netdev_input__: dp_netdev_queue_batches 333");*/
+//   	VLOG_INFO("+++++++tsf dp_netdev_input__: dp_netdev_input__ n_batches=%d, PKT_ARRAY_SIZE=%d 11111111",
+//   			n_batches, PKT_ARRAY_SIZE);
     for (i = 0; i < n_batches; i++) {
+//    	VLOG_INFO("+++++++tsf dp_netdev_input__: dp_netdev_input__ n_batches=%d, batch->count=%d 2222222",
+//    			n_batches, batches[i].array.count);
         packet_batch_per_flow_execute(&batches[i], pmd, now);
     }
 }
@@ -4641,7 +4678,9 @@ dp_netdev_execute_actions(struct dp_netdev_pmd_thread *pmd,
     struct dp_netdev_execute_aux aux = { pmd, now, flow };
 
     odp_execute_actions(&aux, packets, may_steal, actions,
-                        actions_len, dp_execute_cb);
+                        actions_len, dp_execute_cb,
+                        &aux.pmd->stats.n[DP_STAT_PKT_PROCESSED],
+                        &aux.pmd->stats.n[DP_STAT_BYTE_PROCESSED]);
 }
 
 struct dp_netdev_ct_dump {

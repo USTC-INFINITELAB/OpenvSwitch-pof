@@ -1646,6 +1646,8 @@ pof_group_default_best_live_bucket_v2(const struct xlate_ctx *ctx,
         }
     }
 
+    VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_2: best_bucket_id=%d", best_bucket->bucket_id);
+
     return best_bucket;
 }
 
@@ -3763,7 +3765,7 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
     packet = dp_packet_clone(ctx->xin->packet);
     packet_batch_init_packet(&batch, packet);
     odp_execute_actions(NULL, &batch, false,
-                        ctx->odp_actions->data, ctx->odp_actions->size, NULL);
+                        ctx->odp_actions->data, ctx->odp_actions->size, NULL, NULL, NULL);
 
     /* A packet sent by an action in a table-miss rule is considered an
      * explicit table miss.  OpenFlow before 1.3 doesn't have that concept so
@@ -4887,6 +4889,10 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
     const char *datapath_name = "br0";
     struct ofproto *ofproto = ofproto_lookup(datapath_name);
     flow->telemetry.device_id = ofproto->datapath_id;
+
+//    uint64_t n_packets, n_bytes;
+//    n_packets = ofproto->tables->n_matched;
+//    VLOG_INFO("++++++++tsf pof_do_xlate_actions: n_matched=%d", n_packets);
 
     if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
         tnl_neigh_snoop(flow, wc, ctx->xbridge->name);

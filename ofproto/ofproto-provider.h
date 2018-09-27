@@ -131,6 +131,9 @@ struct ofproto {
 void ofproto_init_tables(struct ofproto *, int n_tables);
 void ofproto_init_max_ports(struct ofproto *, uint16_t max_ports);
 
+/* Map from datapath name to struct ofproto, for use by unixctl commands. */
+static struct hmap all_ofprotos = HMAP_INITIALIZER(&all_ofprotos);
+
 struct ofproto *ofproto_lookup(const char *name);
 struct ofport *ofproto_get_port(const struct ofproto *, ofp_port_t ofp_port);
 
@@ -260,6 +263,8 @@ struct oftable {
 
     atomic_ulong n_matched;
     atomic_ulong n_missed;
+
+//    atomic_ullong n_matched_bytes;   // add by tsf
 };
 
 /* Assigns TABLE to each oftable, in turn, in OFPROTO.

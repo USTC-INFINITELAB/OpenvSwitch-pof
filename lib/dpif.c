@@ -1207,7 +1207,7 @@ dpif_execute_with_help(struct dpif *dpif, struct dpif_execute *execute)
 
     packet_batch_init_packet(&pb, execute->packet);
     odp_execute_actions(&aux, &pb, false, execute->actions,
-                        execute->actions_len, dpif_execute_helper_cb);
+                        execute->actions_len, dpif_execute_helper_cb, NULL, NULL);
     return aux.error;
 }
 

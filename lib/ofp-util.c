@@ -3363,6 +3363,7 @@ ofputil_encode_pof_flow_stats_request(const struct ofputil_pof_flow_stats_reques
     case OFPUTIL_P_OF14_OXM:
     case OFPUTIL_P_OF15_OXM:
     case OFPUTIL_P_OF16_OXM: {
+    	VLOG_INFO("+++++++++++tsf ofputil_encode_pof_flow_stats_request: OFPUTIL_P_OF12_OXM");
         struct ofp11_flow_stats_request *ofsr;
 
         raw = (fsr->aggregate
@@ -3387,7 +3388,7 @@ ofputil_encode_pof_flow_stats_request(const struct ofputil_pof_flow_stats_reques
 
     case OFPUTIL_P_OF10_NXM:
     case OFPUTIL_P_OF10_NXM_TID: {
-        /*VLOG_INFO("+++++++++++sqy ofputil_encode_pof_flow_stats_request: OFPUTIL_P_OF10_NXM_TID");*/
+        VLOG_INFO("+++++++++++sqy ofputil_encode_pof_flow_stats_request: OFPUTIL_P_OF10_NXM_TID");
         struct nx_flow_stats_request *nfsr;
         int match_len;
 
@@ -3664,6 +3665,7 @@ ofputil_decode_pof_flow_stats_reply(struct ofputil_pof_flow_stats *fs,
         }
         fs->packet_count = ntohll(nfs->packet_count);
         fs->byte_count = ntohll(nfs->byte_count);
+        VLOG_INFO("+++++++tsf ofputil_decode_pof_flow_stats_reply: fs->n_packet=%d, fs->n_bytes=%d", fs->packet_count, fs->byte_count);
         fs->flags = 0;
     } else {
         OVS_NOT_REACHED();

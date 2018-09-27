@@ -294,7 +294,9 @@ lib_libopenvswitch_la_SOURCES = \
 	lib/lldp/lldpd.c \
 	lib/lldp/lldpd.h \
 	lib/lldp/lldpd-structs.c \
-	lib/lldp/lldpd-structs.h
+	lib/lldp/lldpd-structs.h \
+	#ofproto/ofproto-provider.h \
+	#ofproto/ofproto.c # 2 ofproto files added by tsf
 
 if WIN32
 lib_libopenvswitch_la_SOURCES += \

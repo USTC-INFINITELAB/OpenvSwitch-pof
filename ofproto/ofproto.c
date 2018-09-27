@@ -316,7 +316,7 @@ size_t n_handlers, n_revalidators;
 char *pmd_cpu_mask;
 
 /* Map from datapath name to struct ofproto, for use by unixctl commands. */
-static struct hmap all_ofprotos = HMAP_INITIALIZER(&all_ofprotos);
+//static struct hmap all_ofprotos = HMAP_INITIALIZER(&all_ofprotos);
 
 /* Initial mappings of port to OpenFlow number mappings. */
 static struct shash init_ofp_ports = SHASH_INITIALIZER(&init_ofp_ports);
@@ -4460,6 +4460,7 @@ handle_flow_stats_request(struct ofconn *ofconn,
 
         ofproto->ofproto_class->rule_get_stats(rule, &fs.packet_count,
                                                &fs.byte_count, &used);
+        VLOG_INFO("+++++++tsf handle_flow_stats_request: fs.n_packets=%d, fs.b_bytes=%d", fs.packet_count, fs.byte_count);
         /*VLOG_INFO("++++++++++sqy handle_flow_stats_request: before pof_minimatch_expand");*/
         pof_minimatch_expand(&rule->cr.match, &fs.match);
         fs.table_id = rule->table_id;
