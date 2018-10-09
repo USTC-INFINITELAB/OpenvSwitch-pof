@@ -104,14 +104,6 @@ odp_pof_modify_field(struct dp_packet *packet, const struct ovs_key_modify_field
     }
 }
 
-/* tsf: convert double data into byte array. */
-//uint8_t * double_to_arr(double dou) {
-//    uint8_t arr[8];
-//    for (int i = 0; i < 8; i++) {
-//        arr[i] = (dou << 8*i) & 0xff;
-//    }
-//    return arr;
-//}
 
 /* tsf: convert uint64_t data into byte array. */
 uint8_t * uint64_to_arr(uint64_t uint64) {
@@ -193,19 +185,21 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
         }
 
         if (key->value[0] & (UINT8_C(1) << 5)) { // tsf: bandwidth computation insert, 8B
-        	int_len += 8;
             if (!bd_info->comp_latch) {
-            	bandwidth = (bd_info->n_bytes + int_len*bd_info->n_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
+            	bandwidth = (bd_info->n_bytes + (int_len+8)*bd_info->n_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
             } // else keep static
-//            memcpy(int_value + int_len - 8, double_to_arr(bandwidth), 8);
+            memcpy(int_value + int_len, &bandwidth, 8);      // sizeof double, should read as double type
+            int_len += 8;
         }
 
         /* Adjust counter's value to control log rate.*/
         /*counter++;
-        if(counter % 4000000 == 0) {
+        if(counter % 20 == 0) {
         	counter = 0;
-        	VLOG_INFO("++++++tsf odp_pof_add_field: n_pkt=%d, orig_pkt_len=%d, pkt_sizes=%d, int_len=%d, batch_diff_time=%d us, bandwidth=%lf Mbps",
-        	         bd_info->n_packets, dp_packet_size(packet), (bd_info->n_bytes + int_len*bd_info->n_packets), int_len, bd_info->diff_time, bandwidth);
+            double test;
+            memcpy(&test, int_value + int_len - 8, 8);
+        	VLOG_INFO("++++++tsf odp_pof_add_field: n_pkt=%d, orig_pkt_len=%d, pkt_sizes=%d, int_len=%d, batch_diff_time=%d us, bandwidth=%lf Mbps, back_bd=%lf Mbps",
+        	         bd_info->n_packets, dp_packet_size(packet), (bd_info->n_bytes + int_len*bd_info->n_packets), int_len, bd_info->diff_time, bandwidth, test);
         }*/
 
         /*VLOG_INFO("++++++tsf odp_pof_add_field: before dp_packet_pof_resize_field, int_value=%s, offset=%d, int_len=%d ",
