@@ -58,10 +58,10 @@ modprobe uio_pci_generic
 #done
 
 ##  IPL211
-#./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.0 # sfp
-#./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.1 # sfp
-./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.0 # eth1
-./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.1 # eth2
+./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.0 # sfp
+./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.1 # sfp
+#./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.0 # eth1
+#./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.1 # eth2
 ./tools/dpdk-devbind.py --status
 echo "DPDK Environment Success"
 cd $OVS_DIR

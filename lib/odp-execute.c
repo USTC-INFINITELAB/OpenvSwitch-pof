@@ -35,24 +35,16 @@
 #include "util.h"
 #include "openvswitch/vlog.h"
 #include "timeval.h"
-//#include "ofproto/ofproto-provider.h"
 
 VLOG_DEFINE_THIS_MODULE(odp_execute);
 
-/* tsf: same as ofproto_lookup(). To get oftable.n_matched. */
-//struct ofproto *
-//dp_ofproto_lookup(const char *name)
-//{
-//    struct ofproto *ofproto;
-//
-//    HMAP_FOR_EACH_WITH_HASH (ofproto, hmap_node, hash_string(name, 0),
-//                             &all_ofprotos) {
-//        if (!strcmp(ofproto->name, name)) {
-//            return ofproto;
-//        }
-//    }
-//    return NULL;
-//}
+/* tsf: to calculate bandwidth. */
+struct bandwidth_info {
+    bool comp_latch;     /* if true, don't compute bandwidth, use the former value. */
+    uint64_t diff_time;  /* the time that comp_latch value changes. */
+    uint64_t n_packets;
+    uint64_t n_bytes;
+};
 
 /* Masked copy of an ethernet address. 'src' is already properly masked. */
 static void
@@ -112,6 +104,15 @@ odp_pof_modify_field(struct dp_packet *packet, const struct ovs_key_modify_field
     }
 }
 
+/* tsf: convert double data into byte array. */
+//uint8_t * double_to_arr(double dou) {
+//    uint8_t arr[8];
+//    for (int i = 0; i < 8; i++) {
+//        arr[i] = (dou << 8*i) & 0xff;
+//    }
+//    return arr;
+//}
+
 /* tsf: convert uint64_t data into byte array. */
 uint8_t * uint64_to_arr(uint64_t uint64) {
     uint8_t arr[8];
@@ -128,10 +129,13 @@ uint8_t * uint8_to_arr(uint8_t uint8) {
     return arr;
 }
 
+double bandwidth = 0.0;   // initialized value, if change, else keep
+int counter = 0;          // used to limit log rate
+
 static void
 odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
-                    const struct ovs_key_add_field *mask, long long ingress_time,
-                    uint64_t *n_packets, uint64_t *n_bytes)
+                  const struct ovs_key_add_field *mask, long long ingress_time,
+                  struct bandwidth_info *bd_info)
 {
 	/*VLOG_INFO("++++++tsf odp_pof_add_field:key->fieldid= %d, offset = %d, len= %d, value=%lx / %lx",
 			  key->field_id, key->offset, key->len, (uint64_t *)(key->value), (uint64_t *)key->value + 8);*/
@@ -140,9 +144,8 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
    	/*VLOG_INFO("++++++tsf odp_pof_add_field: pre_time=%lld, now_time=%lld, diff_time=%lldus, key->value[0]=%d",
     			pre_time, now_time, diff_time, key->value[0]);*/
 
-	/**
-	 * tsf: if field_id=0xffff, then to add INT field, the `value` store the adding intent.
-	 *      otherwise, then to add static fields that comes from controller.
+	/** tsf: if field_id=0xffff, then to add INT field, the `value` store the adding intent.
+	 *       otherwise, then to add static fields that comes from controller.
 	 **/
 	if (key->field_id != 0xffff) {
         header = dp_packet_pof_resize_field(packet, key->len);
@@ -151,58 +154,59 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 	} else {
 		uint64_t device_id = key->device_id;
 
-//		const char *datapath_name = "br0";
-//		struct ofproto *ofproto = ofproto_lookup(datapath_name);
-//		if (ofproto != NULL) {
-//			uint64_t n_packets = ofproto->tables->n_matched;
-//			VLOG_INFO("+++++++++tsf odp_pof_add_field: oftable.n_matched=%d", n_packets);
-//		}
-
 		uint8_t in_port = key->in_port;
 		uint8_t out_port = key->out_port;
 
-		uint16_t int_len = 0;
-		uint8_t int_value[32];
-		uint64_t diff_time;
+		uint16_t int_len = 0;      // indicate how many available bytes in int_value[]
+		uint8_t int_value[64];     // should cover added fields.
 
         if (key->value[0] & (UINT8_C(1))) { // tsf: device_id, 8B
         	memcpy(int_value, uint64_to_arr(device_id), 8);
         	int_len += 8;
-        	VLOG_INFO("++++++tsf odp_pof_add_field: device_id=%llx", device_id);
+//        	VLOG_INFO("++++++tsf odp_pof_add_field: device_id=%llx", device_id);
         }
 
         if (key->value[0] & (UINT8_C(1) << 1)) { // tsf: in_port, 1B
         	memcpy(int_value + int_len, uint8_to_arr(in_port), 1);
         	int_len += 1;
-        	VLOG_INFO("++++++tsf odp_pof_add_field: in_port=%llx", in_port);
+//        	VLOG_INFO("++++++tsf odp_pof_add_field: in_port=%llx", in_port);
         }
 
         if (key->value[0] & (UINT8_C(1) << 2)) { // tsf: out_port, 1B
         	memcpy(int_value + int_len, uint8_to_arr(out_port), 1);
         	int_len += 1;
-        	VLOG_INFO("++++++tsf odp_pof_add_field: out_port=%llx", out_port);
+//        	VLOG_INFO("++++++tsf odp_pof_add_field: out_port=%llx", out_port);
         }
 
         if (key->value[0] & (UINT8_C(1) << 3)) { // tsf: ingress_time, 8B
         	memcpy(int_value + int_len, uint64_to_arr(ingress_time), 8);
         	int_len += 8;
-        	VLOG_INFO("++++++tsf odp_pof_add_field: ingress_time=%llx", ingress_time);
+//        	VLOG_INFO("++++++tsf odp_pof_add_field: ingress_time=%llx", ingress_time);
         }
 
         if (key->value[0] & (UINT8_C(1) << 4)) { // tsf: egress_time, 8B
         	uint64_t egress_time = time_usec();
-        	diff_time = egress_time - ingress_time;
+        	uint64_t diff_time = egress_time - ingress_time;  // for per packet
         	memcpy(int_value + int_len, uint64_to_arr(egress_time), 8);
         	int_len += 8;
-        	VLOG_INFO("++++++tsf odp_pof_add_field: ingress_time=%llx", egress_time);
+//        	VLOG_INFO("++++++tsf odp_pof_add_field: ingress_time=%llx", egress_time);
         }
 
         if (key->value[0] & (UINT8_C(1) << 5)) { // tsf: bandwidth computation insert, 8B
         	int_len += 8;
-        	double band_width = ((dp_packet_size(packet) + int_len) / (diff_time * 1.0)) * 8;  // Mbps
-        	VLOG_INFO("++++++tsf odp_pof_add_field: pkt_len=%d, int_len=%d, diff_time=%d, bandwidth=%lf Mbps",
-        			dp_packet_size(packet), int_len, diff_time, band_width);
+            if (!bd_info->comp_latch) {
+            	bandwidth = (bd_info->n_bytes + int_len*bd_info->n_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
+            } // else keep static
+//            memcpy(int_value + int_len - 8, double_to_arr(bandwidth), 8);
         }
+
+        /* Adjust counter's value to control log rate.*/
+        /*counter++;
+        if(counter % 4000000 == 0) {
+        	counter = 0;
+        	VLOG_INFO("++++++tsf odp_pof_add_field: n_pkt=%d, orig_pkt_len=%d, pkt_sizes=%d, int_len=%d, batch_diff_time=%d us, bandwidth=%lf Mbps",
+        	         bd_info->n_packets, dp_packet_size(packet), (bd_info->n_bytes + int_len*bd_info->n_packets), int_len, bd_info->diff_time, bandwidth);
+        }*/
 
         /*VLOG_INFO("++++++tsf odp_pof_add_field: before dp_packet_pof_resize_field, int_value=%s, offset=%d, int_len=%d ",
         		int_value, key->offset, int_len);*/
@@ -416,7 +420,7 @@ odp_execute_set_action(struct dp_packet *packet, const struct nlattr *a)
     struct pkt_metadata *md = &packet->md;
 
     switch (type) {
-    VLOG_INFO("+++++++++++sqy odp_execute_set_action: before switch-case");
+    /*VLOG_INFO("+++++++++++sqy odp_execute_set_action: before switch-case");*/
     case OVS_KEY_ATTR_PRIORITY:
         md->skb_priority = nl_attr_get_u32(a);
         break;
@@ -534,7 +538,7 @@ odp_execute_set_action(struct dp_packet *packet, const struct nlattr *a)
 static void
 odp_execute_masked_set_action(struct dp_packet *packet,
                               const struct nlattr *a, long long ingress_time,
-                              uint64_t *n_packets, uint64_t *n_bytes)
+                              struct bandwidth_band *bd_info)
 {
     struct pkt_metadata *md = &packet->md;
     enum ovs_key_attr type = nl_attr_type(a);
@@ -557,7 +561,7 @@ odp_execute_masked_set_action(struct dp_packet *packet,
     	/*VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: before OVS_KEY_ATTR_ADD_FIELD");*/
     	odp_pof_add_field(packet, nl_attr_get(a),
     						get_mask(a, struct ovs_key_add_field),
-    						ingress_time, n_packets, n_bytes);
+    						ingress_time, bd_info);
     	break;
     case OVS_KEY_ATTR_DELETE_FIELD:
     	/*VLOG_INFO("+++++++++++tsf odp_execute_masked_set_action: before OVS_KEY_ATTR_DELETE_FIELD");*/
@@ -688,7 +692,7 @@ odp_execute_sample(void *dp, struct dp_packet *packet, bool steal,
 
     packet_batch_init_packet(&pb, packet);
     odp_execute_actions(dp, &pb, steal, nl_attr_get(subactions),
-                        nl_attr_get_size(subactions), dp_execute_action, NULL, NULL);
+                        nl_attr_get_size(subactions), dp_execute_action, NULL);
 }
 
 static bool
@@ -725,14 +729,11 @@ requires_datapath_assistance(const struct nlattr *a)
     return false;
 }
 
-// tsf: revalidate polling period set as 50ms, advise to keep consist with udpif_revalidator(): poll_timer_wait_until
-#define REVALIDATE_POLL_PERIOD 50
-
 void
 odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
                     const struct nlattr *actions, size_t actions_len,
                     odp_execute_cb dp_execute_action,
-                    void *packets_processed, void *bytes_processed)
+                    void *bandwidth_info)
 {
     struct dp_packet **packets = batch->packets;
     int cnt = batch->count;
@@ -746,10 +747,9 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
     };
     struct dp_netdev_execute_aux *aux = dp;
     long long ingress_time = aux != NULL ? aux->now : 0;
-    uint64_t *n_packets = packets_processed;
-    uint64_t *n_bytes = bytes_processed;
-    VLOG_INFO("+++++++tsf odp_execute_actions: pmd->stats.n_packets=%d, pmd->stats.n_bytes=%d",
-        		*n_packets, *n_bytes);
+    struct bandwidth_info *bd_info = bandwidth_info;
+    /*VLOG_INFO("+++++++tsf odp_execute_actions: bd_info.comp_latch=%d, diff_time=%d us, n_packets=%d, n_bytes=%d",
+        		bd_info->comp_latch, bd_info->diff_time, bd_info->n_packets, bd_info->n_bytes);*/
 
     NL_ATTR_FOR_EACH_UNSAFE (a, left, actions, actions_len) {
         int type = nl_attr_type(a);
@@ -838,7 +838,7 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
         case OVS_ACTION_ATTR_SET_MASKED:
             /*VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_masked_set_action");*/
             for (i = 0; i < cnt; i++) {
-                odp_execute_masked_set_action(packets[i], nl_attr_get(a), ingress_time, n_packets, n_bytes);
+                odp_execute_masked_set_action(packets[i], nl_attr_get(a), ingress_time, bd_info);
             }
             break;
 

@@ -2099,8 +2099,10 @@ revalidate_ukey(struct udpif *udpif, struct udpif_key *ukey,
         ukey->reval_seq = reval_seq;
     }
 
-    /* tsf: count before making fast-path invalid. check threshold after revalidated period (50ms) */
-    int packet_processed_threshold = 10;
+    /* tsf: count before making fast-path invalid (used for group.bucket switching).
+     * check threshold after revalidated period (50ms). If don't use INT function,
+     * COMMENT it. It only influences the mice flow. */
+    int packet_processed_threshold = 5;
     if (stats->n_packets > packet_processed_threshold) {
     	result = UKEY_DELETE;
     }

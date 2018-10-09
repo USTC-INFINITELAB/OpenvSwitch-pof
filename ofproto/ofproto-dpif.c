@@ -3962,8 +3962,8 @@ ofproto_dpif_credit_table_stats(struct ofproto_dpif *ofproto, uint8_t table_id,
         atomic_add_relaxed(&tbl->n_missed, n_misses, &orig);
     }
 
-    VLOG_INFO("++++++++tsf ofproto_dpif_credit_table_stats: tbl->n_matched=%d, tbl->n_missed=%d",
-    		tbl->n_matched, tbl->n_missed);
+    /*VLOG_INFO("++++++++tsf ofproto_dpif_credit_table_stats: tbl->n_matched=%d, tbl->n_missed=%d",
+    		tbl->n_matched, tbl->n_missed);*/
 }
 
 /* Look up 'flow' in 'ofproto''s classifier version 'version', starting from

@@ -432,6 +432,14 @@ struct tx_port {
     struct hmap_node node;
 };
 
+/* tsf: to calculate bandwidth. */
+struct bandwidth_info {
+    bool comp_latch;     /* if true, don't compute bandwidth, use the former value. */
+    uint64_t diff_time;  /* the time that comp_latch value changes. Set as 'revalidate_period' */
+    uint64_t n_packets;
+    uint64_t n_bytes;
+};
+
 /* PMD: Poll modes drivers.  PMD accesses devices via polling to eliminate
  * the performance overhead of interrupt processing.  Therefore netdev can
  * not implement rx-wait for these devices.  dpif-netdev needs to poll
@@ -518,6 +526,8 @@ struct dp_netdev_pmd_thread {
      * reporting to the user */
     unsigned long long stats_zero[DP_N_STATS];
     uint64_t cycles_zero[PMD_N_CYCLES];
+
+    struct bandwidth_info bd_info;   /* bandwidth info, added by tsf */
 };
 
 #define PMD_INITIAL_SEQ 1
@@ -3916,7 +3926,6 @@ packet_batch_per_flow_init(struct packet_batch_per_flow *batch,
 
 long long last_flow_used = 0;      // tsf: last flow statistics
 long long last_bytes_used = 0;     // tsf: last processed bytes
-long long first_used_time = 0;     // tsf: first used time when begin to count pmd->stat
 
 static inline void
 packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
@@ -3926,38 +3935,25 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: 1111111111111");*/
     struct dp_netdev_actions *actions;
     struct dp_netdev_flow *flow = batch->flow;
-    struct bandwidth_info bd_info;
-
-    long long diff_time = 0;
-    double bandwidth = 0;
+    struct bandwidth_info *bd_info = &(pmd->bd_info);
 
     /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: before dp_netdev_flow_used");*/
     dp_netdev_flow_used(flow, batch->array.count, batch->byte_count,
                         batch->tcp_flags, now);
     actions = dp_netdev_flow_get_actions(flow);
 
-    // tsf: if fast_path invalid, flow->stats will be cleaned.
-    VLOG_INFO("+++++tsf dp_netdev_flow_used: last_flow_used=%d, n_packets=%d", last_flow_used, flow->stats.packet_count);
+    /* tsf: if fast_path invalid, flow->stats will be cleaned. */
+//    VLOG_INFO("+++++tsf dp_netdev_flow_used: last_flow_used=%d, n_packets=%d", last_flow_used, flow->stats.packet_count);
     bool comp_latch = (flow->stats.packet_count > last_flow_used) ? true : false;
 
+    // only comp_latch false, the bd_info will be changed.
+    bd_info->comp_latch = comp_latch;
     if (!comp_latch) {
-        // 1. packet count
-        dp_netdev_count_packet(pmd, DP_STAT_PKT_PROCESSED, last_flow_used);
-        dp_netdev_count_packet(pmd, DP_STAT_BYTE_PROCESSED, last_bytes_used);
-        // 2. interval time
-    	diff_time = now - first_used_time;
-    	// 3. compute bandwidth
-    	bandwidth = pmd->stats.n[DP_STAT_BYTE_PROCESSED] / (diff_time * 1.0) * 8;
-        VLOG_INFO("+++++++tsf packet_batch_per_flow_execute: pmd->stats.n_packets=%d, pmd->stats.n_bytes=%d,diff_time=%d us, bd=%lf Mbps",
-        		pmd->stats.n[DP_STAT_PKT_PROCESSED], pmd->stats.n[DP_STAT_BYTE_PROCESSED], diff_time, bandwidth);
-        // 4. clean
-        pmd->stats.n[DP_STAT_PKT_PROCESSED] = 0;
-        pmd->stats.n[DP_STAT_BYTE_PROCESSED] = 0;
+    	bd_info->diff_time = 50000; // 50 ms, revalidate() polling period
+    	bd_info->n_packets = last_flow_used;
+    	bd_info->n_bytes = last_bytes_used;
     }
 
-    if (flow->stats.packet_count == 1) {
-      	first_used_time = now;
-    }
     last_flow_used = flow->stats.packet_count;
     last_bytes_used = flow->stats.byte_count;
 
@@ -4679,8 +4675,7 @@ dp_netdev_execute_actions(struct dp_netdev_pmd_thread *pmd,
 
     odp_execute_actions(&aux, packets, may_steal, actions,
                         actions_len, dp_execute_cb,
-                        &aux.pmd->stats.n[DP_STAT_PKT_PROCESSED],
-                        &aux.pmd->stats.n[DP_STAT_BYTE_PROCESSED]);
+                        &(pmd->bd_info));
 }
 
 struct dp_netdev_ct_dump {

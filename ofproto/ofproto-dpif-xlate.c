@@ -3765,7 +3765,7 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
     packet = dp_packet_clone(ctx->xin->packet);
     packet_batch_init_packet(&batch, packet);
     odp_execute_actions(NULL, &batch, false,
-                        ctx->odp_actions->data, ctx->odp_actions->size, NULL, NULL, NULL);
+                        ctx->odp_actions->data, ctx->odp_actions->size, NULL, NULL);
 
     /* A packet sent by an action in a table-miss rule is considered an
      * explicit table miss.  OpenFlow before 1.3 doesn't have that concept so
