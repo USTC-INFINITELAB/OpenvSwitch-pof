@@ -651,6 +651,8 @@ dpdk_eth_dev_queue_setup(struct netdev_dpdk *dev, int n_rxq, int n_txq)
         for (i = 0; i < n_txq; i++) {
             diag = rte_eth_tx_queue_setup(dev->port_id, i, dev->txq_size,
                                           dev->socket_id, NULL);
+            VLOG_INFO("++++++++tsf dpdk_eth_dev_queue_setup/txq_setup: dev->port_id=%d, dev->txq_size=%d, skt_id=%d",
+            		dev->port_id, dev->txq_size, dev->socket_id);
             if (diag) {
                 VLOG_INFO("Interface %s txq(%d) setup error: %s",
                           dev->up.name, i, rte_strerror(-diag));
@@ -668,6 +670,8 @@ dpdk_eth_dev_queue_setup(struct netdev_dpdk *dev, int n_rxq, int n_txq)
             diag = rte_eth_rx_queue_setup(dev->port_id, i, dev->rxq_size,
                                           dev->socket_id, NULL,
                                           dev->dpdk_mp->mp);
+            VLOG_INFO("++++++++tsf dpdk_eth_dev_queue_setup/rxq_setup: dev->port_id=%d, dev->rxq_size=%d, skt_id=%d",
+            		dev->port_id, dev->rxq_size, dev->socket_id);
             if (diag) {
                 VLOG_INFO("Interface %s rxq(%d) setup error: %s",
                           dev->up.name, i, rte_strerror(-diag));
@@ -716,6 +720,7 @@ dpdk_eth_dev_init(struct netdev_dpdk *dev)
 
     n_rxq = MIN(info.max_rx_queues, dev->up.n_rxq);
     n_txq = MIN(info.max_tx_queues, dev->up.n_txq);
+    VLOG_INFO("+++++++tsf dpdk_eth_dev_init: n_rxq=%d, n_txq=%d", n_rxq, n_txq);
 
     diag = dpdk_eth_dev_queue_setup(dev, n_rxq, n_txq);
     if (diag) {
@@ -744,6 +749,7 @@ dpdk_eth_dev_init(struct netdev_dpdk *dev)
 
     mbp_priv = rte_mempool_get_priv(dev->dpdk_mp->mp);
     dev->buf_size = mbp_priv->mbuf_data_room_size - RTE_PKTMBUF_HEADROOM;
+    VLOG_INFO("++++++++tsf dpdk_eth_dev_init: dev->buf_size=%d", dev->buf_size);
 
     dev->flags = NETDEV_UP | NETDEV_PROMISC;
 
@@ -847,10 +853,15 @@ netdev_dpdk_init(struct netdev *netdev, unsigned int port_no,
     dev->requested_rxq_size = dev->rxq_size;
     dev->requested_txq_size = dev->txq_size;
 
+    VLOG_INFO("+++++++tsf netdev_dpdk_init: n_rxq=%d, rxq_size=%d; n_txq=%d, txq_size=%d",
+    		netdev->n_rxq, dev->rxq_size, netdev->n_txq, dev->txq_size);
+
     /* Initialize the flow control to NULL */
     memset(&dev->fc_conf, 0, sizeof dev->fc_conf);
     if (type == DPDK_DEV_ETH) {
+    	VLOG_INFO("+++++++tsf netdev_dpdk_init: before dpdk_eth_dev_init");
         err = dpdk_eth_dev_init(dev);
+        VLOG_INFO("+++++++tsf netdev_dpdk_init: after dpdk_eth_dev_init");
         if (err) {
             goto unlock;
         }
@@ -1117,6 +1128,9 @@ netdev_dpdk_set_config(struct netdev *netdev, const struct smap *args)
     dpdk_process_queue_size(netdev, args, "n_txq_desc",
                             NIC_PORT_DEFAULT_TXQ_SIZE,
                             &dev->requested_txq_size);
+
+    VLOG_INFO("+++++++tsf netdev_dpdk_set_config: netdev.n_rxq_desc=%d, n_txq_desc=%d",
+    		 dev->rxq_size, dev->txq_size);
 
     rx_fc_en = smap_get_bool(args, "rx-flow-ctrl", false);
     tx_fc_en = smap_get_bool(args, "tx-flow-ctrl", false);
@@ -1670,11 +1684,18 @@ netdev_dpdk_send__(struct netdev_dpdk *dev, int qid,
                    struct dp_packet_batch *batch, bool may_steal,
                    bool concurrent_txq)
 {
-//	VLOG_INFO("++++++tsf netdev_dpdk_send__");
+	VLOG_INFO("++++++tsf netdev_dpdk_send__: port_id=%d, qid=%d", dev->port_id, qid);
     if (OVS_UNLIKELY(concurrent_txq)) {
         qid = qid % dev->up.n_txq;
         rte_spinlock_lock(&dev->tx_q[qid].tx_lock);
     }
+
+    /*int used_desc = rte_eth_rx_queue_count(dev->port_id, qid);
+    VLOG_INFO("++++++tsf netdev_dpdk_send__: qid=0(Rx), used_tx_desc=%d", qid, rte_eth_rx_queue_count(0, 0));
+    VLOG_INFO("++++++tsf netdev_dpdk_send__: qid=%d(Tx), used_tx_desc=%d", qid, rte_eth_rx_queue_count(1, 0));*/
+
+    VLOG_INFO("+++++++tsf netdev_dpdk_send__: stats.rx_packets=%d, tx_packets=%d", dev->stats.rx_packets, dev->stats.tx_packets);
+    VLOG_INFO("+++++++tsf netdev_dpdk_send__: stats.rx_dropped=%d, tx_dropped=%d", dev->stats.rx_dropped, dev->stats.tx_dropped);
 
     if (OVS_UNLIKELY(!may_steal ||
                      batch->packets[0]->source != DPBUF_DPDK)) {
@@ -1694,6 +1715,7 @@ netdev_dpdk_send__(struct netdev_dpdk *dev, int qid,
         dropped = batch->count - cnt;
 
         dropped += netdev_dpdk_eth_tx_burst(dev, qid, pkts, cnt);
+        VLOG_INFO("+++++++tsf netdev_dpdk_send__: dropped=%d", dropped);
 
         if (OVS_UNLIKELY(dropped)) {
             rte_spinlock_lock(&dev->stats_lock);
@@ -2952,8 +2974,13 @@ netdev_dpdk_reconfigure(struct netdev *netdev)
     dev->rxq_size = dev->requested_rxq_size;
     dev->txq_size = dev->requested_txq_size;
 
+    VLOG_INFO("+++++++tsf: netdev_dpdk_reconfigure: netdev->n_rxq=%d, rxq_size=%d; n_txq=%d, txq_size=%d",
+    		netdev->n_rxq, dev->rxq_size, netdev->n_txq, dev->txq_size);
+
     rte_free(dev->tx_q);
+    VLOG_INFO("+++++++tsf: netdev_dpdk_reconfigure: before dpdk_eth_dev_init");
     err = dpdk_eth_dev_init(dev);
+    VLOG_INFO("+++++++tsf: netdev_dpdk_reconfigure: after dpdk_eth_dev_init");
     dev->tx_q = netdev_dpdk_alloc_txq(netdev->n_txq);
     if (!dev->tx_q) {
         err = ENOMEM;
