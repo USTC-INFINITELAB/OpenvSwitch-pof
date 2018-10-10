@@ -1541,7 +1541,7 @@ pof_group_default_best_live_bucket_v1(const struct xlate_ctx *ctx,
     uint32_t static temp_score[6];              // OFP_MAX_BUCKET_PER_GROUP = 6, store every bucket's score
     uint32_t static sum_score = 0;              // sum scores of all buckets'weight
 
-    uint32_t packets_interval = 1;              // process how many packet uints to switch buckets
+    uint32_t packets_interval = 1;              // process how many fast-path loop to switch buckets
     bool static init_flag = true;
 
     struct ofputil_bucket *bucket;
@@ -1556,7 +1556,7 @@ pof_group_default_best_live_bucket_v1(const struct xlate_ctx *ctx,
             sum_score += temp_score[bucket->bucket_id];
         }
         init_flag = false;
-        VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_v1: init stage, sum_score=%d", sum_score);
+        /*VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_v1: init stage, sum_score=%d", sum_score);*/
     }
 
     // tsf: run stage, compare all buckets' temp_score to choose one with best_score
@@ -1565,15 +1565,15 @@ pof_group_default_best_live_bucket_v1(const struct xlate_ctx *ctx,
 
             // tsf: calculate score
         	score = temp_score[bucket->bucket_id];
-            VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_v1 in if: bucket_id=%d, score=%d, sum_score=%d",
-                      bucket->bucket_id, score, sum_score);
+            /*VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_v1 in if: bucket_id=%d, score=%d, sum_score=%d",
+                      bucket->bucket_id, score, sum_score);*/
 
             // tsf: get best_score bucket
             if (score >= best_score) {
                 best_bucket = bucket;
                 best_score = score;
-                VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_v1 in if: best_bucket_id=%d, best_score=%d",
-                		best_bucket->bucket_id, best_score);
+                /*VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_v1 in if: best_bucket_id=%d, best_score=%d",
+                		best_bucket->bucket_id, best_score);*/
             }
         }
     }
@@ -1605,7 +1605,7 @@ pof_group_default_best_live_bucket_v2(const struct xlate_ctx *ctx,
     uint32_t static temp_score[6];              // OFP_MAX_BUCKET_PER_GROUP = 6, store every bucket's score
     uint32_t static sum_score = 0;              // sum scores of all buckets'weight
 
-    uint32_t packets_interval = 1;    // process how many packet uints to switch buckets
+    uint32_t packets_interval = 1;    // process how many fast-path loop to switch buckets
     bool static init_flag = true;
 
     struct ofputil_bucket *bucket;
@@ -1646,7 +1646,7 @@ pof_group_default_best_live_bucket_v2(const struct xlate_ctx *ctx,
         }
     }
 
-    VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_2: best_bucket_id=%d", best_bucket->bucket_id);
+    /*VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_2: best_bucket_id=%d", best_bucket->bucket_id);*/
 
     return best_bucket;
 }
@@ -3481,7 +3481,7 @@ xlate_all_group(struct xlate_ctx *ctx, struct group_dpif *group)
 
     buckets = group_dpif_get_buckets(group, NULL);
     LIST_FOR_EACH (bucket, list_node, buckets) {
-    	VLOG_INFO("++++++tsf xlate_all_group: before xlate_group_bucket, bucket_id=%d", bucket->bucket_id);
+    	/*VLOG_INFO("++++++tsf xlate_all_group: before xlate_group_bucket, bucket_id=%d", bucket->bucket_id);*/
         xlate_group_bucket(ctx, bucket);
     }
     xlate_group_stats(ctx, group, NULL);
@@ -3526,11 +3526,11 @@ xlate_default_pof_select_group(struct xlate_ctx *ctx, struct group_dpif *group)
     struct ofputil_bucket *bucket;
     uint32_t basis = 0;      // tsf: no use here
 
-    bucket = pof_group_default_best_live_bucket_v2(ctx, group, basis);      // tsf: now have v1 and v2 two methods
+    bucket = pof_group_default_best_live_bucket_v1(ctx, group, basis);    // tsf: support v1 and v2 two methods, choose one as you like
     if (bucket) {
         xlate_group_bucket(ctx, bucket);
         xlate_group_stats(ctx, group, bucket);
-        VLOG_INFO("++++++tsf xlate_default_select_group: xlate_group_bucket and xlate_group_stats");
+        /*VLOG_INFO("++++++tsf xlate_default_select_group: xlate_group_bucket and xlate_group_stats");*/
     } else if (ctx->xin->xcache) {
         group_dpif_unref(group);
     }
@@ -3634,11 +3634,11 @@ xlate_select_group(struct xlate_ctx *ctx, struct group_dpif *group)
     }
 
     if (selection_method[0] == '\0') {   // tsf: run here
-    	VLOG_INFO("++++++tsf xlate_select_group: xlate_default_select_group");
+    	/*VLOG_INFO("++++++tsf xlate_select_group: xlate_default_select_group");*/
         xlate_default_pof_select_group(ctx, group);
-    } else if (!strcasecmp("hash", selection_method)) {  // tsf: not support
+    } else if (!strcasecmp("hash", selection_method)) {  // tsf: not support, para got from ovs-ofctl
         xlate_hash_fields_select_group(ctx, group);
-    } else if (!strcasecmp("dp_hash", selection_method)) {  // tsf: not support
+    } else if (!strcasecmp("dp_hash", selection_method)) {  // tsf: not support, para got from ovs-ofctl
         xlate_dp_hash_select_group(ctx, group);
     } else {
         /* Parsing of groups should ensure this never happens */
@@ -3655,12 +3655,12 @@ xlate_group_action__(struct xlate_ctx *ctx, struct group_dpif *group)
     switch (group_dpif_get_type(group)) {
     case OFPGT11_ALL:
     case OFPGT11_INDIRECT:
-    	VLOG_INFO("++++++tsf xlate_group_action__: before xlate_all_group");
-        xlate_all_group(ctx, group);
+    	/*VLOG_INFO("++++++tsf xlate_group_action__: before xlate_all_group");*/
+        xlate_all_group(ctx, group);     // tsf: supported by POF
         break;
     case OFPGT11_SELECT:
-    	VLOG_INFO("++++++tsf xlate_group_action__: before xlate_select_group");
-        xlate_select_group(ctx, group);
+    	/*VLOG_INFO("++++++tsf xlate_group_action__: before xlate_select_group");*/
+        xlate_select_group(ctx, group);  // tsf: supported by POF
         break;
     case OFPGT11_FF:
         xlate_ff_group(ctx, group);
@@ -3801,7 +3801,7 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
             .max_len = len,
         },
     };
-    flow_get_metadata(&ctx->xin->flow, &am->pin.up.public.flow_metadata);   // tsf: no run for ipv4
+    //flow_get_metadata(&ctx->xin->flow, &am->pin.up.public.flow_metadata);   // tsf: no run for ipv4
     /*VLOG_INFO("++++++tsf execute_controller_action: metadata_inport=%"PRIu32,
     		am->pin.up.public.flow_metadata.flow.in_port.ofp_port);*/
 
@@ -4890,10 +4890,6 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
     struct ofproto *ofproto = ofproto_lookup(datapath_name);
     flow->telemetry.device_id = ofproto->datapath_id;
 
-//    uint64_t n_packets, n_bytes;
-//    n_packets = ofproto->tables->n_matched;
-//    VLOG_INFO("++++++++tsf pof_do_xlate_actions: n_matched=%d", n_packets);
-
     if (ovs_native_tunneling_is_on(ctx->xbridge->ofproto)) { //sqy notes: false
         tnl_neigh_snoop(flow, wc, ctx->xbridge->name);
     }
@@ -5028,8 +5024,8 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         	break;
 
         case OFPACT_GROUP:
-            VLOG_INFO("++++++tsf do_xlate_actions: xlate_group_action, group_id=%d",
-                      ofpact_get_GROUP(a)->group_id);
+            /*VLOG_INFO("++++++tsf pof_do_xlate_actions: xlate_group_action, group_id=%d",
+                      ofpact_get_GROUP(a)->group_id);*/
         	if (xlate_group_action(ctx, ofpact_get_GROUP(a)->group_id)) {
                 /* Group could not be found. */
 
