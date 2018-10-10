@@ -749,7 +749,7 @@ dpdk_eth_dev_init(struct netdev_dpdk *dev)
 
     mbp_priv = rte_mempool_get_priv(dev->dpdk_mp->mp);
     dev->buf_size = mbp_priv->mbuf_data_room_size - RTE_PKTMBUF_HEADROOM;
-    VLOG_INFO("++++++++tsf dpdk_eth_dev_init: dev->buf_size=%d", dev->buf_size);
+    /*VLOG_INFO("++++++++tsf dpdk_eth_dev_init: dev->buf_size=%d", dev->buf_size);*/
 
     dev->flags = NETDEV_UP | NETDEV_PROMISC;
 
@@ -1684,7 +1684,7 @@ netdev_dpdk_send__(struct netdev_dpdk *dev, int qid,
                    struct dp_packet_batch *batch, bool may_steal,
                    bool concurrent_txq)
 {
-	VLOG_INFO("++++++tsf netdev_dpdk_send__: port_id=%d, qid=%d", dev->port_id, qid);
+	/*VLOG_INFO("++++++tsf netdev_dpdk_send__: port_id=%d, qid=%d", dev->port_id, qid);*/
     if (OVS_UNLIKELY(concurrent_txq)) {
         qid = qid % dev->up.n_txq;
         rte_spinlock_lock(&dev->tx_q[qid].tx_lock);
@@ -1694,8 +1694,8 @@ netdev_dpdk_send__(struct netdev_dpdk *dev, int qid,
     VLOG_INFO("++++++tsf netdev_dpdk_send__: qid=0(Rx), used_tx_desc=%d", qid, rte_eth_rx_queue_count(0, 0));
     VLOG_INFO("++++++tsf netdev_dpdk_send__: qid=%d(Tx), used_tx_desc=%d", qid, rte_eth_rx_queue_count(1, 0));*/
 
-    VLOG_INFO("+++++++tsf netdev_dpdk_send__: stats.rx_packets=%d, tx_packets=%d", dev->stats.rx_packets, dev->stats.tx_packets);
-    VLOG_INFO("+++++++tsf netdev_dpdk_send__: stats.rx_dropped=%d, tx_dropped=%d", dev->stats.rx_dropped, dev->stats.tx_dropped);
+    /*VLOG_INFO("+++++++tsf netdev_dpdk_send__: stats.rx_packets=%d, tx_packets=%d", dev->stats.rx_packets, dev->stats.tx_packets);
+    VLOG_INFO("+++++++tsf netdev_dpdk_send__: stats.rx_dropped=%d, tx_dropped=%d", dev->stats.rx_dropped, dev->stats.tx_dropped);*/
 
     if (OVS_UNLIKELY(!may_steal ||
                      batch->packets[0]->source != DPBUF_DPDK)) {
@@ -1715,7 +1715,7 @@ netdev_dpdk_send__(struct netdev_dpdk *dev, int qid,
         dropped = batch->count - cnt;
 
         dropped += netdev_dpdk_eth_tx_burst(dev, qid, pkts, cnt);
-        VLOG_INFO("+++++++tsf netdev_dpdk_send__: dropped=%d", dropped);
+        /*VLOG_INFO("+++++++tsf netdev_dpdk_send__: dropped=%d", dropped);*/
 
         if (OVS_UNLIKELY(dropped)) {
             rte_spinlock_lock(&dev->stats_lock);
