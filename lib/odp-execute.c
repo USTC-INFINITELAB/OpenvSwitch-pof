@@ -121,7 +121,7 @@ uint8_t * uint8_to_arr(uint8_t uint8) {
     return arr;
 }
 
-double bandwidth = 0.0;   // initialized value, if change, else keep
+float bandwidth = 0.0;    // initialized value, if change, else keep
 int counter = 0;          // used to limit log rate
 
 static void
@@ -129,12 +129,7 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
                   const struct ovs_key_add_field *mask, long long ingress_time,
                   struct bandwidth_info *bd_info)
 {
-	/*VLOG_INFO("++++++tsf odp_pof_add_field:key->fieldid= %d, offset = %d, len= %d, value=%lx / %lx",
-			  key->field_id, key->offset, key->len, (uint64_t *)(key->value), (uint64_t *)key->value + 8);*/
-
 	char * header;
-   	/*VLOG_INFO("++++++tsf odp_pof_add_field: pre_time=%lld, now_time=%lld, diff_time=%lldus, key->value[0]=%d",
-    			pre_time, now_time, diff_time, key->value[0]);*/
 
 	/** tsf: if field_id=0xffff, then to add INT field, the `value` store the adding intent.
 	 *       otherwise, then to add static fields that comes from controller.
@@ -144,63 +139,64 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
         memmove(header, header + key->len, key->offset);
 		memcpy(header + key->offset, key->value, key->len);
 	} else {
-		uint64_t device_id = key->device_id;
+		uint32_t device_id = ntohl(key->device_id);
+		uint32_t ingress_time__ = (uint32_t) ingress_time;
 
 		uint8_t in_port = key->in_port;
 		uint8_t out_port = key->out_port;
 
 		uint16_t int_len = 0;      // indicate how many available bytes in int_value[]
-		uint8_t int_value[64];     // should cover added fields.
+		uint8_t int_value[32];     // should cover added fields.
 
-        if (key->value[0] & (UINT8_C(1))) { // tsf: device_id, 8B
-        	memcpy(int_value, uint64_to_arr(device_id), 8);
-        	int_len += 8;
-//        	VLOG_INFO("++++++tsf odp_pof_add_field: device_id=%llx", device_id);
+        if (key->value[0] & (UINT8_C(1))) { // tsf: device_id, 4B
+        	memcpy(int_value, &device_id, sizeof(device_id));
+        	int_len += 4;
+        	/*VLOG_INFO("++++++tsf odp_pof_add_field: device_id=%llx", htonl(device_id));*/
         }
 
         if (key->value[0] & (UINT8_C(1) << 1)) { // tsf: in_port, 1B
-        	memcpy(int_value + int_len, uint8_to_arr(in_port), 1);
+        	memcpy(int_value + int_len, &in_port, sizeof(in_port));
         	int_len += 1;
-//        	VLOG_INFO("++++++tsf odp_pof_add_field: in_port=%llx", in_port);
+        	/*VLOG_INFO("++++++tsf odp_pof_add_field: in_port=%llx", in_port);*/
         }
 
         if (key->value[0] & (UINT8_C(1) << 2)) { // tsf: out_port, 1B
-        	memcpy(int_value + int_len, uint8_to_arr(out_port), 1);
+        	memcpy(int_value + int_len, &out_port, sizeof(out_port));
         	int_len += 1;
-//        	VLOG_INFO("++++++tsf odp_pof_add_field: out_port=%llx", out_port);
+        	/*VLOG_INFO("++++++tsf odp_pof_add_field: out_port=%llx", out_port);*/
         }
 
         if (key->value[0] & (UINT8_C(1) << 3)) { // tsf: ingress_time, 8B
         	memcpy(int_value + int_len, uint64_to_arr(ingress_time), 8);
         	int_len += 8;
-//        	VLOG_INFO("++++++tsf odp_pof_add_field: ingress_time=%llx", ingress_time);
+        	/*VLOG_INFO("++++++tsf odp_pof_add_field: ingress_time=%llx / %llx", ingress_time, ingress_time__);*/
         }
 
-        if (key->value[0] & (UINT8_C(1) << 4)) { // tsf: egress_time, 8B
-        	uint64_t egress_time = time_usec();
-        	uint64_t diff_time = egress_time - ingress_time;  // for per packet
-        	memcpy(int_value + int_len, uint64_to_arr(egress_time), 8);
-        	int_len += 8;
-//        	VLOG_INFO("++++++tsf odp_pof_add_field: ingress_time=%llx", egress_time);
+        if (key->value[0] & (UINT8_C(1) << 4)) { // tsf: hop latency, 2B
+        	uint32_t egress_time = (uint32_t) time_usec();
+        	uint16_t diff_time = ntohs(egress_time - ingress_time__);  // for packet level
+        	memcpy(int_value + int_len, &diff_time, 2);
+        	int_len += 2;
+        	/*VLOG_INFO("++++++tsf odp_pof_add_field: egress_time=%llx, diff_lantency=%d us", egress_time, htons(diff_time));*/
         }
 
-        if (key->value[0] & (UINT8_C(1) << 5)) { // tsf: bandwidth computation insert, 8B
+        if (key->value[0] & (UINT8_C(1) << 5)) { // tsf: bandwidth computation insert, 4B
             if (!bd_info->comp_latch) {
-            	bandwidth = (bd_info->n_bytes + (int_len+8)*bd_info->n_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
+            	bandwidth = (bd_info->n_bytes + (int_len+4)*bd_info->n_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
             } // else keep static
-            memcpy(int_value + int_len, &bandwidth, 8);      // sizeof double, should read as double type
-            int_len += 8;
+            memcpy(int_value + int_len, &bandwidth, 4);      // stored as float type
+            int_len += 4;
         }
 
         /* Adjust counter's value to control log rate.*/
-        /*counter++;
-        if(counter % 20 == 0) {
+        counter++;
+        if(counter % 400000 == 0) {
         	counter = 0;
-            double test;
-            memcpy(&test, int_value + int_len - 8, 8);
-        	VLOG_INFO("++++++tsf odp_pof_add_field: n_pkt=%d, orig_pkt_len=%d, pkt_sizes=%d, int_len=%d, batch_diff_time=%d us, bandwidth=%lf Mbps, back_bd=%lf Mbps",
+            float test;
+            memcpy(&test, int_value + int_len - 4, 4);
+        	VLOG_INFO("++++++tsf odp_pof_add_field: n_pkt=%d, orig_pkt_len=%d, pkt_sizes=%d, int_len=%d, batch_diff_time=%d us, bandwidth=%f Mbps, back_bd=%f Mbps",
         	         bd_info->n_packets, dp_packet_size(packet), (bd_info->n_bytes + int_len*bd_info->n_packets), int_len, bd_info->diff_time, bandwidth, test);
-        }*/
+        }
 
         /*VLOG_INFO("++++++tsf odp_pof_add_field: before dp_packet_pof_resize_field, int_value=%s, offset=%d, int_len=%d ",
         		int_value, key->offset, int_len);*/
