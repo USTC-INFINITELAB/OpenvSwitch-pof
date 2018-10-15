@@ -363,6 +363,9 @@ struct dp_netdev_flow {
 
     bool dead;
     bool have_group_action;          /* tsf: Indicate this flow contains Group actions. */
+    bool sel_int_action;             /* tsf: Indicate this flow will execute selective INT,
+     	 	 	 	 	 	 	 	  *      add_dynamic_field->field_id == 0xffff.
+     	 	 	 	 	 	 	 	  * */
 
     /* Statistics. */
     struct dp_netdev_flow_stats stats;
@@ -438,6 +441,7 @@ struct bandwidth_info {
     bool comp_latch;     /* if true, don't compute bandwidth, use the former value. */
     uint64_t diff_time;  /* the time that comp_latch value changes. Set as 'revalidate_period' */
     uint64_t n_packets;
+    uint64_t sel_int_packets;
     uint64_t n_bytes;
 };
 
@@ -3925,8 +3929,9 @@ packet_batch_per_flow_init(struct packet_batch_per_flow *batch,
     batch->tcp_flags = 0;
 }
 
-long long last_flow_used = 0;      // tsf: last flow statistics
-long long last_bytes_used = 0;     // tsf: last processed bytes
+long long last_n_packets_used = 0;      // tsf: last flow statistics
+long long last_sel_int_packets = 0;
+long long last_n_bytes_used = 0;        // tsf: last processed bytes
 
 static inline void
 packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
@@ -3945,20 +3950,20 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
 
     /* tsf: if fast_path invalid, flow->stats will be cleaned. */
 //    VLOG_INFO("+++++tsf dp_netdev_flow_used: last_flow_used=%d, n_packets=%d", last_flow_used, flow->stats.packet_count);
-    bool comp_latch = (flow->stats.packet_count > last_flow_used) ? true : false;
+    bool comp_latch = (flow->stats.packet_count > last_n_packets_used) ? true : false;
 
     // only comp_latch false, the bd_info will be changed.
     bd_info->comp_latch = comp_latch;
     if (!comp_latch) {
     	bd_info->diff_time = 50000; // 50 ms, revalidate() polling period
-    	bd_info->n_packets = last_flow_used;
-    	bd_info->n_bytes = last_bytes_used;
+    	bd_info->n_packets = last_n_packets_used;
+    	bd_info->n_bytes = last_n_bytes_used;
     }
 
-    last_flow_used = flow->stats.packet_count;
-    last_bytes_used = flow->stats.byte_count;
+    last_n_packets_used = flow->stats.packet_count;
+    last_n_bytes_used = flow->stats.byte_count;
 
-    VLOG_INFO("+++++++tsf packet_batch_per_flow_execute: netdev_flow.have_group_action=%d", flow->have_group_action);
+    VLOG_INFO("+++++++tsf packet_batch_per_flow_execute: netdev_flow.sel_int_action=%d", flow->sel_int_action);
 
     dp_netdev_execute_actions(pmd, &batch->array, true, &flow->flow,
                               actions->actions, actions->size, now);
@@ -4072,6 +4077,7 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
 
     match.tun_md.valid = false;
     match.wc.masks.have_group_action = false;
+    match.wc.masks.sel_int_action = false;
     miniflow_expand(&key->mf, &match.flow);
 
     ofpbuf_clear(actions);
@@ -4121,13 +4127,17 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
             netdev_flow = dp_netdev_flow_add(pmd, &match, &ufid,
                                              add_actions->data,
                                              add_actions->size);
+            netdev_flow->have_group_action = false;
+            netdev_flow->sel_int_action = false;
+
             if(match.wc.masks.have_group_action) {
                 netdev_flow->have_group_action = true;
-            	/*VLOG_INFO("++++++++tsf handle_packet_upcall: has_group_actions=%d, %lx", match.wc.masks.have_group_action, &match.wc);*/
-            } else {
-            	netdev_flow->have_group_action = false;
             }
-            VLOG_INFO("++++++++++tsf handle_packet_upcall: netdev_flow.have_group_action=%d", netdev_flow->have_group_action);
+
+            if(match.wc.masks.sel_int_action) {
+            	 netdev_flow->sel_int_action = true;
+            }
+            VLOG_INFO("++++++++++tsf handle_packet_upcall: netdev_flow.sel_action=%d", netdev_flow->sel_int_action);
         }
         ovs_mutex_unlock(&pmd->flow_mutex);
 

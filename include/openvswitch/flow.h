@@ -104,8 +104,9 @@ struct pof_fp_flow {
     uint16_t ct_state;          /* Connection tracking state. */
     uint16_t ct_zone;           /* Connection tracking zone. */
     uint32_t ct_mark;           /* Connection mark.*/
-    uint8_t have_group_action;
-    uint8_t pad1[3];            /* Pad to 64 bits. */
+    uint8_t have_group_action;  /* tsf: Used to tell packets to execute Group action*/
+    uint8_t sel_int_action;     /* tsf: Used to tell packets to execute INT add_field action. */
+    uint8_t pad1[2];            /* Pad to 64 bits. */
     ovs_u128 ct_label;          /* Connection label. */
     uint32_t conj_id;           /* Conjunction ID. */
     ofp_port_t actset_output;   /* Output port in action set. */
@@ -149,8 +150,9 @@ struct flow {
     uint16_t ct_state;          /* Connection tracking state. */
     uint16_t ct_zone;           /* Connection tracking zone. */
     uint32_t ct_mark;           /* Connection mark.*/
-    uint8_t have_group_action;
-    uint8_t pad1[3];            /* Pad to 64 bits. */
+    uint8_t have_group_action;  /* tsf: Used to tell packets to execute Group action*/
+    uint8_t sel_int_action;     /* tsf: Used to tell packets to execute INT add_field action. */
+    uint8_t pad1[2];            /* Pad to 64 bits. */
     ovs_u128 ct_label;          /* Connection label. */
     uint32_t conj_id;           /* Conjunction ID. */
     ofp_port_t actset_output;   /* Output port in action set. */
