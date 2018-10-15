@@ -362,6 +362,7 @@ struct dp_netdev_flow {
     struct ovs_refcount ref_cnt;
 
     bool dead;
+    bool have_group_action;          /* tsf: Indicate this flow contains Group actions. */
 
     /* Statistics. */
     struct dp_netdev_flow_stats stats;
@@ -3957,6 +3958,8 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     last_flow_used = flow->stats.packet_count;
     last_bytes_used = flow->stats.byte_count;
 
+    VLOG_INFO("+++++++tsf packet_batch_per_flow_execute: netdev_flow.have_group_action=%d", flow->have_group_action);
+
     dp_netdev_execute_actions(pmd, &batch->array, true, &flow->flow,
                               actions->actions, actions->size, now);
 }
@@ -4068,6 +4071,7 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
     int error;
 
     match.tun_md.valid = false;
+    match.wc.masks.have_group_action = false;
     miniflow_expand(&key->mf, &match.flow);
 
     ofpbuf_clear(actions);
@@ -4112,10 +4116,18 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
          * move to a per-core classifier, it would be reasonable. */
         ovs_mutex_lock(&pmd->flow_mutex);
         netdev_flow = dp_netdev_pmd_lookup_flow(pmd, key, NULL);
+
         if (OVS_LIKELY(!netdev_flow)) {
             netdev_flow = dp_netdev_flow_add(pmd, &match, &ufid,
                                              add_actions->data,
                                              add_actions->size);
+            if(match.wc.masks.have_group_action) {
+                netdev_flow->have_group_action = true;
+            	/*VLOG_INFO("++++++++tsf handle_packet_upcall: has_group_actions=%d, %lx", match.wc.masks.have_group_action, &match.wc);*/
+            } else {
+            	netdev_flow->have_group_action = false;
+            }
+            VLOG_INFO("++++++++++tsf handle_packet_upcall: netdev_flow.have_group_action=%d", netdev_flow->have_group_action);
         }
         ovs_mutex_unlock(&pmd->flow_mutex);
 

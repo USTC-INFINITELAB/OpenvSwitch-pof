@@ -5024,8 +5024,9 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         	break;
 
         case OFPACT_GROUP:
-            /*VLOG_INFO("++++++tsf pof_do_xlate_actions: xlate_group_action, group_id=%d",
-                      ofpact_get_GROUP(a)->group_id);*/
+        	wc->masks.have_group_action = true;
+            /*VLOG_INFO("++++++tsf pof_do_xlate_actions: xlate_group_action, group_id=%d, has_group_actions=%d, %lx",
+                      ofpact_get_GROUP(a)->group_id, wc->masks.have_group_action, wc);*/
         	if (xlate_group_action(ctx, ofpact_get_GROUP(a)->group_id)) {
                 /* Group could not be found. */
 

@@ -1094,7 +1094,6 @@ upcall_xlate(struct udpif *udpif, struct upcall *upcall,
     stats.n_packets = 1;
     stats.n_bytes = dp_packet_size(upcall->packet);
     stats.used = time_msec();
-//    stats.used = time_usec();
     stats.tcp_flags = ntohs(upcall->flow->tcp_flags);
 
     xlate_in_init(&xin, upcall->ofproto,
@@ -1220,13 +1219,15 @@ upcall_cb(const struct dp_packet *packet, const struct flow *flow, ovs_u128 *ufi
 
     error = upcall_receive(&upcall, udpif->backer, packet, type, userdata,
                            flow, 0, ufid, pmd_id);
+
     if (error) {
         return error;
     }
 
+    /*VLOG_INFO("++++++++tsf upcall_cb: has_group_action=%d, wc.addr=%lx", wc->masks.have_group_action, wc);*/
     error = process_upcall(udpif, &upcall, actions, wc);
     if (error) {
-        VLOG_INFO("+++++++++++sqy upcall_cb: error process_upcall");
+        /*VLOG_INFO("+++++++++++sqy upcall_cb: error process_upcall");*/
         goto out;
     }
 
