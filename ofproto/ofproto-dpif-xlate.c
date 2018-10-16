@@ -4985,7 +4985,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         	flow->len[action_num] = htons(add_field->tag_len / 8);  // bytes
         	flow->offset[action_num] = htons(add_field->tag_pos / 8);
         	flow->flag[action_num] = OFPACT_ADD_FIELD;
-        	VLOG_INFO("++++++tsf pof_do_xlate_actions: flow->field_id=%x", flow->field_id[action_num]);
+        	/*VLOG_INFO("++++++tsf pof_do_xlate_actions: flow->field_id=%x", flow->field_id[action_num]);*/
 
         	if (flow->field_id[action_num] == 0xffff) {  // tsf: execute add_dynamic_field, i.e. selective INT
         		wc->masks.sel_int_action = true;

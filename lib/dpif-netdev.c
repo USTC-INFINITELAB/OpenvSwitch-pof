@@ -436,13 +436,13 @@ struct tx_port {
     struct hmap_node node;
 };
 
-/* tsf: to calculate bandwidth. */
+/* tsf: to calculate bandwidth. should keep consistent with odp-execute.c */
 struct bandwidth_info {
-    bool comp_latch;     /* if true, don't compute bandwidth, use the former value. */
-    uint64_t diff_time;  /* the time that comp_latch value changes. Set as 'revalidate_period' */
+    bool comp_latch;             /* If true, don't compute bandwidth, use the former value. */
+    uint64_t diff_time;          /* The time that comp_latch value changes. Set as 'revalidate_period' */
     uint64_t n_packets;
-    uint64_t sel_int_packets;
     uint64_t n_bytes;
+    uint64_t sel_int_packets;    /* How many packets will execute add_dynamcic_field (sel_INT_action). */
 };
 
 /* PMD: Poll modes drivers.  PMD accesses devices via polling to eliminate
@@ -3929,9 +3929,9 @@ packet_batch_per_flow_init(struct packet_batch_per_flow *batch,
     batch->tcp_flags = 0;
 }
 
-long long last_n_packets_used = 0;      // tsf: last flow statistics
-long long last_sel_int_packets = 0;
+long long last_n_packets_used = 0;      // tsf: last flow statistics, shared for multi-flow
 long long last_n_bytes_used = 0;        // tsf: last processed bytes
+long long last_sel_int_packets = 0;
 
 static inline void
 packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
@@ -3952,18 +3952,29 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
 //    VLOG_INFO("+++++tsf dp_netdev_flow_used: last_flow_used=%d, n_packets=%d", last_flow_used, flow->stats.packet_count);
     bool comp_latch = (flow->stats.packet_count > last_n_packets_used) ? true : false;
 
-    // only comp_latch false, the bd_info will be changed.
+    /* only comp_latch false, the bd_info will be changed. */
     bd_info->comp_latch = comp_latch;
     if (!comp_latch) {
     	bd_info->diff_time = 50000; // 50 ms, revalidate() polling period
     	bd_info->n_packets = last_n_packets_used;
     	bd_info->n_bytes = last_n_bytes_used;
+    	bd_info->sel_int_packets = last_sel_int_packets;
+    	// clear
+        last_n_packets_used = 0;
+        last_n_bytes_used = 0;
+        last_sel_int_packets = 0;
     }
 
-    last_n_packets_used = flow->stats.packet_count;
-    last_n_bytes_used = flow->stats.byte_count;
+    /* apply to count multi-flow */
+    last_n_packets_used += batch->array.count;
+    last_n_bytes_used += batch->byte_count;
+    /* count packets that will execute add_dynamic_field (sel_int_action) */
+    if (flow->sel_int_action) {
+    	last_sel_int_packets += batch->array.count;
+    }
 
-    VLOG_INFO("+++++++tsf packet_batch_per_flow_execute: netdev_flow.sel_int_action=%d", flow->sel_int_action);
+
+    /*VLOG_INFO("+++++++tsf packet_batch_per_flow_execute: netdev_flow.sel_int_action=%d", flow->sel_int_action);*/
 
     dp_netdev_execute_actions(pmd, &batch->array, true, &flow->flow,
                               actions->actions, actions->size, now);
@@ -4137,7 +4148,7 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
             if(match.wc.masks.sel_int_action) {
             	 netdev_flow->sel_int_action = true;
             }
-            VLOG_INFO("++++++++++tsf handle_packet_upcall: netdev_flow.sel_action=%d", netdev_flow->sel_int_action);
+            /*VLOG_INFO("++++++++++tsf handle_packet_upcall: netdev_flow.sel_action=%d", netdev_flow->sel_int_action);*/
         }
         ovs_mutex_unlock(&pmd->flow_mutex);
 

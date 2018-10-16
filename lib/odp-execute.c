@@ -38,12 +38,13 @@
 
 VLOG_DEFINE_THIS_MODULE(odp_execute);
 
-/* tsf: to calculate bandwidth. */
+/* tsf: to calculate bandwidth. should keep consistent with dpif-netdev.c */
 struct bandwidth_info {
     bool comp_latch;     /* if true, don't compute bandwidth, use the former value. */
     uint64_t diff_time;  /* the time that comp_latch value changes. */
     uint64_t n_packets;
     uint64_t n_bytes;
+    uint64_t sel_int_packets;
 };
 
 /* Masked copy of an ethernet address. 'src' is already properly masked. */
@@ -182,21 +183,19 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 
         if (key->value[0] & (UINT8_C(1) << 5)) { // tsf: bandwidth computation insert, 4B
             if (!bd_info->comp_latch) {
-            	bandwidth = (bd_info->n_bytes + (int_len+4)*bd_info->n_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
+            	bandwidth = (bd_info->n_bytes + (int_len+4)*bd_info->sel_int_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
             } // else keep static
             memcpy(int_value + int_len, &bandwidth, 4);      // stored as float type
             int_len += 4;
         }
 
         /* Adjust counter's value to control log rate.*/
-        counter++;
-        if(counter % 400000 == 0) {
+        /*counter++;
+        if(counter % 4000000 == 0) {
         	counter = 0;
-            float test;
-            memcpy(&test, int_value + int_len - 4, 4);
-        	VLOG_INFO("++++++tsf odp_pof_add_field: n_pkt=%d, orig_pkt_len=%d, pkt_sizes=%d, int_len=%d, batch_diff_time=%d us, bandwidth=%f Mbps, back_bd=%f Mbps",
-        	         bd_info->n_packets, dp_packet_size(packet), (bd_info->n_bytes + int_len*bd_info->n_packets), int_len, bd_info->diff_time, bandwidth, test);
-        }
+        	VLOG_INFO("++++++tsf odp_pof_add_field: n_pkt=%d / %d, orig_pkt_len=%d, int_len=%d, pkt_sizes=%d, batch_diff_time=%d us, bandwidth=%f Mbps",
+        	         bd_info->n_packets, bd_info->sel_int_packets, dp_packet_size(packet), int_len, (bd_info->n_bytes + int_len*bd_info->sel_int_packets), bd_info->diff_time, bandwidth);
+        }*/
 
         /*VLOG_INFO("++++++tsf odp_pof_add_field: before dp_packet_pof_resize_field, int_value=%s, offset=%d, int_len=%d ",
         		int_value, key->offset, int_len);*/
