@@ -5746,11 +5746,13 @@ get_pof_delete_field_key(const struct pof_flow *flow, struct ovs_key_delete_fiel
 {
 	struct pof_match *pm;
 	eth->len_type = flow->len[index];  // len_type
+	uint32_t *uint32 = (uint32_t *) flow->value[index];
 
 	switch(eth->len_type) {
 		case 0:  // POFVT_IMMEDIATE_NUM
 			eth->offset = ntohs(flow->offset[index]) / 8;
-			eth->len = flow->value[index][0] / 8;
+			eth->len = *uint32 / 8;    // cut 32b to 16b
+			/*VLOG_INFO("+++++tsf get_pof_delete_field: case0 offset=%d, len(uint32)=%d", eth->offset, eth->len);*/
 			break;
 		case 1:  // POFVT_FIELD
 			pm = (struct pof_match *) flow->value[index];
@@ -5766,13 +5768,13 @@ get_pof_delete_field_mask(const struct pof_flow *flow, struct ovs_key_delete_fie
 {
 	// no mask
 	struct pof_match *pm;
-
 	eth->len_type = flow->len[index];  // len_type
+	uint32_t *uint32 = (uint32_t *) flow->value[index];
 
 	switch(eth->len_type) {
 		case 0:  // POFVT_IMMEDIATE_NUM
 			eth->offset = ntohs(flow->offset[index]) / 8;
-			eth->len = flow->mask[index][0] / 8;
+			eth->len = *uint32 / 8;    // cut 32b to 16b
 			break;
 		case 1:  // POFVT_FIELD
 			pm = (struct pof_match *) flow->mask[index];
@@ -5787,13 +5789,13 @@ static void
 put_pof_delete_field_key(const struct ovs_key_delete_field *eth, struct pof_flow *flow, int index)
 {
 	struct pof_match *pm;
-
 	flow->len[index] = eth->len_type;
+	uint32_t *uint32 = (uint32_t *) flow->value[index];
 
 	switch(eth->len_type) {
 		case 0:  // POFVT_IMMEDIATE_NUM
 			flow->offset[index] = htons(eth->offset * 8);
-			flow->value[index][0] = eth->len * 8;
+			*uint32 = eth->len * 8;
 			break;
 		case 1:  // POFVT_FIELD
 			pm = (struct pof_match *) flow->value[index];
@@ -5801,7 +5803,7 @@ put_pof_delete_field_key(const struct ovs_key_delete_field *eth, struct pof_flow
 			pm->len = eth->len * 8;
 			break;
 	}
-	/*VLOG_INFO("++++++tsf put_delete_field_key eth->offset=%d, eth->len=%d", eth->offset, eth->len);*/
+	/*VLOG_INFO("++++++tsf put_delete_field_key eth->offset=%d, eth->len=%d", ntohs(flow->offset[index]), *uint32);*/
 }
 
 

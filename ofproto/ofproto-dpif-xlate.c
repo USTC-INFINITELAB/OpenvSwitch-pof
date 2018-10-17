@@ -4967,9 +4967,9 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             flow->offset[action_num] = htons(modify_field->offset / 8);
             flow->flag[action_num] = OFPACT_MODIFY_FIELD;
 
-            /*tsf: cut off increment from uint32_t into uint8_t*/
-//            memset(flow->value[action_num], 0x00, sizeof(flow->value[action_num]));
-//            memset(flow->mask[action_num], 0x00, sizeof(flow->mask[action_num]));
+            /*tsf: cut off increment from uint32_t (no need) into uint8_t. If you insist on
+             *     32b, refer to codes in case OFPACT_DELETE_FIELD. It's similar codes.
+             **/
             flow->value[action_num][0] = modify_field->increment;
             flow->mask[action_num][0] = 0xff;
 
@@ -5011,10 +5011,10 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             struct pof_match *pm;
             memset(flow->value[action_num], 0x00, sizeof(flow->value[action_num]));
             memset(flow->mask[action_num], 0x00, sizeof(flow->mask[action_num]));
-            if (flow->len[action_num] == 0) { // POFVT_IMMEDIATE_NUM
-                flow->value[action_num][0] = delete_field->tag_len.value;
-                flow->mask[action_num][0] = 0xff;
-                /*VLOG_INFO("++++++tsf pof_do_xlate_actions flow->value[3][0]=%d", flow->value[3][0]);*/
+            if (flow->len[action_num] == 0) { // POFVT_IMMEDIATE_NUM, will cut 32b to 16 b in commit_odp_actions()
+                memcpy(flow->value[action_num], &delete_field->tag_len.value, sizeof(delete_field->tag_len.value));
+                memset(flow->mask[action_num], 0xff, sizeof(delete_field->tag_len.value));
+                /*VLOG_INFO("++++++tsf pof_do_xlate_actions offset=%d, len=%d", delete_field->tag_pos, delete_field->tag_len.value);*/
             } else {  // // POFVT_FIELD
             	memcpy(flow->value[action_num], &delete_field->tag_len, sizeof(delete_field->tag_len));  // tsf: copy all union
             	memset(flow->mask[action_num], 0xff, sizeof(delete_field->tag_len));
