@@ -5751,7 +5751,7 @@ get_pof_delete_field_key(const struct pof_flow *flow, struct ovs_key_delete_fiel
 	switch(eth->len_type) {
 		case 0:  // POFVT_IMMEDIATE_NUM
 			eth->offset = ntohs(flow->offset[index]) / 8;
-			eth->len = *uint32 / 8;    // cut 32b to 16b
+			eth->len = ((uint16_t) *uint32) / 8;    // cut 32b to 16b
 			/*VLOG_INFO("+++++tsf get_pof_delete_field: case0 offset=%d, len(uint32)=%d", eth->offset, eth->len);*/
 			break;
 		case 1:  // POFVT_FIELD
@@ -5774,7 +5774,7 @@ get_pof_delete_field_mask(const struct pof_flow *flow, struct ovs_key_delete_fie
 	switch(eth->len_type) {
 		case 0:  // POFVT_IMMEDIATE_NUM
 			eth->offset = ntohs(flow->offset[index]) / 8;
-			eth->len = *uint32 / 8;    // cut 32b to 16b
+			eth->len = ((uint16_t) *uint32) / 8;    // cut 32b to 16b
 			break;
 		case 1:  // POFVT_FIELD
 			pm = (struct pof_match *) flow->mask[index];
