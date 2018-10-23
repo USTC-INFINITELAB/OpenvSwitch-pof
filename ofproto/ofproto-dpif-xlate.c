@@ -378,6 +378,11 @@ struct xlate_ctx {
     struct ofpbuf action_set;   /* Action set. */
 
     enum xlate_error error;     /* Translation failed. */
+
+    /* tsf: Used in execute_controller_action(). If true, truncate packets into
+     * {offset, length} in byte from packet header. {offset, lenght} need to be
+     * given manually before running ovs.*/
+    bool need_trunc;     /* If true, truncate packets before packet-in to controller. */
 };
 
 const char *xlate_strerror(enum xlate_error error)
@@ -3778,7 +3783,22 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
     /*VLOG_INFO("++++++tsf execute_controller_action: reason2=%d", reason);*/
 
     size_t packet_len = dp_packet_size(packet);
-    /*VLOG_INFO("++++++tsf execute_controller_action: packet_len=%d", packet_len);*/
+    /*VLOG_INFO("++++++tsf execute_controller_action 1: packet_len=%d", packet_len);*/
+
+    /* truncate packets into {offset, length} in byte from header. */
+    if (ctx->need_trunc) {
+        int kept_offset = 26;
+        int kept_len = 14;
+        char *header = dp_packet_data(packet);
+        memcpy(header, header + kept_offset, kept_len);
+        int to_be_deleted_len = packet_len - kept_len;
+        int to_be_deleted_offset = kept_len;
+        memmove(header + to_be_deleted_len, header, to_be_deleted_offset);
+        dp_packet_pof_resize_field(packet, -to_be_deleted_len);
+        /*VLOG_INFO("++++++tsf execute_controller_action 2: packet_len=%d", dp_packet_size(packet));*/
+
+        packet_len = kept_len;
+    }
 
     struct ofproto_async_msg *am = xmalloc(sizeof *am);
     *am = (struct ofproto_async_msg) {
@@ -4100,6 +4120,7 @@ xlate_output_action(struct xlate_ctx *ctx,
     case OFPP_CONTROLLER:
     	/*VLOG_INFO("++++++tsf xlate_output_action: execute_controller_action, inport=%"PRIu32,
     			ctx->xin->flow.in_port.ofp_port);*/
+    	ctx->need_trunc = true;
         execute_controller_action(ctx, max_len,
                                   (ctx->in_group ? OFPR_GROUP
                                    : ctx->in_action_set ? OFPR_ACTION_SET
@@ -5741,6 +5762,7 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
 
         .action_set_has_group = false,
         .action_set = OFPBUF_STUB_INITIALIZER(action_set_stub),
+        .need_trunc = false,
     };
 
     /* 'base_flow' reflects the packet as it came in, but we need it to reflect

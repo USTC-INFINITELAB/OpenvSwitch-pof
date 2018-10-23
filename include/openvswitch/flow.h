@@ -90,6 +90,7 @@ struct pof_flow {
 
     uint8_t pad_to_flow[POF_MAX_MATCH_FIELD_NUM][31];
 };
+
 struct pof_fp_flow {
     /* Metadata */
     struct flow_tnl tunnel;     /* Encapsulating tunnel parameters. */
