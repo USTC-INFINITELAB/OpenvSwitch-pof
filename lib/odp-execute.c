@@ -218,7 +218,7 @@ static void
 odp_pof_delete_field(struct dp_packet *packet, const struct ovs_key_delete_field *key,
                     const struct ovs_key_delete_field *mask)
 {
-	/*VLOG_INFO("++++++tsf odp_pof_delete_field: offset=%d, len=%d.", key->offset, key->len);*/
+	/*VLOG_INFO("++++++tsf odp_pof_delete_field: offset=%d, len=%d, pkt_len=%d.", key->offset, key->len, dp_packet_size(packet));*/
 
 	char * header;
 	uint32_t offset = key->offset;
@@ -230,18 +230,30 @@ odp_pof_delete_field(struct dp_packet *packet, const struct ovs_key_delete_field
 	/* tsf: act1: defined as delete_trunc_field action, truncate packets into key->len length from header. */
 	if (key->offset == 0xffff / 8) {
 		/* delete_field in act3. */
+		int kept_offset = 26, kept_len = key->len;    // kept_offset defines the start location from header
+		memcpy(header, header+kept_offset, kept_len);
 		len = dp_packet_size(packet) - key->len;     // remained payload to be deleted
 		offset = key->len;                           // keep key->len header
+		goto act3;
 	}
 
 	/* tsf: act2: defined as delete_int_field action, calculate deleted length according to mapInfo, key->offset
 	 * sets start location. INT format start from 272b: | type(2B) | TTL(1B) | mapInfo(1B) | INT_data([1, 8B]. */
 	if (key->len == 0xffff / 8) {
+		int int_ttl_offset = 36, int_ttl_len = 1;  // we define INT.ttl's {offset=36, len=1}
 		int int_map_offset = 37, int_map_len = 1;  // we define INT.mapInfo's {offset=37B, len=1B}
-		int int_header_offset = 34, int_header_len = 4;  //  2+1+1=4
+		int int_header_offset = 34, int_header_len = 4;  //  type + ttl + mapInfo = 2+1+1 = 4
 		int int_data_len = 0;
-		uint8_t int_map;
+		uint8_t int_map, int_ttl;
+		memcpy(&int_ttl, header + int_ttl_offset, int_ttl_len);    // read INT.ttl from packet frame
 		memcpy(&int_map, header + int_map_offset, int_map_len);    // read INT.mapInfo from packet frame
+
+		/* check ttl first. if ttl > 0, then followed with mapInfo and INT_data. */
+		if (int_ttl == 0) {
+			offset = int_header_offset;
+			len = 3;     // type + ttl = 3B
+			goto act3;
+		}
 
         if (int_map & (UINT8_C(1) << 0)) { // tsf: device_id, 4B
         	int_data_len += 4;
@@ -275,10 +287,10 @@ odp_pof_delete_field(struct dp_packet *packet, const struct ovs_key_delete_field
 	}
 
 	/* tsf: act3: original delete_field action, delete static {offset, length} field. */
+act3:
 	memmove(header + len, header, offset);  // shift the packet's length=key->offset backward key->len bytes
 	dp_packet_pof_resize_field(packet, -len);
 	/*VLOG_INFO("++++++tsf odp_pof_delete_field: after delete field 2, pkt_len=%d.", dp_packet_size(packet));*/
-
 }
 
 static void
