@@ -58,10 +58,10 @@ modprobe uio_pci_generic
 #done
 
 ##  IPL211, sfp for bigtao test (high speed), ethx for ostinato test (low speed)
-./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.0 # sfp eth5
-./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.1 # sfp eth6
-#./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.0 # eth1
-#./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.1 # eth2
+#./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.0 # sfp eth5
+#./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.1 # sfp eth6
+./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.0 # eth1
+./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.1 # eth2
 ./tools/dpdk-devbind.py --status
 echo "DPDK Environment Success"
 cd $OVS_DIR
@@ -96,5 +96,9 @@ ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
 ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
 #ovs-ofctl show br0
 sleep 1s
+
+# set datapath-id of ovs, must be 8B decimal number, cannot omit zeros.
+ovs-vsctl set bridge br0 other-config:datapath-id=0000000000000001
+
 #ovs-appctl -t ovs-vswitchd exit
 #ovs-vswitchd --pidfile

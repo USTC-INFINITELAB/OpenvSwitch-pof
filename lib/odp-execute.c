@@ -107,7 +107,7 @@ odp_pof_modify_field(struct dp_packet *packet, const struct ovs_key_modify_field
 
 
 /* tsf: convert uint64_t data into byte array. */
-uint8_t * uint64_to_arr(uint64_t uint64) {
+static uint8_t * uint64_to_arr(uint64_t uint64) {
     uint8_t arr[8];
     for (int i = 0; i < 8; i++) {
         arr[7-i] = (uint64 >> 8*i) & 0xff;
@@ -116,10 +116,19 @@ uint8_t * uint64_to_arr(uint64_t uint64) {
 }
 
 /* tsf: store uint8_t data into byte array. */
-uint8_t * uint8_to_arr(uint8_t uint8) {
+static uint8_t * uint8_to_arr(uint8_t uint8) {
     uint8_t arr[8];
     arr[0] = uint8;
     return arr;
+}
+
+static uint8_t get_set_bits_of_byte(uint8_t byte){
+	uint8_t count = 0;
+	while (byte) {
+		count += byte & 1;
+		byte >>= 1;
+	}
+	return count;
 }
 
 float bandwidth = 0.0;    // initialized value, if change, else keep
@@ -149,8 +158,19 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 		uint16_t int_len = 0;      // indicate how many available bytes in int_value[]
 		uint8_t int_value[32];     // should cover added fields.
 
+		/* Check the numbers of set bits in key->value[0]. If equal to 0, return directly.
+		 * Otherwise, add key->value[0] to 'int_value' ahead, and followed with INT data. */
+		if (get_set_bits_of_byte(key->value[0]) == 0) {
+			return;
+		}
+
+		/* tsf: mapInfo, 1B */
+		memcpy(int_value, &key->value[0], 1);
+		int_len += 1;
+		/*VLOG_INFO("++++++tsf odp_pof_add_field: mapInfo=%x", key->value[0]);*/
+
         if (key->value[0] & (UINT8_C(1))) { // tsf: device_id, 4B
-        	memcpy(int_value, &device_id, sizeof(device_id));
+        	memcpy(int_value + int_len, &device_id, sizeof(device_id));
         	int_len += 4;
         	/*VLOG_INFO("++++++tsf odp_pof_add_field: device_id=%llx", htonl(device_id));*/
         }
@@ -174,7 +194,8 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
         }
 
         if (key->value[0] & (UINT8_C(1) << 4)) { // tsf: hop latency, 2B
-        	uint32_t egress_time = (uint32_t) time_usec();
+//        	uint32_t egress_time = (uint32_t) time_usec();             // monotonic timer
+        	uint32_t egress_time = (uint32_t) time_wall_usec();        // current time
         	uint16_t diff_time = ntohs(egress_time - ingress_time__);  // for packet level
         	memcpy(int_value + int_len, &diff_time, 2);
         	int_len += 2;
@@ -183,7 +204,8 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 
         if (key->value[0] & (UINT8_C(1) << 5)) { // tsf: bandwidth computation insert, 4B
             if (!bd_info->comp_latch) {
-            	bandwidth = (bd_info->n_bytes + (int_len+4)*bd_info->sel_int_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
+            	// type:2 + ttl:1 = 3, mapInfo:1 + int_data_len = int_len
+            	bandwidth = (bd_info->n_bytes + (int_len+3)*bd_info->sel_int_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
             } // else keep static
             memcpy(int_value + int_len, &bandwidth, 4);      // stored as float type
             int_len += 4;
@@ -202,9 +224,7 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
         header = dp_packet_pof_resize_field(packet, int_len);
         memmove(header, header + int_len, key->offset);
         memcpy(header + key->offset, int_value, int_len);
-
 	}
-
 }
 
 
