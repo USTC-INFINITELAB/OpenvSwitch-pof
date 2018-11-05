@@ -1,10 +1,11 @@
 set -e
 
-#安装ovs-dpdk
-export HOME=/home/tsf
+## install ovs-dpdk
+export HOME=$HOME
 export DPDK_DIR=$HOME/dpdk-16.07
 cd $DPDK_DIR
-#dpdk configure
+
+## dpdk configuration
 export DPDK_TARGET=x86_64-native-linuxapp-gcc
 export DPDK_BUILD=$DPDK_DIR/$DPDK_TARGET
 #rm -r x86_64-native-linuxapp-gcc
@@ -13,13 +14,14 @@ then
 make install T=$DPDK_TARGET DESTDIR=install
 fi
 
+## for i40e driver, should compile it when first run
 #make install T=$DPDK_TARGET DESTDIR=install
 # For IVSHMEM, Set `export DPDK_TARGET=x86_64-ivshmem-linuxapp-gcc`
 
 cd $HOME
 export OVS_DIR=$HOME/OpenvSwitch-pof
 cd $OVS_DIR
-#./boot.sh  # run once
+#./boot.sh                           ## run once when first run
 #./configure --with-dpdk=$DPDK_BUILD
 ./configure CFLAGS="-g -O0" --with-dpdk=$DPDK_BUILD
 make -j24
@@ -30,10 +32,10 @@ sysctl -w vm.nr_hugepages=2048
 #grep HugePages_ /proc/meminfo   #获取大页信息
 if [ ! -d /dev/hugepages ]
 then
-mkdir /dev/hugepages
+  mkdir /dev/hugepages
 fi
-
 mount -t hugetlbfs none /dev/hugepages
+
 #ifconfig eth2 down
 #    modprobe vfio-pci
 #   sudo /usr/bin/chmod a+x /dev/vfio
@@ -58,10 +60,10 @@ modprobe uio_pci_generic
 #done
 
 ##  IPL211, sfp for bigtao test (high speed), ethx for ostinato test (low speed)
-#./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.0 # sfp eth5
-#./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.1 # sfp eth6
-./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.0 # eth1
-./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.1 # eth2
+./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.0 # sfp eth5
+./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.1 # sfp eth6
+#./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.0 # eth1
+#./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.1 # eth2
 ./tools/dpdk-devbind.py --status
 echo "DPDK Environment Success"
 cd $OVS_DIR
@@ -82,9 +84,11 @@ ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
 ovs-vsctl --no-wait init
 export DB_SOCK=/usr/local/var/run/openvswitch/db.sock
 ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-init=true
+
 sleep 1s
 ovs-vswitchd unix:$DB_SOCK --pidfile --detach
-#     ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,0"
+#     ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,0"  ## for multiple threads across cores.
+#     ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,1024"
 #     ovs-vswitchd unix:$DB_SOCK --pidfile --detach
 #     ovs-vsctl set Open_vSwitch . other_config:pmd-cpu-mask=6
 ovs-appctl vlog/set ANY:ANY:INFO
@@ -97,8 +101,10 @@ ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
 #ovs-ofctl show br0
 sleep 1s
 
-# set datapath-id of ovs, must be 8B decimal number, cannot omit zeros.
+## set datapath-id of ovs, must be 8B decimal number, cannot omit zeros.
 ovs-vsctl set bridge br0 other-config:datapath-id=0000000000000001
 
 #ovs-appctl -t ovs-vswitchd exit
 #ovs-vswitchd --pidfile
+
+grep HugePages_ /proc/meminfo   #获取大页信息
