@@ -3657,6 +3657,8 @@ xlate_group_action__(struct xlate_ctx *ctx, struct group_dpif *group)
     bool was_in_group = ctx->in_group;
     ctx->in_group = true;
 
+    struct pof_fp_flow_wildcards *wc = ctx->wc;
+
     switch (group_dpif_get_type(group)) {
     case OFPGT11_ALL:
     case OFPGT11_INDIRECT:
@@ -3665,6 +3667,7 @@ xlate_group_action__(struct xlate_ctx *ctx, struct group_dpif *group)
         break;
     case OFPGT11_SELECT:
     	/*VLOG_INFO("++++++tsf xlate_group_action__: before xlate_select_group");*/
+    	wc->masks.have_sel_group_action = true;
         xlate_select_group(ctx, group);  // tsf: supported by POF
         break;
     case OFPGT11_FF:
@@ -4120,6 +4123,11 @@ xlate_output_action(struct xlate_ctx *ctx,
     case OFPP_CONTROLLER:
     	/*VLOG_INFO("++++++tsf xlate_output_action: execute_controller_action, inport=%"PRIu32,
     			ctx->xin->flow.in_port.ofp_port);*/
+    	/* tsf: 1. If we want to truncate the packet into fields defined by {offset, length}, then set
+    	 *         'ctx->need_trunc' as 'true'. And {off, len} is given manually at execute_controller_action().
+    	 *      2. If we want to packet-in the whole packet, just set 'ctx->need_trunc' as 'false'. Then,
+    	 *         no need to configure any parameter.
+    	 **/
     	ctx->need_trunc = true;
         execute_controller_action(ctx, max_len,
                                   (ctx->in_group ? OFPR_GROUP
@@ -5047,7 +5055,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         	break;
 
         case OFPACT_GROUP:
-        	wc->masks.have_group_action = true;
+//        	wc->masks.have_group_action = true;
             /*VLOG_INFO("++++++tsf pof_do_xlate_actions: xlate_group_action, group_id=%d, has_group_actions=%d, %lx",
                       ofpact_get_GROUP(a)->group_id, wc->masks.have_group_action, wc);*/
         	if (xlate_group_action(ctx, ofpact_get_GROUP(a)->group_id)) {

@@ -307,6 +307,9 @@ struct dp_netdev_flow_stats {
     atomic_ullong packet_count;    /* Number of packets matched. */
     atomic_ullong byte_count;      /* Number of bytes matched. */
     atomic_uint16_t tcp_flags;     /* Bitwise-OR of seen tcp_flags values. */
+    atomic_uint16_t sel_group_table_flags;   /* Extended by tsf. Initialized in handle_packet_upcall().
+     	 	 	 	 	 	 	 	 	 	    Used in revalidate_ukey(). make select_group_table's fast_path
+     	 	 	 	 	 	 	 	 	  	    be invalid periodically. */
 };
 
 /* A flow in 'dp_netdev_pmd_thread's 'flow_table'.
@@ -362,7 +365,6 @@ struct dp_netdev_flow {
     struct ovs_refcount ref_cnt;
 
     bool dead;
-    bool have_group_action;          /* tsf: Indicate this flow contains Group actions. */
     bool sel_int_action;             /* tsf: Indicate this flow will execute selective INT,
      	 	 	 	 	 	 	 	  *      add_dynamic_field->field_id == 0xffff.
      	 	 	 	 	 	 	 	  * */
@@ -2089,6 +2091,7 @@ get_dpif_flow_stats(const struct dp_netdev_flow *netdev_flow_,
     unsigned long long n;
     long long used;
     uint16_t flags;
+    uint16_t sel_group_table_flags;
 
     netdev_flow = CONST_CAST(struct dp_netdev_flow *, netdev_flow_);
 
@@ -2100,6 +2103,8 @@ get_dpif_flow_stats(const struct dp_netdev_flow *netdev_flow_,
     stats->used = used;
     atomic_read_relaxed(&netdev_flow->stats.tcp_flags, &flags);
     stats->tcp_flags = flags;
+    atomic_read_relaxed(&netdev_flow->stats.sel_group_table_flags, &sel_group_table_flags);
+    stats->sel_group_table_flags = sel_group_table_flags;
 }
 
 /* Converts to the dpif_flow format, using 'key_buf' and 'mask_buf' for
@@ -2290,6 +2295,9 @@ dp_netdev_flow_add(struct dp_netdev_pmd_thread *pmd,
     /* Do not allocate extra space. */
     flow = xmalloc(sizeof *flow - sizeof flow->cr.flow.mf + mask.len);
     memset(&flow->stats, 0, sizeof flow->stats);
+    /*VLOG_INFO("++++++tsf dp_netdev_flow_add: stats->sel_group_table_flags=%d",
+    		flow->stats.sel_group_table_flags);*/
+
     flow->dead = false;
     flow->batch = NULL;
     *CONST_CAST(unsigned *, &flow->pmd_id) = pmd->core_id;
@@ -3955,7 +3963,7 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     /* only comp_latch false, the bd_info will be changed. */
     bd_info->comp_latch = comp_latch;
     if (!comp_latch) {
-    	bd_info->diff_time = 50000; // 50 ms, revalidate() polling period
+    	bd_info->diff_time = 5000; // 5 ms, revalidate() polling period
     	bd_info->n_packets = last_n_packets_used;
     	bd_info->n_bytes = last_n_bytes_used;
     	bd_info->sel_int_packets = last_sel_int_packets;
@@ -3972,7 +3980,6 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     if (flow->sel_int_action) {
     	last_sel_int_packets += batch->array.count;
     }
-
 
     /*VLOG_INFO("+++++++tsf packet_batch_per_flow_execute: netdev_flow.sel_int_action=%d", flow->sel_int_action);*/
 
@@ -4087,7 +4094,7 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
     int error;
 
     match.tun_md.valid = false;
-    match.wc.masks.have_group_action = false;
+    match.wc.masks.have_sel_group_action = false;
     match.wc.masks.sel_int_action = false;
     miniflow_expand(&key->mf, &match.flow);
 
@@ -4138,13 +4145,15 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
             netdev_flow = dp_netdev_flow_add(pmd, &match, &ufid,
                                              add_actions->data,
                                              add_actions->size);
-            netdev_flow->have_group_action = false;
+            netdev_flow->stats.sel_group_table_flags = false;
             netdev_flow->sel_int_action = false;
 
-            if(match.wc.masks.have_group_action) {
-                netdev_flow->have_group_action = true;
+            /* tsf: Indicate that we have select_group_action for this flow. */
+            if(match.wc.masks.have_sel_group_action) {
+           	    netdev_flow->stats.sel_group_table_flags = true;
             }
 
+            /* tsf: Indicate that we have add_dynamic_field (filed_id=-1) for this flow. */
             if(match.wc.masks.sel_int_action) {
             	 netdev_flow->sel_int_action = true;
             }
@@ -4480,6 +4489,9 @@ dp_execute_userspace_action(struct dp_netdev_pmd_thread *pmd,
     }
 }
 
+int out_cnt = 0;
+int thresh = 500000;
+
 static void
 dp_execute_cb(void *aux_, struct dp_packet_batch *packets_,
               const struct nlattr *a, bool may_steal)
@@ -4508,6 +4520,16 @@ dp_execute_cb(void *aux_, struct dp_packet_batch *packets_,
 
             netdev_send(p->port->netdev, tx_qid, packets_, may_steal,
                         dynamic_txqs);
+
+            /* used for latency measurement. */
+            /*out_cnt++;
+            if (out_cnt >= thresh) {
+            	out_cnt = 0;
+            	long long cur_time = time_wall_usec();
+            	uint16_t hop_latency = cur_time - now;
+            	VLOG_INFO("++++++tsf dp_execute_cb: output pkts, hop_latency=%d us.", hop_latency);
+            }*/
+
             return;
         }
         break;

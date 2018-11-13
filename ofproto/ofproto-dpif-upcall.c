@@ -936,7 +936,7 @@ udpif_revalidator(void *arg)
 
             /* tsf: control approximate revalidating period here. */
 //            poll_timer_wait_until(start_time + MIN(ofproto_max_idle, 500));
-            poll_timer_wait_until(start_time + MIN(ofproto_max_idle, 50));
+            poll_timer_wait_until(start_time + MIN(ofproto_max_idle, 5));
 
             seq_wait(udpif->reval_seq, last_reval_seq);
             latch_wait(&udpif->exit_latch);
@@ -948,7 +948,8 @@ udpif_revalidator(void *arg)
                 long long int now = time_msec();
                 /* Block again if we are woken up within 5ms of the last start
                  * time. */
-                start_time += 5;
+                //start_time += 5;
+                start_time += 1;
 
                 if (now < start_time) {
                     poll_timer_wait_until(start_time);
@@ -2104,7 +2105,9 @@ revalidate_ukey(struct udpif *udpif, struct udpif_key *ukey,
      * check threshold after revalidated period (50ms). If don't use INT function,
      * COMMENT it. It only influences the mice flow. */
     int packet_processed_threshold = 5;
-    if (stats->n_packets > packet_processed_threshold) {
+    if ((stats->n_packets > packet_processed_threshold)
+    		&& stats->sel_group_table_flags) {
+        /*VLOG_INFO("++++++tsf revalidate_ukey: have_sel_group_table=%d", stats->sel_group_table_flags);*/
     	result = UKEY_DELETE;
     }
 

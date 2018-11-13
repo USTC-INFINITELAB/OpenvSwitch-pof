@@ -505,6 +505,7 @@ struct dpif_flow_stats {
     uint64_t n_bytes;
     long long int used;
     uint16_t tcp_flags;
+    uint16_t sel_group_table_flags;   /* Extended by tsf. */
 };
 
 void dpif_flow_stats_extract(const struct flow *, const struct dp_packet *packet,
