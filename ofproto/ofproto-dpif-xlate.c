@@ -3749,6 +3749,10 @@ flood_packets(struct xlate_ctx *ctx, bool all)
     ctx->nf_output_iface = NF_OUT_FLOOD;
 }
 
+
+long long start_time = 0, end_time =0;  /* Used for packet-in performance test. */
+int pkt_in_cnt = 0, tmp_cnt = 0;        /* Used for packet-in performance test. */
+
 static void
 execute_controller_action(struct xlate_ctx *ctx, int len,
                           enum ofp_packet_in_reason reason,
@@ -3802,6 +3806,20 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
 
         packet_len = kept_len;
     }
+
+    /* test packet-in performance per second. */
+    /*if (pkt_in_cnt == 0) {
+    	start_time = time_msec();
+    }
+
+    end_time = time_msec();
+    int delta_time = end_time - start_time;
+    pkt_in_cnt++;
+    if (delta_time >= 1000) {
+    	VLOG_INFO("+++++++tsf execute_controller_action: pkt_cnt=%d, delta_time=%d ms, delta_cnt=%d", pkt_in_cnt, delta_time, pkt_in_cnt - tmp_cnt);
+    	tmp_cnt = pkt_in_cnt;
+    	start_time = end_time;
+    }*/
 
     struct ofproto_async_msg *am = xmalloc(sizeof *am);
     *am = (struct ofproto_async_msg) {
