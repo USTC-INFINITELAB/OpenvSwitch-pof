@@ -3941,6 +3941,9 @@ long long last_n_packets_used = 0;      // tsf: last flow statistics, shared for
 long long last_n_bytes_used = 0;        // tsf: last processed bytes
 long long last_sel_int_packets = 0;
 
+long long start_times =0, end_times = 0;  // tsf: we cal bandwidth per ms or fast-path invalid.
+long long delta_times = 0;
+
 static inline void
 packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
                               struct dp_netdev_pmd_thread *pmd,
@@ -3957,20 +3960,20 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     actions = dp_netdev_flow_get_actions(flow);
 
     /* tsf: if fast_path invalid, flow->stats will be cleaned. */
-//    VLOG_INFO("+++++tsf dp_netdev_flow_used: last_flow_used=%d, n_packets=%d", last_flow_used, flow->stats.packet_count);
+    /*VLOG_INFO("+++++tsf dp_netdev_flow_used: last_flow_used=%d, n_packets=%d", last_n_packets_used, flow->stats.packet_count);*/
     bool comp_latch = (flow->stats.packet_count > last_n_packets_used) ? true : false;
 
-    /* only comp_latch false, the bd_info will be changed. */
-    bd_info->comp_latch = comp_latch;
-    if (!comp_latch) {
-    	bd_info->diff_time = 5000; // 5 ms, revalidate() polling period
-    	bd_info->n_packets = last_n_packets_used;
-    	bd_info->n_bytes = last_n_bytes_used;
-    	bd_info->sel_int_packets = last_sel_int_packets;
-    	// clear
-        last_n_packets_used = 0;
-        last_n_bytes_used = 0;
-        last_sel_int_packets = 0;
+    if (last_n_packets_used == 0) {
+    	start_times = time_msec();
+    }
+
+    end_times = time_msec();
+    delta_times = end_times - start_times;
+
+    if (delta_times >= 1 || !comp_latch) {
+    	comp_latch = false;
+    } else {
+    	comp_latch = true;
     }
 
     /* apply to count multi-flow */
@@ -3980,8 +3983,22 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     if (flow->sel_int_action) {
     	last_sel_int_packets += batch->array.count;
     }
-
     /*VLOG_INFO("+++++++tsf packet_batch_per_flow_execute: netdev_flow.sel_int_action=%d", flow->sel_int_action);*/
+
+    /* only comp_latch false, the bd_info will be changed. */
+    bd_info->comp_latch = comp_latch;
+    if (!comp_latch) {
+    	bd_info->diff_time = delta_times * 1000; // us
+    	bd_info->n_packets = last_n_packets_used;
+    	bd_info->n_bytes = last_n_bytes_used;
+    	bd_info->sel_int_packets = last_sel_int_packets;
+    	/*VLOG_INFO("++++++tsf packet_batch_per_flow_execute: d_time=%d us, n_pkts=%d, n_bytes=%d, sel_pkts=%d",
+    			bd_info->diff_time, bd_info->n_packets, bd_info->n_bytes, bd_info->sel_int_packets);*/
+    	// clear
+        last_n_packets_used = 0;
+        last_n_bytes_used = 0;
+        last_sel_int_packets = 0;
+    }
 
     dp_netdev_execute_actions(pmd, &batch->array, true, &flow->flow,
                               actions->actions, actions->size, now);

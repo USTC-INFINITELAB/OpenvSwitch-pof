@@ -206,6 +206,9 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
             if (!bd_info->comp_latch) {
             	// type:2 + ttl:1 = 3, mapInfo:1 + int_data_len = int_len
             	bandwidth = (bd_info->n_bytes + (int_len+3)*bd_info->sel_int_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
+                /*VLOG_INFO("++++++tsf odp_pof_add_field: n_pkt=%d / %d, orig_pkt_len=%d, int_len=%d, pkt_sizes=%d, batch_diff_time=%d us, bandwidth=%f Mbps",
+                        	         bd_info->n_packets, bd_info->sel_int_packets, dp_packet_size(packet), int_len, (bd_info->n_bytes +
+                        	        		 int_len*bd_info->sel_int_packets), bd_info->diff_time, bandwidth);*/
             } // else keep static
             memcpy(int_value + int_len, &bandwidth, 4);      // stored as float type
             int_len += 4;
@@ -213,8 +216,12 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 
         /* Adjust counter's value to control log rate.*/
         /*counter++;
-        if(counter % 4000000 == 0) {
+        int thresh = 5000000;
+        if(counter >= thresh) {
         	counter = 0;
+        	uint32_t egress_time = (uint32_t) time_wall_usec();        // current time
+        	uint16_t diff_time = ntohs(egress_time - ingress_time__);  // for packet level
+        	VLOG_INFO("odp_pof_add_field: add_field_hop_latency=%d", diff_time);
         	VLOG_INFO("++++++tsf odp_pof_add_field: n_pkt=%d / %d, orig_pkt_len=%d, int_len=%d, pkt_sizes=%d, batch_diff_time=%d us, bandwidth=%f Mbps",
         	         bd_info->n_packets, bd_info->sel_int_packets, dp_packet_size(packet), int_len, (bd_info->n_bytes + int_len*bd_info->sel_int_packets), bd_info->diff_time, bandwidth);
         }*/
