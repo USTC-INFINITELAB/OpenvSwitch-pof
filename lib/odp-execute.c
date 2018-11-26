@@ -134,6 +134,36 @@ static uint8_t get_set_bits_of_byte(uint8_t byte){
 float bandwidth = 0.0;    // initialized value, if change, else keep
 int counter = 0;          // used to limit log rate
 
+/* tsf: we define INT header in Byte: ETH + IP + INT (type_ttl_mapInfo_medata) + PAYLOAD. */
+#define ETH_HEADER_LEN              14
+#define IPV4_HEADER_LEN             20
+#define INT_HEADER_BASE             34
+#define INT_HEADER_LEN               4
+#define INT_HEADER_TYPE_OFF         34
+#define INT_HEADER_TYPE_LEN          2
+#define INT_HEADER_TTL_OFF          36
+#define INT_HEADER_TTL_LEN           1
+#define INT_HEADER_MAPINFO_OFF      37
+#define INT_HEADER_MAPINFO_LEN       1
+#define INT_HEADER_DATA_OFF         38
+
+/* tsf: src header: type=0x0908, ttl=0x01 */
+#define INT_SRC_TYPE_TTL         0x090801
+uint8_t int_src_type_ttl[3] = {0x09, 0x08, 0x01};
+
+/* tsf: INT data len. */
+#define INT_DATA_DPID_LEN            4
+#define INT_DATA_IN_PORT_LEN         1
+#define INT_DATA_OUT_PORT_LEN        1
+#define INT_DATA_INGRESS_TIME_LEN    8
+#define INT_DATA_HOP_LATENCY_LEN     2
+#define INT_DATA_BANDWIDTH_LEN       4
+
+/* tsf: flag to determine whether to use 'key->offset' given by controller.
+ *      used by odp_pof_add_field() and odp_pof_delete_field().
+ * */
+bool use_controller_offset = false;
+
 static void
 odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
                   const struct ovs_key_add_field *mask, long long ingress_time,
@@ -144,65 +174,86 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 	/** tsf: if field_id=0xffff, then to add INT field, the `value` store the adding intent.
 	 *       otherwise, then to add static fields that comes from controller.
 	 **/
-	if (key->field_id != 0xffff) {
+	if (key->field_id != 0xffff) {   // 'add_static_field' action, fields come from controller
         header = dp_packet_pof_resize_field(packet, key->len);
         memmove(header, header + key->len, key->offset);
 		memcpy(header + key->offset, key->value, key->len);
-	} else {
+	} else {   // 'add_dynamic_field' or 'add_int_field' action, fields come from data plane
+
+	    /* @param key->value[0] controller mapInfo. if is 0xff, then we read 'mapInfo' from packets
+	     * @param key->offset define where to insert INT data fields (deprecated). determined by data plane.
+	     * @param key->len no meanings, instead of 'int_len'
+	     * */
+
 		uint32_t device_id = ntohl(key->device_id);
 		uint32_t ingress_time__ = (uint32_t) ingress_time;
-
 		uint8_t in_port = key->in_port;
 		uint8_t out_port = key->out_port;
 
-		uint16_t int_len = 0;      // indicate how many available bytes in int_value[]
-		uint8_t int_value[32];     // should cover added fields.
+        uint16_t int_offset = key->len;
+		uint16_t int_len = 0;                          // indicate how many available bytes in int_value[]
+		uint8_t int_value[32];                         // should cover added fields.
+		uint8_t controller_mapInfo = key->value[0];    // the mapInfo comes from controller
+		uint8_t final_mapInfo = 0;                     // the final intent mapInfo
 
-		/* Check the numbers of set bits in key->value[0]. If equal to 0, return directly.
-		 * Otherwise, add key->value[0] to 'int_value' ahead, and followed with INT data. */
-		if (get_set_bits_of_byte(key->value[0]) == 0) {
+		/* If controller_mapInfo is 0xff, which means we use dataplane's mapInfo.
+		 * I finally decide to set 'int_offset' according to 'use_controller_flag'. */
+		if (controller_mapInfo == 0xff) {
+            header = dp_packet_data(packet);   // tsf: start of the original header
+            int_offset = (use_controller_offset ? int_offset : INT_HEADER_DATA_OFF);  // exclude type+ttl+mapInfo
+			memcpy(&final_mapInfo, header + INT_HEADER_MAPINFO_OFF, INT_HEADER_MAPINFO_LEN); // read data plane to get 'mapInfo'
+		} else {
+            final_mapInfo = controller_mapInfo;
+            int_offset = (use_controller_offset ? int_offset : INT_HEADER_BASE);      // include type+ttl+mapInfo
+            /* tsf: we add mapInfo, 1B. 'Type + TTL' added by add_static_filed from controller. */
+            int_len += (INT_HEADER_TYPE_LEN + INT_HEADER_TTL_LEN);
+            memcpy(int_value, &int_src_type_ttl, int_len);
+            memcpy(int_value + int_len, &final_mapInfo, INT_HEADER_MAPINFO_LEN);
+            int_len += INT_HEADER_MAPINFO_LEN;
+            /*VLOG_INFO("++++++tsf odp_pof_add_field: mapInfo=%x", final_mapInfo);*/
+		}
+
+		/* Check the numbers of set bits in final_mapInfo. If equal to 0, return directly.
+		 * Then, we add final_mapInfo to 'int_value' ahead when it comes from controller,
+		 * otherwise followed with INT data only (for data plane's mapInfo). */
+		if (get_set_bits_of_byte(final_mapInfo) == 0) {
 			return;
 		}
 
-		/* tsf: mapInfo, 1B */
-		memcpy(int_value, &key->value[0], 1);
-		int_len += 1;
-		/*VLOG_INFO("++++++tsf odp_pof_add_field: mapInfo=%x", key->value[0]);*/
-
-        if (key->value[0] & (UINT8_C(1))) { // tsf: device_id, 4B
-        	memcpy(int_value + int_len, &device_id, sizeof(device_id));
-        	int_len += 4;
+        if (final_mapInfo & (UINT8_C(1))) { // tsf: device_id, 4B
+        	memcpy(int_value + int_len, &device_id, INT_DATA_DPID_LEN);
+        	int_len += INT_DATA_DPID_LEN;
         	/*VLOG_INFO("++++++tsf odp_pof_add_field: device_id=%llx", htonl(device_id));*/
         }
 
-        if (key->value[0] & (UINT8_C(1) << 1)) { // tsf: in_port, 1B
-        	memcpy(int_value + int_len, &in_port, sizeof(in_port));
-        	int_len += 1;
+        if (final_mapInfo & (UINT8_C(1) << 1)) { // tsf: in_port, 1B
+        	memcpy(int_value + int_len, &in_port, INT_DATA_IN_PORT_LEN);
+        	int_len += INT_DATA_IN_PORT_LEN;
         	/*VLOG_INFO("++++++tsf odp_pof_add_field: in_port=%llx", in_port);*/
         }
 
-        if (key->value[0] & (UINT8_C(1) << 2)) { // tsf: out_port, 1B
-        	memcpy(int_value + int_len, &out_port, sizeof(out_port));
-        	int_len += 1;
+        if (final_mapInfo & (UINT8_C(1) << 2)) { // tsf: out_port, 1B
+        	memcpy(int_value + int_len, &out_port, INT_DATA_OUT_PORT_LEN);
+        	int_len += INT_DATA_OUT_PORT_LEN;
         	/*VLOG_INFO("++++++tsf odp_pof_add_field: out_port=%llx", out_port);*/
         }
 
-        if (key->value[0] & (UINT8_C(1) << 3)) { // tsf: ingress_time, 8B
-        	memcpy(int_value + int_len, uint64_to_arr(ingress_time), 8);
-        	int_len += 8;
+        if (final_mapInfo & (UINT8_C(1) << 3)) { // tsf: ingress_time, 8B
+        	memcpy(int_value + int_len, uint64_to_arr(ingress_time), INT_DATA_INGRESS_TIME_LEN);
+        	int_len += INT_DATA_INGRESS_TIME_LEN;
         	/*VLOG_INFO("++++++tsf odp_pof_add_field: ingress_time=%llx / %llx", ingress_time, ingress_time__);*/
         }
 
-        if (key->value[0] & (UINT8_C(1) << 4)) { // tsf: hop latency, 2B
+        if (final_mapInfo & (UINT8_C(1) << 4)) { // tsf: hop latency, 2B
 //        	uint32_t egress_time = (uint32_t) time_usec();             // monotonic timer
         	uint32_t egress_time = (uint32_t) time_wall_usec();        // current time
         	uint16_t diff_time = ntohs(egress_time - ingress_time__);  // for packet level
-        	memcpy(int_value + int_len, &diff_time, 2);
-        	int_len += 2;
+        	memcpy(int_value + int_len, &diff_time, INT_DATA_HOP_LATENCY_LEN);
+        	int_len += INT_DATA_HOP_LATENCY_LEN;
         	/*VLOG_INFO("++++++tsf odp_pof_add_field: egress_time=%llx, diff_lantency=%d us", egress_time, htons(diff_time));*/
         }
 
-        if (key->value[0] & (UINT8_C(1) << 5)) { // tsf: bandwidth computation insert, 4B
+        if (final_mapInfo & (UINT8_C(1) << 5)) { // tsf: bandwidth computation insert, 4B
             if (!bd_info->comp_latch) {
             	// type:2 + ttl:1 = 3, mapInfo:1 + int_data_len = int_len
             	bandwidth = (bd_info->n_bytes + (int_len+3)*bd_info->sel_int_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
@@ -210,8 +261,8 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
                         	         bd_info->n_packets, bd_info->sel_int_packets, dp_packet_size(packet), int_len, (bd_info->n_bytes +
                         	        		 int_len*bd_info->sel_int_packets), bd_info->diff_time, bandwidth);*/
             } // else keep static
-            memcpy(int_value + int_len, &bandwidth, 4);      // stored as float type
-            int_len += 4;
+            memcpy(int_value + int_len, &bandwidth, INT_DATA_BANDWIDTH_LEN);      // stored as float type
+            int_len += INT_DATA_BANDWIDTH_LEN;
         }
 
         /* Adjust counter's value to control log rate.*/
@@ -229,8 +280,8 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
         /*VLOG_INFO("++++++tsf odp_pof_add_field: before dp_packet_pof_resize_field, int_value=%s, offset=%d, int_len=%d ",
         		int_value, key->offset, int_len);*/
         header = dp_packet_pof_resize_field(packet, int_len);
-        memmove(header, header + int_len, key->offset);
-        memcpy(header + key->offset, int_value, int_len);
+        memmove(header, header + int_len, int_offset);
+        memcpy(header + int_offset, int_value, int_len);
 	}
 }
 
@@ -267,50 +318,45 @@ odp_pof_delete_field(struct dp_packet *packet, const struct ovs_key_delete_field
 	/* tsf: act2: defined as delete_int_field action, calculate deleted length according to mapInfo, key->offset
 	 * sets start location. INT format start from 272b: | type(2B) | TTL(1B) | mapInfo(1B) | INT_data([1, 8B]. */
 	if (key->len == 0xffff / 8) {
-		int int_ttl_offset = 36, int_ttl_len = 1;  // we define INT.ttl's {offset=36, len=1}
-		int int_map_offset = 37, int_map_len = 1;  // we define INT.mapInfo's {offset=37B, len=1B}
-		int int_header_offset = 34, int_header_len = 4;  //  type + ttl + mapInfo = 2+1+1 = 4
-		int int_data_len = 0;
-		uint8_t int_map, int_ttl;
-		memcpy(&int_ttl, header + int_ttl_offset, int_ttl_len);    // read INT.ttl from packet frame
-		memcpy(&int_map, header + int_map_offset, int_map_len);    // read INT.mapInfo from packet frame
 
-		/* check ttl first. if ttl > 0, then followed with mapInfo and INT_data. */
-		if (int_ttl == 0) {
-			offset = int_header_offset;
-			len = 3;     // type + ttl = 3B
-			goto act3;
-		}
+	    /* del_int_field: data_1 refers to one set of metadata type.
+	     * int_format: type + ttl + mapInfo + data_1 + data_1 + ... + data_1*/
+
+		int int_data_len = 0;          // data field length to be deleted
+		uint8_t int_map, int_ttl;      // read them from packets
+		memcpy(&int_ttl, header + INT_HEADER_TTL_OFF, INT_HEADER_TTL_LEN);          // read INT.ttl from packet frame
+		memcpy(&int_map, header + INT_HEADER_MAPINFO_OFF, INT_HEADER_MAPINFO_LEN);  // read INT.mapInfo from packet frame
+
 
         if (int_map & (UINT8_C(1) << 0)) { // tsf: device_id, 4B
-        	int_data_len += 4;
+        	int_data_len += INT_DATA_DPID_LEN;
         }
 
         if (int_map & (UINT8_C(1) << 1)) { // tsf: in_port, 1B
-        	int_data_len += 1;
+        	int_data_len += INT_DATA_IN_PORT_LEN;
         }
 
         if (int_map & (UINT8_C(1) << 2)) { // tsf: out_port, 1B
-        	int_data_len += 1;
+        	int_data_len += INT_DATA_OUT_PORT_LEN;
         }
 
         if (int_map & (UINT8_C(1) << 3)) { // tsf: ingress_time, 8B
-        	int_data_len += 8;
+        	int_data_len += INT_DATA_INGRESS_TIME_LEN;
         }
 
         if (int_map & (UINT8_C(1) << 4)) { // tsf: hop latency, 2B
-        	int_data_len += 2;
+        	int_data_len += INT_DATA_HOP_LATENCY_LEN;
         }
 
         if (int_map & (UINT8_C(1) << 5)) { // tsf: bandwidth, 4B
-            int_data_len += 4;
+            int_data_len += INT_DATA_BANDWIDTH_LEN;
         }
 
         /* delete_field in act3. */
-        offset = int_header_offset;
-        len = int_header_len + int_data_len;
-        /*VLOG_INFO("++++++tsf odp_pof_delete_field: act2, offset=%d, len=%d, int_data_len=%d, pkt_len=%d.",
-        		offset, len, int_data_len, dp_packet_size(packet));*/
+        offset = use_controller_offset ? offset : INT_HEADER_BASE;
+        len = INT_HEADER_LEN + int_data_len * int_ttl;
+        /*VLOG_INFO("++++++tsf odp_pof_delete_field: act2, offset=%d, len=%d, ttl=%d, int_map=%x, int_data_len=%d, pkt_len=%d.",
+        		offset, len, int_ttl, int_map, int_data_len, dp_packet_size(packet));*/
 	}
 
 	/* tsf: act3: original delete_field action, delete static {offset, length} field. */
