@@ -176,6 +176,7 @@ struct dpcls {
 
 /* A rule to be inserted to the classifier. */
 struct dpcls_rule {
+    uint32_t key_hash;           /* tsf: flow key hash. */
     struct cmap_node cmap_node;   /* Within struct dpcls_subtable 'rules'. */
     struct netdev_flow_key *mask; /* Subtable's mask. */
     struct netdev_flow_key flow;  /* Matching key. */
@@ -186,7 +187,8 @@ static void dpcls_init(struct dpcls *);
 static void dpcls_destroy(struct dpcls *);
 static void dpcls_sort_subtable_vector(struct dpcls *);
 static void dpcls_insert(struct dpcls *, struct dpcls_rule *,
-                         const struct netdev_flow_key *mask);
+                         const struct netdev_flow_key *mask,
+                          uint32_t key_hash);
 static void dpcls_remove(struct dpcls *, struct dpcls_rule *);
 static bool dpcls_lookup(struct dpcls *cls,
                          const struct netdev_flow_key keys[],
@@ -2279,7 +2281,8 @@ out:
 static struct dp_netdev_flow *
 dp_netdev_flow_add(struct dp_netdev_pmd_thread *pmd,
                    struct match *match, const ovs_u128 *ufid,
-                   const struct nlattr *actions, size_t actions_len)
+                   const struct nlattr *actions, size_t actions_len,
+                    uint32_t key_hash)
     OVS_REQUIRES(pmd->flow_mutex)
 {
     struct dp_netdev_flow *flow;
@@ -2311,7 +2314,7 @@ dp_netdev_flow_add(struct dp_netdev_pmd_thread *pmd,
     /* Select dpcls for in_port. Relies on in_port to be exact match */
     ovs_assert(match->wc.masks.in_port.odp_port == ODP_PORT_C(UINT32_MAX));
     cls = dp_netdev_pmd_find_dpcls(pmd, in_port);
-    dpcls_insert(cls, &flow->cr, &mask);
+    dpcls_insert(cls, &flow->cr, &mask, key_hash);
 
     cmap_insert(&pmd->flow_table, CONST_CAST(struct cmap_node *, &flow->node),
                 dp_netdev_flow_hash(&flow->ufid));
@@ -2400,7 +2403,7 @@ dpif_netdev_flow_put(struct dpif *dpif, const struct dpif_flow_put *put)
                     memset(put->stats, 0, sizeof *put->stats);
                 }
                 dp_netdev_flow_add(pmd, &match, &ufid, put->actions,
-                                   put->actions_len);
+                                   put->actions_len, 0);
                 error = 0;
             } else {
                 error = EFBIG;
@@ -4161,7 +4164,8 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
         if (OVS_LIKELY(!netdev_flow)) {
             netdev_flow = dp_netdev_flow_add(pmd, &match, &ufid,
                                              add_actions->data,
-                                             add_actions->size);
+                                             add_actions->size,
+                                             key->hash);
             netdev_flow->stats.sel_group_table_flags = false;
             netdev_flow->sel_int_action = false;
 
@@ -5087,13 +5091,14 @@ dp_netdev_pmd_try_optimize(struct dp_netdev_pmd_thread *pmd)
 /* Insert 'rule' into 'cls'. */
 static void
 dpcls_insert(struct dpcls *cls, struct dpcls_rule *rule,
-             const struct netdev_flow_key *mask)
+             const struct netdev_flow_key *mask, uint32_t key_hash)
 {
     struct dpcls_subtable *subtable = dpcls_find_subtable(cls, mask);
 
     /* Refer to subtable's mask, also for later removal. */
     rule->mask = &subtable->mask;
     cmap_insert(&subtable->rules, &rule->cmap_node, rule->flow.hash);
+    rule->key_hash = key_hash;
 }
 
 /* Removes 'rule' from 'cls', also destructing the 'rule'. */
@@ -5215,6 +5220,13 @@ dpcls_lookup(struct dpcls *cls, const struct netdev_flow_key keys[],
 
                 CMAP_NODE_FOR_EACH (rule, cmap_node, nodes[i]) {
                     if (OVS_LIKELY(dpcls_rule_matches_key(rule, &mkeys[i]))) {
+
+                        /* check */
+                        if (rule->key_hash != mkeys[i].hash) {
+                            ULLONG_SET0(map, i);
+                            goto next;
+                        }
+
                         mrules[i] = rule;
                         /* Even at 20 Mpps the 32-bit hit_cnt cannot wrap
                          * within one second optimization interval  */

@@ -5722,7 +5722,7 @@ commit_pof_delete_field_action(const struct flow *flow, struct flow *base_flow,
                              struct flow_wildcards *wc,
                              bool use_masked, int index)
 {
-    struct ovs_key_add_field key, base, mask;
+    struct ovs_key_delete_field key, base, mask;
 
     struct pof_flow * pflow = flow;
     struct pof_flow * pbase = base_flow;
