@@ -207,6 +207,10 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 			memcpy(&final_mapInfo, header + INT_HEADER_MAPINFO_OFF, INT_HEADER_MAPINFO_LEN); // read data plane to get 'mapInfo'
 			memcpy(&int_type, header + INT_HEADER_TYPE_OFF, INT_HEADER_TYPE_LEN);  // check
 			int_type = ntohs(int_type);
+
+			if ((int_type != INT_TYPE_VAL)) {
+				return;
+			}
 			/*VLOG_INFO("+++++++tsf odp_pof_add_field, f_mapInfo = %x, c_mapInfo=%x, int_type=%x", final_mapInfo, controller_mapInfo, int_type);*/
 		} else {
             final_mapInfo = controller_mapInfo;
@@ -222,7 +226,7 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 		/* Check the numbers of set bits in final_mapInfo. If equal to 0, return directly.
 		 * Then, we add final_mapInfo to 'int_value' ahead when it comes from controller,
 		 * otherwise followed with INT data only (for data plane's mapInfo). */
-		if (get_set_bits_of_byte(final_mapInfo) == 0 || (int_type != INT_TYPE_VAL)) {
+		if (get_set_bits_of_byte(final_mapInfo) == 0) {
 			/*VLOG_INFO("+++++++tsf odp_pof_add_field, return: int_type=%x", int_type);*/
 			return;
 		}
