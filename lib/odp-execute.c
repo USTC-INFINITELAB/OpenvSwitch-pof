@@ -150,6 +150,7 @@ int counter = 0;          // used to limit log rate
 /* tsf: src header: type=0x0908, ttl=0x01 */
 #define INT_SRC_TYPE_TTL         0x090801
 uint8_t int_src_type_ttl[3] = {0x09, 0x08, 0x01};
+#define INT_TYPE_VAL             0x0908
 
 /* tsf: INT data len. */
 #define INT_DATA_DPID_LEN            4
@@ -196,12 +197,17 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 		uint8_t controller_mapInfo = key->value[0];    // the mapInfo comes from controller
 		uint8_t final_mapInfo = 0;                     // the final intent mapInfo
 
+		uint16_t int_type = 0;
+
 		/* If controller_mapInfo is 0xff, which means we use dataplane's mapInfo.
 		 * I finally decide to set 'int_offset' according to 'use_controller_flag'. */
 		if (controller_mapInfo == 0xff) {
             header = dp_packet_data(packet);   // tsf: start of the original header
             int_offset = (use_controller_offset ? int_offset : INT_HEADER_DATA_OFF);  // exclude type+ttl+mapInfo
 			memcpy(&final_mapInfo, header + INT_HEADER_MAPINFO_OFF, INT_HEADER_MAPINFO_LEN); // read data plane to get 'mapInfo'
+			memcpy(&int_type, header + INT_HEADER_TYPE_OFF, INT_HEADER_TYPE_LEN);  // check
+			int_type = ntohs(int_type);
+			/*VLOG_INFO("+++++++tsf odp_pof_add_field, f_mapInfo = %x, c_mapInfo=%x, int_type=%x", final_mapInfo, controller_mapInfo, int_type);*/
 		} else {
             final_mapInfo = controller_mapInfo;
             int_offset = (use_controller_offset ? int_offset : INT_HEADER_BASE);      // include type+ttl+mapInfo
@@ -216,7 +222,8 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 		/* Check the numbers of set bits in final_mapInfo. If equal to 0, return directly.
 		 * Then, we add final_mapInfo to 'int_value' ahead when it comes from controller,
 		 * otherwise followed with INT data only (for data plane's mapInfo). */
-		if (get_set_bits_of_byte(final_mapInfo) == 0) {
+		if (get_set_bits_of_byte(final_mapInfo) == 0 || (int_type != INT_TYPE_VAL)) {
+			/*VLOG_INFO("+++++++tsf odp_pof_add_field, return: int_type=%x", int_type);*/
 			return;
 		}
 

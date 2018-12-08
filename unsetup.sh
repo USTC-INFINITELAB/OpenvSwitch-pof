@@ -1,6 +1,6 @@
 #set -e
 
-cd ~/OpenvSwitch-pof
+cd ~/OpenvSwitch-pof/
 
 
 #ovs-vsctl del-br br0
@@ -20,13 +20,14 @@ cd  ~/dpdk-16.07
 echo "Unbind dpdk drivers and bind drivers back to original ..."
 ./tools/dpdk-devbind.py --bind=i40e 0000:05:00.0
 ./tools/dpdk-devbind.py --bind=i40e 0000:05:00.1
+./tools/dpdk-devbind.py --bind=i40e 0000:05:00.2
 #./tools/dpdk-devbind.py --bind=igb 0000:07:00.0
 #./tools/dpdk-devbind.py --bind=igb 0000:07:00.1
 
 sleep 1s
 grep HugePages_ /proc/meminfo
 umount -t hugetlbfs none /dev/hugepages
-sysctl -w vm.nr_hugepages=0        ## clear HugePages config
+#sysctl -w vm.nr_hugepages=0        ## clear HugePages config
 
 #./tools/dpdk-devbind.py  --status
 #echo "Input the number of unbind DPDK ports (even): (Enter)"

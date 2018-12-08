@@ -19,7 +19,7 @@ fi
 # For IVSHMEM, Set `export DPDK_TARGET=x86_64-ivshmem-linuxapp-gcc`
 
 cd $HOME
-export OVS_DIR=$HOME/OpenvSwitch-pof
+export OVS_DIR=$HOME/OpenvSwitch-pof/
 cd $OVS_DIR
 #./boot.sh                           ## run once when first run
 #./configure --with-dpdk=$DPDK_BUILD
@@ -60,8 +60,9 @@ modprobe uio_pci_generic
 #done
 
 ##  IPL211, sfp for bigtao test (high speed), ethx for ostinato test (low speed)
-./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.0 # sfp eth5
-./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.1 # sfp eth6
+./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.0  # sfp R1
+./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.1  # sfp R2
+./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.2  # sfp R3
 #./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.0 # eth1
 #./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.1 # eth2
 ./tools/dpdk-devbind.py --status
@@ -98,11 +99,12 @@ ovs-vsctl add-br br0 -- set bridge br0 datapath_type=netdev
 #ovs-vsctl set-controller br0 tcp:192.168.109.209:6666
 ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
 ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
+ovs-vsctl add-port br0 dpdk2 -- set Interface dpdk2 type=dpdk
 #ovs-ofctl show br0
 sleep 1s
 
 ## set datapath-id of ovs, must be 8B decimal number, cannot omit zeros.
-ovs-vsctl set bridge br0 other-config:datapath-id=0000000000000001
+ovs-vsctl set bridge br0 other-config:datapath-id=0000000000000002
 
 #ovs-appctl -t ovs-vswitchd exit
 #ovs-vswitchd --pidfile
