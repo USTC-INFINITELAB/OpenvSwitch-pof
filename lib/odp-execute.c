@@ -89,16 +89,16 @@ odp_pof_modify_field(struct dp_packet *packet, const struct ovs_key_modify_field
 {
 	uint8_t *value = dp_packet_pof_modify_field(packet, key->offset);
     uint8_t *lowest_byte = value + (key->len - 1);
-    /*VLOG_INFO("++++++tsf odp_pof_modify_field: *lowest_byte=%d", *lowest_byte);*/
+    /*VLOG_INFO("++++++tsf odp_pof_modify_field: *lowest_byte=%d, value[0]=%d", *lowest_byte, key->value[0]);*/
 
     if (value) {
         if (!mask) {
             *lowest_byte += key->value[0];
-            /*VLOG_INFO("++++++tsf odp_pof_modify_field/wo mask: key->value[1]=%d, key->mask[1]=%d, *lowest_byte=%d",
-                      key->value[1], mask->value[1], *lowest_byte);*/
-        } else {
+            /*VLOG_INFO("++++++tsf odp_pof_modify_field/wo mask: key->value[0]=%d, key->mask[0]=%d, *lowest_byte=%d",
+                      key->value[0], mask->value[0], *lowest_byte);*/
+        } else {   // run here
         	/**lowest_byte += key->value[0];*/
-            *lowest_byte = key->value[0] + (*lowest_byte & mask->value[0]);
+            *lowest_byte += key->value[0];
             /*VLOG_INFO("++++++tsf odp_pof_modify_field/wt mask: key->value[0]=%d, key->mask[0]=%d, *lowest_byte=%d",
                       key->value[0], mask->value[0], *lowest_byte);*/
         }
