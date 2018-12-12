@@ -1534,6 +1534,9 @@ group_best_live_bucket(const struct xlate_ctx *ctx,
 /** tsf: TODO use polling way for now, should consider more reasonable approach.
  *       can work for more than two buckets with weight m:n
  * */
+ uint64_t b_start_time = 0, b_delta_time = 0;
+ uint64_t b_sum_group_time = 0;
+ bool first_pkt_in = true;
 static struct ofputil_bucket *
 pof_group_default_best_live_bucket_v1(const struct xlate_ctx *ctx,
                        const struct group_dpif *group,
@@ -1553,6 +1556,20 @@ pof_group_default_best_live_bucket_v1(const struct xlate_ctx *ctx,
     const struct ovs_list *buckets;
 
     buckets = group_dpif_get_buckets(group, NULL);
+
+    if (first_pkt_in) {
+        b_start_time = time_msec();
+        first_pkt_in = false;
+    }
+
+    b_delta_time = time_msec() - b_start_time;
+    b_sum_group_time += b_delta_time;
+    /* if group is idle for 100ms, then clear the remain bucket weight to start a new loop. */
+    if (b_delta_time > 100) {
+        init_flag = true;
+        sum_score = 0;
+        b_sum_group_time = 0;
+    }
 
     // tsf init stage, reset when sum_score = 0
     if (init_flag) {
@@ -1574,7 +1591,7 @@ pof_group_default_best_live_bucket_v1(const struct xlate_ctx *ctx,
                       bucket->bucket_id, score, sum_score);*/
 
             // tsf: get best_score bucket
-            if (score >= best_score) {
+            if (score > best_score) {
                 best_bucket = bucket;
                 best_score = score;
                 /*VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_v1 in if: best_bucket_id=%d, best_score=%d",
@@ -1587,9 +1604,15 @@ pof_group_default_best_live_bucket_v1(const struct xlate_ctx *ctx,
     --temp_score[best_bucket->bucket_id];
     --sum_score;
 
+
+    /*VLOG_INFO("+++++++tsf pof_group_b_live_bkt_v1: sum_score=%d, ret_bucket=%d, delta_time=%d, sum_time = %d",
+              sum_score, best_bucket->bucket_id, b_delta_time, b_sum_group_time);*/
+    b_start_time = time_msec();
+
     // tsf: pretend to reset temp_score and sum_score, run back to init stage
     if (sum_score == 0) {
         init_flag = true;
+        b_sum_group_time = 0;
     }
 
     return best_bucket;
@@ -1598,6 +1621,9 @@ pof_group_default_best_live_bucket_v1(const struct xlate_ctx *ctx,
 /** tsf: TODO use token bucket way for now, should consider more reasonable approach.
  *       can work for more than two bucket with weight m:n
  * */
+uint64_t b_start_time_v2 = 0, b_delta_time_v2 = 0;
+uint64_t b_sum_group_time_v2 = 0;
+bool first_pkt_in_v2 = true;
 static struct ofputil_bucket *
 pof_group_default_best_live_bucket_v2(const struct xlate_ctx *ctx,
                                      const struct group_dpif *group,
@@ -1617,6 +1643,20 @@ pof_group_default_best_live_bucket_v2(const struct xlate_ctx *ctx,
     const struct ovs_list *buckets;
 
     buckets = group_dpif_get_buckets(group, NULL);
+
+    if (first_pkt_in_v2) {
+        b_start_time_v2 = time_msec();
+        first_pkt_in_v2 = false;
+    }
+
+    b_delta_time_v2 = time_msec() - b_start_time_v2;
+    b_sum_group_time_v2 += b_delta_time_v2;
+    /* if group is idle for 100ms, then clear the remain bucket weight to start a new loop. */
+    if (b_delta_time > 100) {
+        init_flag = true;
+        sum_score = 0;
+        b_sum_group_time_v2 = 0;
+    }
 
     // tsf: init stage, reset when sum_score = 0
     if (init_flag) {
@@ -1644,12 +1684,15 @@ pof_group_default_best_live_bucket_v2(const struct xlate_ctx *ctx,
                 // tsf: pretend to reset temp_score and sum_score
                 if (sum_score == 0) {
                     init_flag = true;
+                    b_sum_group_time_v2 = 0;
                 }
 
                 break;
             }
         }
     }
+
+    b_start_time_v2 = time_msec();
 
     /*VLOG_INFO("++++++tsf pof_group_default_best_live_bucket_2: best_bucket_id=%d", best_bucket->bucket_id);*/
 
