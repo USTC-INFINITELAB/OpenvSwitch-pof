@@ -447,6 +447,7 @@ struct bandwidth_info {
     uint64_t n_packets;
     uint64_t n_bytes;
     uint64_t sel_int_packets;    /* How many packets will execute add_dynamcic_field (sel_INT_action). */
+    float    bd;
 };
 
 /* PMD: Poll modes drivers.  PMD accesses devices via polling to eliminate
@@ -3947,6 +3948,11 @@ long long last_sel_int_packets = 0;
 long long start_times =0, end_times = 0;  // tsf: we cal bandwidth per ms or fast-path invalid.
 long long delta_times = 0;
 
+/* after how long second, we cal bandwidth. */
+#define BANDWIDTH_INTERVAL 50
+/* second count. */
+uint16_t sec_cnt = 0;
+
 static inline void
 packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
                               struct dp_netdev_pmd_thread *pmd,
@@ -3964,7 +3970,8 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
 
     /* tsf: if fast_path invalid, flow->stats will be cleaned. */
     /*VLOG_INFO("+++++tsf dp_netdev_flow_used: last_flow_used=%d, n_packets=%d", last_n_packets_used, flow->stats.packet_count);*/
-    bool comp_latch = (flow->stats.packet_count > last_n_packets_used) ? true : false;
+//    bool comp_latch = (flow->stats.packet_count > last_n_packets_used) ? true : false;
+    bool comp_latch = true;
 
     if (last_n_packets_used == 0) {
     	start_times = time_msec();
@@ -3973,7 +3980,7 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     end_times = time_msec();
     delta_times = end_times - start_times;
 
-    if (delta_times >= 1 || !comp_latch) {
+    if (delta_times >= BANDWIDTH_INTERVAL /*|| !comp_latch*/) {
     	comp_latch = false;
     } else {
     	comp_latch = true;
@@ -3991,13 +3998,21 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     /* only comp_latch false, the bd_info will be changed. */
     bd_info->comp_latch = comp_latch;
     if (!comp_latch) {
+        sec_cnt++;
     	bd_info->diff_time = delta_times * 1000; // us
     	bd_info->n_packets = last_n_packets_used;
     	bd_info->n_bytes = last_n_bytes_used;
     	bd_info->sel_int_packets = last_sel_int_packets;
-    	/*VLOG_INFO("++++++tsf packet_batch_per_flow_execute: d_time=%d us, n_pkts=%d, n_bytes=%d, sel_pkts=%d",
-    			bd_info->diff_time, bd_info->n_packets, bd_info->n_bytes, bd_info->sel_int_packets);*/
-    	// clear
+//        bd_info->bd = (bd_info->n_bytes + (4)*bd_info->sel_int_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
+    	/*VLOG_INFO("++++++tsf pkt_bat_flow_exe: d_time=%d us, n_pkts=%d, n_bytes=%d, sel_pkts=%d, bd=%f",
+    			bd_info->diff_time, bd_info->n_packets, bd_info->n_bytes, bd_info->sel_int_packets, bd_info->bd);*/
+
+        /* if we want to know how long for the path, then UNCOMMENT this. */
+        /*if (sec_cnt % 20 == 0) {
+            VLOG_INFO("have been %d s.", sec_cnt / 20);
+        }*/
+
+        // clear
         last_n_packets_used = 0;
         last_n_bytes_used = 0;
         last_sel_int_packets = 0;

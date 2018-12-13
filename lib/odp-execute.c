@@ -45,6 +45,7 @@ struct bandwidth_info {
     uint64_t n_packets;
     uint64_t n_bytes;
     uint64_t sel_int_packets;
+    float    bd;
 };
 
 /* Masked copy of an ethernet address. 'src' is already properly masked. */
@@ -265,13 +266,14 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
         }
 
         if (final_mapInfo & (UINT8_C(1) << 5)) { // tsf: bandwidth computation insert, 4B
-            if (!bd_info->comp_latch) {
-            	// type:2 + ttl:1 = 3, mapInfo:1 + int_data_len = int_len
-            	bandwidth = (bd_info->n_bytes + (int_len+3)*bd_info->sel_int_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
-                /*VLOG_INFO("++++++tsf odp_pof_add_field: n_pkt=%d / %d, orig_pkt_len=%d, int_len=%d, pkt_sizes=%d, batch_diff_time=%d us, bandwidth=%f Mbps",
-                        	         bd_info->n_packets, bd_info->sel_int_packets, dp_packet_size(packet), int_len, (bd_info->n_bytes +
-                        	        		 int_len*bd_info->sel_int_packets), bd_info->diff_time, bandwidth);*/
-            } // else keep static
+//            if (!bd_info->comp_latch) {
+//            	// int_len calculated by the former code, '4' is bd len
+//            	bandwidth = (bd_info->n_bytes + (int_len+4)*bd_info->sel_int_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
+//                VLOG_INFO("++++++tsf odp_pof_add_field: n_pkt=%d / %d, ori_plen=%d, int_len=%d, pkt_tsize=%d, d_time=%d us, bd=%f Mbps",
+//                        	         bd_info->n_packets, bd_info->sel_int_packets, dp_packet_size(packet), int_len+4, (bd_info->n_bytes +
+//                        	        		 int_len*bd_info->sel_int_packets), bd_info->diff_time, bandwidth);
+//            } // else keep static
+            bandwidth = (bd_info->n_bytes + (int_len + INT_DATA_BANDWIDTH_LEN)*bd_info->sel_int_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
             memcpy(int_value + int_len, &bandwidth, INT_DATA_BANDWIDTH_LEN);      // stored as float type
             int_len += INT_DATA_BANDWIDTH_LEN;
         }
