@@ -22,8 +22,13 @@ cd $HOME
 export OVS_DIR=$HOME/OpenvSwitch-pof/
 cd $OVS_DIR
 #./boot.sh                           ## run once when first run
+
+## configure, can use '-march=native' accelerate ovs-pof packet processing
 #./configure --with-dpdk=$DPDK_BUILD
-./configure CFLAGS="-g -O0" --with-dpdk=$DPDK_BUILD
+# ./configure CFLAGS="-g -O0" --with-dpdk=$DPDK_BUILD  ## way1: use 'dpdk', with lower performance
+./configure CFLAGS="-g -O2 -march=native" --with-dpdk=$DPDK_BUILD  ## way2: use 'dpdk' and 'native' to accelerate processor, decreases hash times. with higher performance
+
+## compilation and install
 make -j24
 make install
 
