@@ -183,8 +183,8 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 	} else {   // 'add_dynamic_field' or 'add_int_field' action, fields come from data plane
 
 	    /* @param key->value[0] controller mapInfo. if is 0xff, then we read 'mapInfo' from packets
-	     * @param key->offset define where to insert INT data fields (deprecated). determined by data plane.
-	     * @param key->len no meanings, instead of 'int_len'
+	     * @param key->offset define where to insert INT data fields. determined by data plane or controller (see flag 'use_controller_offset').
+	     * @param key->len no meanings, instead of 'int_len' (auto-calculation)
 	     * */
 
 		uint32_t device_id = ntohl(key->device_id);
