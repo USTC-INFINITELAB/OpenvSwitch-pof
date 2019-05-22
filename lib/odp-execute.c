@@ -161,6 +161,12 @@ uint8_t int_src_type_ttl[3] = {0x09, 0x08, 0x01};
 #define INT_DATA_HOP_LATENCY_LEN     2
 #define INT_DATA_BANDWIDTH_LEN       4
 
+/* tsf: invisible packet length. */
+#define INTER_FRAME_GAP              12  /* in bytes */
+#define PKT_PREAMBLE_SIZE             8  /* in bytes */
+#define ETHER_CRC_LEN                 4  /* in bytes */
+#define INVISIBLE_PKT_SIZE           24  /* in bytes, 12+8+4=24B */
+
 /* tsf: flag to determine whether to use 'key->offset' given by controller.
  *      used by odp_pof_add_field() and odp_pof_delete_field().
  * */
@@ -273,7 +279,8 @@ odp_pof_add_field(struct dp_packet *packet, const struct ovs_key_add_field *key,
 //                        	         bd_info->n_packets, bd_info->sel_int_packets, dp_packet_size(packet), int_len+4, (bd_info->n_bytes +
 //                        	        		 int_len*bd_info->sel_int_packets), bd_info->diff_time, bandwidth);
 //            } // else keep static
-            bandwidth = (bd_info->n_bytes + (int_len + INT_DATA_BANDWIDTH_LEN)*bd_info->sel_int_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
+            bandwidth = (bd_info->n_bytes + INVISIBLE_PKT_SIZE * bd_info->n_packets
+                        + (int_len + INT_DATA_BANDWIDTH_LEN) * bd_info->sel_int_packets) / (bd_info->diff_time * 1.0) * 8;  // Mbps
             memcpy(int_value + int_len, &bandwidth, INT_DATA_BANDWIDTH_LEN);      // stored as float type
             int_len += INT_DATA_BANDWIDTH_LEN;
         }

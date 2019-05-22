@@ -865,7 +865,6 @@ struct  ofp10_action_add_field {
 };
 OFP_ASSERT(sizeof(struct ofp10_action_add_field) == 32);
 
-
 /* tsf: encode_ADD_FIELD.
  *
  * encode ofpact_add_field into ofp10_action_add_field.
