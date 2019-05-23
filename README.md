@@ -7,7 +7,7 @@ In this stage, the OVS-POF only supports to connect with the remote controller t
 
 How to run?
 ---------------------
-The OVS-POF follows the install steps of OVS. Start with OVS-DPDK, please read [INSTALL.DPDK.md]. For ease of use, we create two scripts (```setup.sh``` and ```unsetup.sh```) to automatically install or uninstall the OVS-POF. 
+The OVS-POF follows the install steps of OVS. Start with OVS-DPDK, please read ```INSTALL.DPDK.md```. For ease of use, we create two scripts (```setup.sh``` and ```unsetup.sh```) to automatically install or uninstall the OVS-POF. 
 
 After the DPDK confifuration (i.e., driver binding, hugepages), then it's easy for us in later running with the scripts.
 ```
